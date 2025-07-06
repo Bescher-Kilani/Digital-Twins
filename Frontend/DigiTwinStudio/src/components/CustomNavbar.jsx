@@ -1,4 +1,4 @@
-import { Navbar, Nav, Container, Button, NavDropdown} from "react-bootstrap";
+import { Navbar, Nav, Container, Button, NavDropdown, Image } from "react-bootstrap";
 import logo from "../assets/logo.png";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -13,6 +13,13 @@ function CustomNavbar() {
   const changeLanguage = (lng) => {
     i18n.changeLanguage(lng);
   };
+
+  const username =
+    keycloak?.tokenParsed?.preferred_username || "User";
+
+  const profilePicture =
+    keycloak?.tokenParsed?.profilePicture ||
+    "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png"; // fallback
 
   const getLangName = (lng) => {
     switch (lng) {
@@ -49,12 +56,16 @@ function CustomNavbar() {
         <nav>
           <Nav.Link as={Link} to="/marketplace" className="text-light">{t("marketplace")}</Nav.Link>
         </nav>
-        <Nav className="ms-auto">
+        <Nav className="ms-auto align-items-center">
           <NavDropdown
-            title={getLangName(i18n.language)}
+            title={
+    <span className="align-middle">
+      {getLangName(i18n.language)}
+    </span>
+  }
             id="language-dropdown"
             align="end"
-            className="language-dropdown"
+            className="language-dropdow white-dropdown"
           >
             <NavDropdown.Item onClick={() => changeLanguage("en")}>
               English
@@ -65,13 +76,27 @@ function CustomNavbar() {
           </NavDropdown>
 
           {authenticated ? (
-            <Button
-              onClick={handleLogout}
-              variant="outline-light"
-              className="ms-3"
+            <NavDropdown
+              align="end"
+              title={
+                <span className="allign-middle">
+                  <Image
+                    src={profilePicture}
+                    roundedCircle
+                    width="40"
+                    height="40"
+                    className="me-2"
+                  />
+                  <span>{username}</span>
+                </span>
+              }
+              id="user-dropdown"
+              className="ms-3 white-dropdown"
             >
-              Logout
-            </Button>
+              <NavDropdown.Item onClick={handleLogout}>
+                Logout
+              </NavDropdown.Item>
+            </NavDropdown>
           ) : (
             <Button
               onClick={handleLogin}

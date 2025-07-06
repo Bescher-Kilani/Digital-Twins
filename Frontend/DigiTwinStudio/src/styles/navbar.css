@@ -1,3 +1,11 @@
-.language-dropdown .dropdown-toggle {
+.white-dropdown .dropdown-toggle {
   color: #fff !important;
+}
+
+.white-dropdown {
+    padding-right: 10px;
+}
+
+.language-dropdown{
+  padding-right: 10px;
 }

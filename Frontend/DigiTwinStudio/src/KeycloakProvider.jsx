@@ -11,6 +11,20 @@ const generateCodeVerifier = () => {
     .replace(/=/g, '');
 };
 
+// Helper function to decode base64url (JWT tokens use this instead of standard base64)
+const base64urlDecode = (str) => {
+  // Add padding if needed
+  const padded = str + '='.repeat((4 - str.length % 4) % 4);
+  // Convert base64url to base64
+  const base64 = padded.replace(/-/g, '+').replace(/_/g, '/');
+  try {
+    return atob(base64);
+  } catch (e) {
+    console.error('Failed to decode base64url string:', str, e);
+    throw e;
+  }
+};
+
 const generateCodeChallenge = async (codeVerifier) => {
   const encoder = new TextEncoder();
   const data = encoder.encode(codeVerifier);
@@ -33,7 +47,7 @@ const initiateLogin = () => {
     authUrl.searchParams.set('client_id', 'digitwin-auth');
     authUrl.searchParams.set('redirect_uri', window.location.origin);
     authUrl.searchParams.set('response_type', 'code');
-    authUrl.searchParams.set('scope', 'openid profile email');
+    authUrl.searchParams.set('scope', 'openid profile email custom-profile');
     authUrl.searchParams.set('code_challenge', codeChallenge);
     authUrl.searchParams.set('code_challenge_method', 'S256');
     
@@ -68,7 +82,7 @@ const checkSilentSSO = () => {
     'client_id=digitwin-auth&' +
     'redirect_uri=' + encodeURIComponent(window.location.origin + '/silent-check-sso.html') + '&' +
     'response_type=code&' +
-    'scope=openid profile email&' +
+    'scope=openid profile email custom-profile&' +
     'prompt=none'; // This tells Keycloak to not show login screen
   
   document.body.appendChild(iframe);
@@ -127,16 +141,16 @@ const exchangeCodeForTokens = (code) => {
       client_id: 'digitwin-auth',
       code: code,
       redirect_uri: window.location.origin + '/silent-check-sso.html',
-      scope: 'openid profile email'
+      scope: 'openid profile email custom-profile'
     })
   })
   .then(response => response.json())
   .then(data => {
     if (data.access_token) {
+      console.log("Response from token endpoint:", data);
       const tokenParts = data.access_token.split('.');
-      const payload = JSON.parse(atob(tokenParts[1]));
-      
-      console.log("Safari: Silent authentication successful", payload.preferred_username);
+      const payload = JSON.parse(base64urlDecode(tokenParts[1]));              console.log("Safari: Silent authentication successful", payload.preferred_username);
+              console.log("Safari: Silent token payload:", payload);
       
       // Store tokens
       sessionStorage.setItem('access_token', data.access_token);
@@ -224,7 +238,7 @@ export default function KeycloakProvider({ children }) {
             code: code,
             redirect_uri: window.location.origin,
             code_verifier: sessionStorage.getItem('pkce_code_verifier') || '',
-            scope: 'openid profile email'
+            scope: 'openid profile email custom-profile'
           })
         })
         .then(response => response.json())
@@ -232,9 +246,10 @@ export default function KeycloakProvider({ children }) {
           if (data.access_token) {
             // Parse the token to get user info
             const tokenParts = data.access_token.split('.');
-            const payload = JSON.parse(atob(tokenParts[1]));
+            const payload = JSON.parse(base64urlDecode(tokenParts[1]));
             
             console.log("Safari: Authentication successful", payload.preferred_username);
+            console.log("Safari: Token payload:", payload);
             
             // Store tokens (including ID token if available)
             sessionStorage.setItem('access_token', data.access_token);
@@ -272,11 +287,12 @@ export default function KeycloakProvider({ children }) {
         if (storedToken) {
           try {
             const tokenParts = storedToken.split('.');
-            const payload = JSON.parse(atob(tokenParts[1]));
+            const payload = JSON.parse(base64urlDecode(tokenParts[1]));
             
             // Check if token is still valid
             if (payload.exp * 1000 > Date.now()) {
               console.log("Safari: Using stored token", payload.preferred_username);
+              console.log("Safari: Stored token payload:", payload);
               setAuthStateInternal({
                 keycloak: {
                   login: () => initiateLogin(),
