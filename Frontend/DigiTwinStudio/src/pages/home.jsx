@@ -1,7 +1,12 @@
+import { useTranslation } from "react-i18next";
+
 function Home() {
+
+  const { t } = useTranslation();
+
   return (
     <div className="text-center">
-      <h1>Welcome to My Website</h1>
+      <h1>{t("welcome")}</h1>
       <p>This is the index page built with React.</p>
     </div>
   );
