@@ -8,7 +8,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SubModelDto {
+public class SubmodelDto {
 
 
     private Submodel submodel;
