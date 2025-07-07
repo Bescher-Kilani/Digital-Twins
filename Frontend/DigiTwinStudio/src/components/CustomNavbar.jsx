@@ -94,7 +94,7 @@ function CustomNavbar() {
               className="ms-3 white-dropdown"
             >
               <NavDropdown.Item onClick={handleLogout}>
-                Logout
+                {t("logout")}
               </NavDropdown.Item>
             </NavDropdown>
           ) : (
@@ -104,7 +104,7 @@ function CustomNavbar() {
               className="ms-3"
               disabled={!ready || !keycloak}
             >
-              Sign In
+              {t("sign in")}
             </Button>
           )}
         </Nav>

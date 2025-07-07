@@ -1,4 +1,23 @@
 {
-  "welcome": "Willkommen bei DigiTwin Studio",
-  "marketplace": "Marktplatz"
+  "marketplace": "Marktplatz",
+  "sign in": "Anmelden",
+  "register": "Registrieren",
+  "logout": "Abmelden",
+  "create": "Digitale Zwillinge erstellen",
+  "create text": "Erstellen Sie interaktive datengesteuerte Zwillinge Ihrer Maschinen, Gebäude oder Prozesse - ganz einfach über DigiTwin Studio",
+  "start now": "Jetzt anfangen",
+  "why 1": "Warum DigiTwin Studio?",
+  "why text 1": "Füllen Sie nur, was Sie brauchen!",
+  "why text 2": "Einfacher geht's nicht!",
+  "why text 3": "Erweitert nur, wenn Sie es brauchen",
+  "why desc 1": "Vorbei sind die Zeiten, in denen Sie jedes Feld im AASX-Explorer ausfüllen mussten, wenn es automatisch ausgefüllt werden kann. Mit DigiTwin Studio füllen Sie nur das aus, was Sie wirklich müssen.",
+  "why desc 2": "Die Benutzeroberfläche wurde mit Blick auf die Benutzerfreundlichkeit entwickelt und ist leicht zu bedienen. Jetzt kann jeder Teilmodelle erstellen.",
+  "why desc 3": "DigiTwin Studio bittet Sie nur um die notwendigen Informationen, ermöglicht Ihnen aber dennoch die Eingabe von Daten, die Sie im erweiterten Bereich benötigen.",
+  "why 2": "Warum einen digitalen Zwilling erstellen?",
+  "feature 1": "Optimierung von Wartungsprozessen",
+  "feature 2": "Kostenreduktion durch Simulation",
+  "feature 3": "Bessere Entscheidungen durch Datenvisualisierung",
+  "more": "...und vieles mehr",
+  "made with": "Erstellt mit ❤️ durch das PSE-Team",
+  "copyright": "© 2025 Fraunhofer IOSB. Alle Rechte vorbehalten."
 }
