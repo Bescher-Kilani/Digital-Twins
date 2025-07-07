@@ -1,6 +1,6 @@
 import { Navbar, Nav, Container, Button, NavDropdown, Image } from "react-bootstrap";
 import logo from "../assets/logo.png";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import '../styles/navbar.css';
 import { useContext } from "react";
@@ -9,6 +9,7 @@ import { KeycloakContext } from "../KeycloakContext";
 function CustomNavbar() {
   const { i18n, t } = useTranslation();
   const { keycloak, authenticated, ready } = useContext(KeycloakContext);
+  const navigate = useNavigate();
 
   const changeLanguage = (lng) => {
     i18n.changeLanguage(lng);
@@ -30,9 +31,7 @@ function CustomNavbar() {
   };
 
   const handleLogin = () => {
-    if (keycloak) {
-      keycloak.login();
-    }
+    navigate('/signin');
   };
 
   const handleLogout = () => {
