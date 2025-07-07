@@ -19,7 +19,8 @@ function Signin() {
 
   const handleRegister = () => {
     if (keycloak) {
-      keycloak.register();
+      // Use a simpler approach - direct URL to registration
+      window.location.href = 'http://localhost:8080/realms/DigiTwinStudio/protocol/openid-connect/registrations?client_id=digitwin-auth&response_type=code&scope=openid%20profile%20email%20custom-profile&redirect_uri=' + encodeURIComponent(window.location.origin);
     }
   };
 
