@@ -43,7 +43,7 @@ function CustomNavbar() {
   return (
     <Navbar bg="primary" variant="dark">
       <Container fluid>
-        <Navbar.Brand href="#home" className="d-flex align-items-center">
+        <Navbar.Brand as={Link} to="/" className="d-flex align-items-center">
           <img
             alt=""
             src={logo}
