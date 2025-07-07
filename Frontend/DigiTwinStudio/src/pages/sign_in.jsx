@@ -20,12 +20,15 @@ function Signin() {
   const handleRegister = () => {
     if (keycloak) {
       // Use a simpler approach - direct URL to registration
-      window.location.href = 'http://localhost:8080/realms/DigiTwinStudio/protocol/openid-connect/registrations?client_id=digitwin-auth&response_type=code&scope=openid%20profile%20email%20custom-profile&redirect_uri=' + encodeURIComponent(window.location.origin);
+      window.location.href =
+        "http://localhost:8080/realms/DigiTwinStudio/protocol/openid-connect/registrations?client_id=digitwin-auth&response_type=code&scope=openid%20profile%20email%20custom-profile&redirect_uri=" +
+        encodeURIComponent(window.location.origin);
     }
   };
 
+  // TODO: Logic to be made later
   const handleContinueAsGuest = () => {
-    navigate('/');
+    navigate("/");
   };
 
   return (
@@ -37,45 +40,51 @@ function Signin() {
         <div className="text-center">
           <img src={Logo} alt="Logo" style={{ width: 100, marginBottom: 16 }} />
 
-          <div className="signin-container text-white p-5">
+          <div className="signin-container text-white pt-5 pl-5 pr-5 pb-1">
             <p>
               We recommend signing into the website to experience all of the
               features we offer such as saving your files, but you can continue
               as a guest if you wish
             </p>
-            <Button 
-              variant="primary" 
-              className="me-2"
-              onClick={handleLogin}
-              disabled={!ready || !keycloak}
-            >
-              Sign in
-            </Button>
-            <Button 
-              variant="secondary"
-              onClick={handleRegister}
-              disabled={!ready || !keycloak}
-            >
-              Register
-            </Button>
+            <div className="mt-4">
+              <Button
+                variant="primary"
+                className="me-2"
+                onClick={handleLogin}
+                disabled={!ready || !keycloak}
+              >
+                Sign in
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={handleRegister}
+                disabled={!ready || !keycloak}
+              >
+                Register
+              </Button>
+            </div>
             <div className="d-flex align-items-center my-3">
               <div
-                className="flex-grow-1"
+                className="flex-grow-1 mx-3"
                 style={{ borderTop: "1px solid #fff" }}
               ></div>
               <span className="mx-2 text-white">or</span>
               <div
-                className="flex-grow-1"
+                className="flex-grow-1 mx-3"
                 style={{ borderTop: "1px solid #fff" }}
               ></div>
             </div>
-            <Button 
-              variant="primary" 
+            <Button
+              variant="primary"
               className="me-2"
               onClick={handleContinueAsGuest}
             >
               Continue as Guest
             </Button>
+            <p className="pt-4">
+              By using our services, you accept our Terms and Conditions and
+              Privacy Policy
+            </p>
           </div>
         </div>
       </div>
