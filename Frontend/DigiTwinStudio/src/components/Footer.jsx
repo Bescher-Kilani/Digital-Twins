@@ -7,8 +7,8 @@ function Footer() {
   return (
     <footer className="bg-primary text-white py-3">
       <Container className="text-center">
-        {t("made with")} <br />
-        {t("copyright")}
+        {t("footer.madeWith")} <br />
+        {t("footer.copyright")}
       </Container>
     </footer>
   );

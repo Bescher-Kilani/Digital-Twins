@@ -14,9 +14,9 @@ function Home() {
           <Row>
             <Col md={6}>
               <div className="text-container">
-                <h1>{t("create")}</h1>
-                <p>{t("create text")}</p>
-                <Button variant="primary">{t("start now")}</Button>
+                <h1>{t("home.hero.create")}</h1>
+                <p>{t("home.hero.createText")}</p>
+                <Button variant="primary">{t("home.hero.startNow")}</Button>
               </div>
             </Col>
             <Col md={6} className="g-0">
@@ -28,28 +28,28 @@ function Home() {
         </Container>
       </div>
       <div className="text-center pt-2">
-        <h1>{t("why 1")}</h1>
+        <h1>{t("home.why.studio.title")}</h1>
         <div className="features-section pt-2">
           <Container fluid>
             <Row className="text-center justify-content-around">
               <Col md={3} lg={2} className="p-3 custom-box">
-                <h3>{t("why text 1")}</h3>
-                <p>{t("why desc 1")}</p>
+                <h3>{t("home.why.studio.features.fillOnly.title")}</h3>
+                <p>{t("home.why.studio.features.fillOnly.description")}</p>
               </Col>
               <Col md={3} lg={2} className="p-3 custom-box">
-                <h3>{t("why text 2")}</h3>
-                <p>{t("why desc 2")}</p>
+                <h3>{t("home.why.studio.features.easyToUse.title")}</h3>
+                <p>{t("home.why.studio.features.easyToUse.description")}</p>
               </Col>
               <Col md={3} lg={2} className="p-3 custom-box">
-                <h3>{t("why text 3")}</h3>
-                <p>{t("why desc 3")}</p>
+                <h3>{t("home.why.studio.features.advanced.title")}</h3>
+                <p>{t("home.why.studio.features.advanced.description")}</p>
               </Col>
             </Row>
           </Container>
         </div>
       </div>
       <div className="pt-2">
-        <h1 className="text-center">{t("why 2")}</h1>
+        <h1 className="text-center">{t("home.why.digitalTwin.title")}</h1>
 
         <div
           className="d-flex flex-column align-items-start mx-auto"
@@ -57,20 +57,20 @@ function Home() {
         >
           <div className="d-flex align-items-center gap-2">
             <CheckIcon style={{ color: "green", width: 36, height: 36 }} />
-            <span>{t("feature 1")}</span>
+            <span>{t("home.why.digitalTwin.features.optimization")}</span>
           </div>
           <div className="d-flex align-items-center gap-2">
             <CheckIcon style={{ color: "green", width: 36, height: 36 }} />
-            <span>{t("feature 2")}</span>
+            <span>{t("home.why.digitalTwin.features.costReduction")}</span>
           </div>
           <div className="d-flex align-items-center gap-2">
             <CheckIcon style={{ color: "green", width: 36, height: 36 }} />
-            <span>{t("feature 3")}</span>
+            <span>{t("home.why.digitalTwin.features.dataVisualization")}</span>
           </div>
         </div>
         <div className="text-center pt-2 pb-3">
-          <p>{t("more")}</p>
-          <Button variant="primary">{t("start now")}</Button>
+          <p>{t("home.why.digitalTwin.more")}</p>
+          <Button variant="primary">{t("home.hero.startNow")}</Button>
         </div>
       </div>
     </div>
