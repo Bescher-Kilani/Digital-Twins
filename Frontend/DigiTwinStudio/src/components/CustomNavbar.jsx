@@ -43,7 +43,7 @@ function CustomNavbar() {
   return (
     <Navbar bg="primary" variant="dark">
       <Container fluid>
-        <Navbar.Brand as={Link} to="/" className="d-flex align-items-center">
+        <Navbar.Brand as={Link} to={authenticated ? "/dashboard" : "/"} className="d-flex align-items-center">
           <img
             alt=""
             src={logo}
@@ -82,8 +82,8 @@ function CustomNavbar() {
                   <Image
                     src={profilePicture}
                     roundedCircle
-                    width="40"
-                    height="40"
+                    width="45"
+                    height="45"
                     className="me-2"
                   />
                   <span>{username}</span>
