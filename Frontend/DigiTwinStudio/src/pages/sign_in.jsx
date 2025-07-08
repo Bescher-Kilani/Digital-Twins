@@ -32,13 +32,9 @@ function Signin() {
   };
 
   return (
-    <div>
-      <div
-        className="d-flex justify-content-center align-items-center"
-        style={{ height: "100vh" }}
-      >
-        <div className="text-center">
-          <img src={Logo} alt="Logo" style={{ width: 100, marginBottom: 16 }} />
+    <div className="signin-page-container">
+      <div className="text-center">
+        <img src={Logo} alt="Logo" style={{ width: 100, marginBottom: 16 }} />
 
           <div className="signin-container text-white pt-5 pl-5 pr-5 pb-1">
             <p>
@@ -87,7 +83,6 @@ function Signin() {
             </p>
           </div>
         </div>
-      </div>
     </div>
   );
 }
