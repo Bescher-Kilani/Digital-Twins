@@ -68,7 +68,7 @@ function Home() {
             <span>{t("feature 3")}</span>
           </div>
         </div>
-        <div className="text-center pt-2">
+        <div className="text-center pt-2 pb-3">
           <p>{t("more")}</p>
           <Button variant="primary">{t("start now")}</Button>
         </div>
