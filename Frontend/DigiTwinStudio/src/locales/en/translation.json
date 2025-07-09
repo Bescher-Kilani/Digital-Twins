@@ -1,23 +1,47 @@
 {
-  "marketplace": "Marketplace",
-  "sign in": "Sign in",
-  "register": "Register",
-  "logout": "Logout",
-  "create": "Create Digital Twins",
-  "create text": "Create interactive data-driven twins of your machines, buildings or processes — easily via DigiTwin Studio",
-  "start now": "Start now",
-  "why 1": "Why DigiTwin Studio?",
-  "why text 1": "Fill only what you need to!",
-  "why text 2": "As easy as it gets!",
-  "why text 3": "Advanced only when you need it to be",
-  "why desc 1": "Gone are the days of filling every field in AASX explorer when they can be filled automatically, DigiTwin Studio has got your back, With DigiTwin Studio you only fill what you really have to.",
-  "why desc 2": "The UI has been designed with the user experience in mind and is easily usable. Now everyone can create submodels.",
-  "why desc 3": "DigiTwin Studio will only ask for you to provide the necessary information but will still allow you to input whatever you might need through advanced section.",
-  "why 2": "Why create a Digital Twin?",
-  "feature 1": "Optimization of maintenance processes",
-  "feature 2": "Cost reduction through simulation",
-  "feature 3": "Better decisions through data visualization",
-  "more": "...and much more",
-  "made with": "Made with ❤️ by the PSE Team",
-  "copyright": "© 2025 Fraunhofer IOSB. All rights reserved."
+  "nav": {
+    "marketplace": "Marketplace",
+    "signIn": "Sign in",
+    "register": "Register",
+    "logout": "Logout"
+  },
+  "footer": {
+    "madeWith": "Made with ❤️ by the PSE Team",
+    "copyright": "© 2025 Fraunhofer IOSB. All rights reserved."
+  },
+  "home": {
+    "hero": {
+      "create": "Create Digital Twins",
+      "createText": "Create interactive data-driven twins of your machines, buildings or processes — easily via DigiTwin Studio",
+      "startNow": "Start now"
+    },
+    "why": {
+      "studio": {
+        "title": "Why DigiTwin Studio?",
+        "features": {
+          "fillOnly": {
+            "title": "Fill only what you need to!",
+            "description": "Gone are the days of filling every field in AASX explorer when they can be filled automatically, DigiTwin Studio has got your back, With DigiTwin Studio you only fill what you really have to."
+          },
+          "easyToUse": {
+            "title": "As easy as it gets!",
+            "description": "The UI has been designed with the user experience in mind and is easily usable. Now everyone can create submodels."
+          },
+          "advanced": {
+            "title": "Advanced only when you need it to be",
+            "description": "DigiTwin Studio will only ask for you to provide the necessary information but will still allow you to input whatever you might need through advanced section."
+          }
+        }
+      },
+      "digitalTwin": {
+        "title": "Why create a Digital Twin?",
+        "features": {
+          "optimization": "Optimization of maintenance processes",
+          "costReduction": "Cost reduction through simulation",
+          "dataVisualization": "Better decisions through data visualization"
+        },
+        "more": "...and much more"
+      }
+    }
+  }
 }

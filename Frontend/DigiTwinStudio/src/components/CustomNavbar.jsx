@@ -1,6 +1,6 @@
 import { Navbar, Nav, Container, Button, NavDropdown, Image } from "react-bootstrap";
 import logo from "../assets/logo.png";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import '../styles/navbar.css';
 import { useContext } from "react";
@@ -9,6 +9,7 @@ import { KeycloakContext } from "../KeycloakContext";
 function CustomNavbar() {
   const { i18n, t } = useTranslation();
   const { keycloak, authenticated, ready } = useContext(KeycloakContext);
+  const navigate = useNavigate();
 
   const changeLanguage = (lng) => {
     i18n.changeLanguage(lng);
@@ -30,9 +31,7 @@ function CustomNavbar() {
   };
 
   const handleLogin = () => {
-    if (keycloak) {
-      keycloak.login();
-    }
+    navigate('/signin');
   };
 
   const handleLogout = () => {
@@ -44,7 +43,7 @@ function CustomNavbar() {
   return (
     <Navbar bg="primary" variant="dark">
       <Container fluid>
-        <Navbar.Brand href="#home" className="d-flex align-items-center">
+        <Navbar.Brand as={Link} to={authenticated ? "/dashboard" : "/"} className="d-flex align-items-center">
           <img
             alt=""
             src={logo}
@@ -54,7 +53,7 @@ function CustomNavbar() {
           <span className="ms-2">DigiTwin Studio</span>
         </Navbar.Brand>
         <nav>
-          <Nav.Link as={Link} to="/marketplace" className="text-light">{t("marketplace")}</Nav.Link>
+          <Nav.Link as={Link} to="/marketplace" className="text-light">{t("nav.marketplace")}</Nav.Link>
         </nav>
         <Nav className="ms-auto align-items-center">
           <NavDropdown
@@ -83,8 +82,8 @@ function CustomNavbar() {
                   <Image
                     src={profilePicture}
                     roundedCircle
-                    width="40"
-                    height="40"
+                    width="45"
+                    height="45"
                     className="me-2"
                   />
                   <span>{username}</span>
@@ -94,7 +93,7 @@ function CustomNavbar() {
               className="ms-3 white-dropdown"
             >
               <NavDropdown.Item onClick={handleLogout}>
-                {t("logout")}
+                {t("nav.logout")}
               </NavDropdown.Item>
             </NavDropdown>
           ) : (
@@ -104,7 +103,7 @@ function CustomNavbar() {
               className="ms-3"
               disabled={!ready || !keycloak}
             >
-              {t("sign in")}
+              {t("nav.signIn")}
             </Button>
           )}
         </Nav>

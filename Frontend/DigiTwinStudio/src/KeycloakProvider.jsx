@@ -41,6 +41,9 @@ const initiateLogin = () => {
   const codeVerifier = generateCodeVerifier();
   sessionStorage.setItem('pkce_code_verifier', codeVerifier);
   
+  // Store that we're initiating login to know to redirect later
+  sessionStorage.setItem('login_initiated', 'true');
+  
   // Generate code challenge
   generateCodeChallenge(codeVerifier).then(codeChallenge => {
     const authUrl = new URL('http://localhost:8080/realms/DigiTwinStudio/protocol/openid-connect/auth');
@@ -169,6 +172,11 @@ const exchangeCodeForTokens = (code) => {
         authenticated: true,
         ready: true
       });
+      
+      // Redirect authenticated users to dashboard if they're on home page or sign-in page
+      if (window.location.pathname === '/' || window.location.pathname === '/signin') {
+        window.location.href = '/dashboard';
+      }
     } else {
       setNotAuthenticated();
     }
@@ -258,7 +266,7 @@ export default function KeycloakProvider({ children }) {
               sessionStorage.setItem('id_token', data.id_token);
             }
             
-            // Clean up URL
+            // Clean up URL and redirect to dashboard if login was initiated
             window.history.replaceState({}, document.title, window.location.pathname);
             
             setAuthStateInternal({
@@ -270,6 +278,12 @@ export default function KeycloakProvider({ children }) {
               authenticated: true,
               ready: true
             });
+            
+            // Redirect to dashboard only if this was a login (not silent SSO)
+            if (sessionStorage.getItem('login_initiated') === 'true') {
+              sessionStorage.removeItem('login_initiated');
+              window.location.href = '/dashboard';
+            }
           } else {
             console.error("Safari: Token exchange failed", data);
             // Try silent SSO check if token exchange fails
@@ -302,6 +316,12 @@ export default function KeycloakProvider({ children }) {
                 authenticated: true,
                 ready: true
               });
+              
+              // Redirect authenticated users to dashboard if they're on home page or sign-in page
+              if (window.location.pathname === '/' || window.location.pathname === '/signin') {
+                window.location.href = '/dashboard';
+              }
+              
               return;
             }
           } catch (e) {
@@ -332,6 +352,16 @@ export default function KeycloakProvider({ children }) {
           enableLogging: false
         })
         .then(auth => {
+          // Override the login function to redirect to dashboard after successful login
+          const originalLogin = kc.login;
+          kc.login = (options = {}) => {
+            sessionStorage.setItem('login_initiated', 'true');
+            return originalLogin.call(kc, {
+              ...options,
+              redirectUri: window.location.origin + '/dashboard'
+            });
+          };
+          
           setAuthStateInternal({
             keycloak: kc,
             authenticated: auth,
@@ -340,6 +370,20 @@ export default function KeycloakProvider({ children }) {
           
           if (auth) {
             console.log("User authenticated:", kc.tokenParsed?.preferred_username);
+            // Check if this was a login redirect (not just a page refresh)
+            if (sessionStorage.getItem('login_initiated') === 'true') {
+              sessionStorage.removeItem('login_initiated');
+              // Only redirect if we're not already on dashboard
+              if (window.location.pathname !== '/dashboard') {
+                window.location.href = '/dashboard';
+              }
+            } else {
+              // User is already authenticated from previous session
+              // Redirect to dashboard if they're on home page or sign-in page
+              if (window.location.pathname === '/' || window.location.pathname === '/signin') {
+                window.location.href = '/dashboard';
+              }
+            }
           }
         })
         .catch(err => {
