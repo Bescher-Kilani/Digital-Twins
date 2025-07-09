@@ -3,7 +3,7 @@ package org.DigiTwinStudio.DigiTwin_Backend.domain;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShell;
+import org.eclipse.digitaltwin.aas4j.v3.model.Environment;
 
 import java.time.LocalDateTime;
 
@@ -19,7 +19,7 @@ public class AASModel {
 
     private String ownerId;
 
-    private AssetAdministrationShell aas;
+    private Environment env;
 
     private PublishMetadata publishMetadata;
 

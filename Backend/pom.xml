@@ -67,6 +67,13 @@
 			<version>1.0.4</version>
 		</dependency>
 
+		<!-- https://mvnrepository.com/artifact/de.fraunhofer.iosb.ilt.faaast.service/model -->
+		<dependency>
+			<groupId>de.fraunhofer.iosb.ilt.faaast.service</groupId>
+			<artifactId>model</artifactId>
+			<version>1.2.0</version>
+		</dependency>
+
 		<!-- MapStruct Core -->
 		<dependency>
 			<groupId>org.mapstruct</groupId>
@@ -83,6 +90,10 @@
 		</dependency>
 
 	</dependencies>
+
+
+
+
 
 	<build>
 		<plugins>
