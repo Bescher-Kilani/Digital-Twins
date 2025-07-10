@@ -7,7 +7,7 @@ function Layout() {
     <div className="d-flex flex-column min-vh-100">
       <CustomNavbar />
       
-      <main className="flex-fill">
+      <main className="flex-fill d-flex flex-column">
         <Outlet />
       </main>
       

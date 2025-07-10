@@ -5,10 +5,10 @@ function Footer() {
   const { t } = useTranslation();
 
   return (
-    <footer className="bg-primary text-white mt-5 py-3">
+    <footer className="bg-primary text-white py-3">
       <Container className="text-center">
-        {t("made with")} <br />
-        {t("copyright")}
+        {t("footer.madeWith")} <br />
+        {t("footer.copyright")}
       </Container>
     </footer>
   );
