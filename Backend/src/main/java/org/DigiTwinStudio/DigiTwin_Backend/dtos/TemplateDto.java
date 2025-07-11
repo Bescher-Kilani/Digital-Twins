@@ -17,6 +17,8 @@ public class TemplateDto {
 
     private String name;
 
+    private String json;
+
     private String description;
 
     private String sourceUrl;
