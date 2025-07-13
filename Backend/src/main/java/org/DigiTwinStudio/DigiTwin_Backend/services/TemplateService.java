@@ -7,10 +7,9 @@ import java.util.stream.Collectors;
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.TemplateMapper;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.Template;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.TemplateDto;
-//import org.DigiTwinStudio.DigiTwin_Backend.dtos.ExternalTemplateDto;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.TemplateRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.NotFoundException;
-//import org.DigiTwinStudio.DigiTwin_Backend.integration.SmtRepoClient;
+import org.DigiTwinStudio.DigiTwin_Backend.integration.SMTRepoClient;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
@@ -21,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 public class TemplateService {
 
     private final TemplateRepository templateRepository;
-//    private final SmtRepoClient smtRepoClient;
+    private final SMTRepoClient smtRepoClient;
     private final TemplateMapper templateMapper;
 
     /**
@@ -60,13 +59,12 @@ public class TemplateService {
      *
      * @throws RuntimeException if fetching or mapping fails
      */
-//    public void syncTemplatesFromRepo() {
-//       List<ExternalTemplateDto> external = smtRepoClient.fetchTemplates();
-//        for (ExternalTemplateDto ext : external) {
-//            Template tpl = templateMapper.fromExternal(ext);
-//            templateRepository.save(tpl);
-//        }
-//    }
+    public void syncTemplatesFromRepo() {
+        List<Template> fetchedTemplates = smtRepoClient.fetchTemplates();
+        templateRepository.saveAll(fetchedTemplates);
+        // ToDo: Scheduling.
+        // ToDo: Nach Scheduling Logik implementieren, dass nur neue Templates (bzw Versionen) gespeichert werden, und der Rest ignoriert wird.
+   }
 
     /**
      * Resolves a domain Template by ID for reuse in Submodel instantiation.
