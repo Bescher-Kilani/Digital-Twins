@@ -1,7 +1,7 @@
 package org.DigiTwinStudio.DigiTwin_Backend.validation;
 
 import lombok.RequiredArgsConstructor;
-import org.eclipse.digitaltwin.aas4j.v3.model.Environment;
+import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShell;
 import org.springframework.stereotype.Component;
 
 
@@ -39,15 +39,15 @@ public class AASModelValidator {
      */
     public void validate(AASModel model) throws ValidationException {
         // 1. Validate AAS structure
-        Environment env = model.getEnv();
-        if (env == null) {
+        AssetAdministrationShell aas = model.getAas();
+        if (aas == null) {
             throw new ValidationException("AASModel must contain an AssetAdministrationShell");
         }
-        ModelValidator.validate(env);
+        ModelValidator.validate(aas);
 
 
         // 2. Validate all submodels in env
-        List<Submodel> submodels = env.getSubmodels();
+        List<Submodel> submodels = model.getSubmodels();
 
         for (Submodel sm : submodels) {
             submodelValidator.validate(sm);
