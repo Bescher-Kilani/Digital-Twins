@@ -1,10 +1,12 @@
 package org.DigiTwinStudio.DigiTwin_Backend.domain;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Document("templates")
 @Data
@@ -18,15 +20,11 @@ public class Template {
 
     private String name;
 
-    private String description;
+    private Map<String, String> descriptions; // key = language, value = description
 
     private String version;
 
-    private String json;
-
-    private byte[] documentationAsPdf;
-
-    private String sourceUrl;
+    private JsonNode json;
 
     private LocalDateTime pulledAt;
 

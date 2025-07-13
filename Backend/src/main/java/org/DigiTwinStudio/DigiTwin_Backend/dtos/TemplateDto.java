@@ -1,11 +1,13 @@
 package org.DigiTwinStudio.DigiTwin_Backend.dtos;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
@@ -17,13 +19,11 @@ public class TemplateDto {
 
     private String name;
 
-    private String description;
+    private Map<String, String> descriptions; // key = language, value = description
 
     private String version;
 
-    private String json;
-
-    private String sourceUrl;
+    private JsonNode json;
 
     private LocalDateTime pulledAt;
 }
