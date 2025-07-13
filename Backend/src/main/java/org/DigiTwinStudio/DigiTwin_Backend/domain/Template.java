@@ -20,7 +20,11 @@ public class Template {
 
     private String description;
 
+    private String version;
+
     private String json;
+
+    private byte[] documentationAsPdf;
 
     private String sourceUrl;
 
