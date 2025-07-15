@@ -4,6 +4,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Home from "./pages/home"; 
 import NotFound from "./pages/NotFound";
 import Signin from "./pages/sign_in";
+import CreatePage from "./pages/createPage";
 import Dashboard from "./pages/dashboard";
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="signin" element={<Signin />} />
+          <Route path="create" element={<CreatePage />} />
           <Route path="dashboard" element={
             <ProtectedRoute>
               <Dashboard />
