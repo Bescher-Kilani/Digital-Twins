@@ -75,7 +75,7 @@ function CreatePage() {
       </div>
 
       {tooltipVisible && (
-        <div id="mypopup" className="tooltip" style={tooltipStyle}>
+        <div id="mypopup" className="tip" style={tooltipStyle}>
           <h4 style={{ marginTop: 0 }}>Model Name</h4>
           <p style={{ marginBottom: 0 }}>This name will be used as the title for your model in the Dashboard.</p>
         </div>
@@ -113,7 +113,7 @@ function CreatePage() {
             <input id="specificAssetId" placeholder="name" />
           </div>
           <div className="field-group auto">
-            <label>Value</label>
+            <label>&nbsp;</label>
             <input placeholder="Value" />
           </div>
           <div className="field-group auto">
