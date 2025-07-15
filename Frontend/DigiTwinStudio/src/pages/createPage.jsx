@@ -9,20 +9,29 @@ function CreatePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const [tooltipVisible, setTooltipVisible] = useState(null);
   const [tooltipStyle, setTooltipStyle] = useState({});
   const [showChat, setShowChat] = useState(false);
-  const helpRef = useRef(null);
 
-  const showPopup = () => {
-    if (helpRef.current) {
-      const iconPos = helpRef.current.getBoundingClientRect();
+  const helpRefs = {
+    name: useRef(null),
+    description: useRef(null),
+    id: useRef(null),
+    assetKind: useRef(null),
+    globalAssetId: useRef(null),
+    specificAssetId: useRef(null),
+  };
+
+  const showPopup = (key) => {
+    const ref = helpRefs[key];
+    if (ref.current) {
+      const iconPos = ref.current.getBoundingClientRect();
       setTooltipStyle({
-        left: (iconPos.right + 20) + "px",
-        top: (window.scrollY + iconPos.top - 60) + "px",
+        left: iconPos.right + 15 + "px",
+        top: window.scrollY + iconPos.top - 60 + "px",
         display: "block",
         position: "absolute",
-        backgroundColor: "white",
+        backgroundColor: "rgba(174, 174, 174, 1)",
         color: "black",
         padding: "12px",
         borderRadius: "6px",
@@ -30,12 +39,21 @@ function CreatePage() {
         width: "260px",
         zIndex: 10
       });
-      setTooltipVisible(true);
+      setTooltipVisible(key);
     }
   };
 
   const hidePopup = () => {
-    setTooltipVisible(false);
+    setTooltipVisible(null);
+  };
+
+  const tooltipText = {
+    name: ["Model Name", "This name will be used as the title for your model in the Dashboard."],
+    description: ["Model Description", "Optional field for a short description of your model."],
+    id: ["AAS Identifier", "Unique identifier for the Asset Administration Shell."],
+    assetKind: ["Asset Kind", "Defines whether the asset is an Instance or a Type."],
+    globalAssetId: ["Global Asset ID", "Globally unique identifier for the asset this AAS refers to."],
+    specificAssetId: ["Specific Asset ID", "Optional additional identifier for the asset."]
   };
 
   return (
@@ -56,42 +74,61 @@ function CreatePage() {
             <label htmlFor="name" className="help-wrapper">
               name
               <img
-                id="myicon"
                 src={helpIcon}
                 alt="?"
                 className="help-icon"
-                ref={helpRef}
-                onMouseEnter={showPopup}
+                ref={helpRefs.name}
+                onMouseEnter={() => showPopup("name")}
                 onMouseLeave={hidePopup}
               />
             </label>
             <input id="name" placeholder="ex. Office Building" />
           </div>
           <div className="field-group auto">
-            <label htmlFor="description">description</label>
+            <label htmlFor="description" className="help-wrapper">
+              description
+              <img
+                src={helpIcon}
+                alt="?"
+                className="help-icon"
+                ref={helpRefs.description}
+                onMouseEnter={() => showPopup("description")}
+                onMouseLeave={hidePopup}
+              />
+            </label>
             <input id="description" placeholder="ex. Optional Description" />
           </div>
         </div>
       </div>
 
-      {tooltipVisible && (
-        <div id="mypopup" className="tip" style={tooltipStyle}>
-          <h4 style={{ marginTop: 0 }}>Model Name</h4>
-          <p style={{ marginBottom: 0 }}>This name will be used as the title for your model in the Dashboard.</p>
-        </div>
-      )}
-
       <div className="section boxed">
         <h3>AAS Identification</h3>
         <div className="field-block">
           <div className="field-group half">
-            <label htmlFor="id">id</label>
+            <label htmlFor="id" className="help-wrapper">
+              id
+              <img
+                src={helpIcon}
+                alt="?"
+                className="help-icon"
+                ref={helpRefs.id}
+                onMouseEnter={() => showPopup("id")}
+                onMouseLeave={hidePopup}
+              />
+            </label>
             <input id="id" placeholder="ex. urn:aas:example:aas:123456" />
           </div>
           <div className="field-group auto">
-            <label htmlFor="assetKind">
+            <label htmlFor="assetKind" className="help-wrapper">
               assetKind
-              <img src={helpIcon} alt="?" className="help-icon" />
+              <img
+                src={helpIcon}
+                alt="?"
+                className="help-icon"
+                ref={helpRefs.assetKind}
+                onMouseEnter={() => showPopup("assetKind")}
+                onMouseLeave={hidePopup}
+              />
             </label>
             <select id="assetKind">
               <option>Instance</option>
@@ -105,15 +142,35 @@ function CreatePage() {
         <h3>Asset Identification</h3>
         <div className="field-block">
           <div className="field-group half">
-            <label htmlFor="globalAssetId">globalAssetId</label>
+            <label htmlFor="globalAssetId" className="help-wrapper">
+              globalAssetId
+              <img
+                src={helpIcon}
+                alt="?"
+                className="help-icon"
+                ref={helpRefs.globalAssetId}
+                onMouseEnter={() => showPopup("globalAssetId")}
+                onMouseLeave={hidePopup}
+              />
+            </label>
             <input id="globalAssetId" placeholder="ex. urn:aas:example:aas:123456" />
           </div>
           <div className="field-group auto">
-            <label htmlFor="specificAssetId">specificAssetId</label>
+            <label htmlFor="specificAssetId" className="help-wrapper">
+              specificAssetId
+              <img
+                src={helpIcon}
+                alt="?"
+                className="help-icon"
+                ref={helpRefs.specificAssetId}
+                onMouseEnter={() => showPopup("specificAssetId")}
+                onMouseLeave={hidePopup}
+              />
+            </label>
             <input id="specificAssetId" placeholder="name" />
           </div>
           <div className="field-group auto">
-            <label>&nbsp;</label>
+            <label>Value</label>
             <input placeholder="Value" />
           </div>
           <div className="field-group auto">
@@ -150,6 +207,13 @@ function CreatePage() {
             </p>
           </div>
           <input className="chat-input" placeholder="Write your message here." />
+        </div>
+      )}
+
+      {tooltipVisible && (
+        <div id="mypopup" className="tip" style={tooltipStyle}>
+          <h4 style={{ marginTop: 0 }}>{tooltipText[tooltipVisible][0]}</h4>
+          <p style={{ marginBottom: 0 }}>{tooltipText[tooltipVisible][1]}</p>
         </div>
       )}
     </div>
