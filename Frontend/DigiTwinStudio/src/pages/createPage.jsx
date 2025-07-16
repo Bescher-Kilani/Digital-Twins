@@ -2,16 +2,65 @@ import React, { useState, useRef, useEffect } from "react";
 import "../styles/createPage.css";
 import helpIcon from "../assets/icons/help.png";
 import aiAssistantIcon from "../assets/ai-chatbot-assistant.png";
-import { Link, useNavigate } from "react-router-dom";
+import tagIcon from "../assets/icons/tags.svg";
+import ChevronLeftIcon from "../assets/icons/chevron-left.svg?react";
+import FloppyFillIcon from "../assets/icons/floppy-fill.svg?react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Card, Button } from "react-bootstrap";
 
 function CreatePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [tooltipVisible, setTooltipVisible] = useState(null);
   const [tooltipStyle, setTooltipStyle] = useState({});
   const [showChat, setShowChat] = useState(false);
+  
+  // State for form data
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    id: "",
+    assetKind: "Instance",
+    globalAssetId: "",
+    specificAssetId: ""
+  });
+  
+  // State for submodel templates - initialize from sessionStorage
+  const [submodelTemplates, setSubmodelTemplates] = useState(() => {
+    const saved = sessionStorage.getItem('submodelTemplates');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Persist submodel templates to sessionStorage whenever they change
+  useEffect(() => {
+    sessionStorage.setItem('submodelTemplates', JSON.stringify(submodelTemplates));
+  }, [submodelTemplates]);
+
+  // Handle returning template data from /templates/create
+  useEffect(() => {
+    if (location.state?.templateData) {
+      const newTemplate = location.state.templateData;
+      console.log('Adding new template:', newTemplate);
+      
+      setSubmodelTemplates(prev => {
+        console.log('Current templates before adding:', prev);
+        const updated = [...prev, newTemplate];
+        console.log('Updated templates:', updated);
+        return updated;
+      });
+      
+      // Restore the original form data if it exists
+      if (location.state?.originalFormData) {
+        setFormData(location.state.originalFormData);
+      }
+      
+      // Clear the state to prevent re-adding on refresh
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, navigate, location.pathname]);
 
   const helpRefs = {
     name: useRef(null),
@@ -47,6 +96,58 @@ function CreatePage() {
     setTooltipVisible(null);
   };
 
+  // Handle adding submodel
+  const handleAddSubmodel = () => {
+    // Pass current form data to maintain context
+    navigate('/templates', { 
+      state: { 
+        fromCreate: true,
+        formData: formData 
+      } 
+    });
+  };
+
+  // Handle removing submodel template
+  const handleRemoveTemplate = (templateIndex) => {
+    setSubmodelTemplates(prev => prev.filter((_, index) => index !== templateIndex));
+  };
+
+  // Handle final save
+  const handleSave = async () => {
+    const finalData = {
+      aasData: formData,
+      submodelTemplates: submodelTemplates
+    };
+    
+    try {
+      // TODO: Replace with actual API endpoint
+      console.log('Saving AASX model:', finalData);
+      // const response = await fetch('/api/create-aasx', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(finalData)
+      // });
+      // if (response.ok) {
+      //   sessionStorage.removeItem('submodelTemplates'); // Clear saved templates
+      //   navigate('/dashboard');
+      // }
+      
+      // Clear the templates after successful save
+      sessionStorage.removeItem('submodelTemplates');
+      setSubmodelTemplates([]);
+      
+      alert('Model saved successfully! (Mock implementation)');
+    } catch (error) {
+      console.error('Error saving model:', error);
+      alert('Error saving model');
+    }
+  };
+
+  // Handle form field changes
+  const handleFieldChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
   const tooltipText = {
     name: ["Model Name", "This name will be used as the title for your model in the Dashboard."],
     description: ["Model Description", "Optional field for a short description of your model."],
@@ -58,13 +159,31 @@ function CreatePage() {
 
   return (
     <div className="create-page-wrapper">
-      <div className="step-header">
-        <span>Fill the Details</span>
-        <div className="step-progress">
-          <div className="dot active"></div>
-          <div className="dot"></div>
-        </div>
-        <span>All done</span>
+      {/* Progress bar */}
+      <div className="d-flex mb-1">
+        <div className="text-warning step-progress-item step-progress-left">Fill the Details</div>
+        <div className="text-white step-progress-item step-progress-right">All done</div>
+      </div>
+
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div
+          style={{
+            flex: 1,
+            height: "4px",
+            background: "gold",
+            marginRight: "4px",
+            borderRadius: "2px",
+          }}
+        />
+        <div
+          style={{
+            flex: 1,
+            height: "4px",
+            background: "#ccc",
+            marginLeft: "4px",
+            borderRadius: "2px",
+          }}
+        />
       </div>
 
       <div className="section boxed">
@@ -82,7 +201,12 @@ function CreatePage() {
                 onMouseLeave={hidePopup}
               />
             </label>
-            <input id="name" placeholder="ex. Office Building" />
+            <input 
+              id="name" 
+              placeholder="ex. Office Building"
+              value={formData.name}
+              onChange={(e) => handleFieldChange('name', e.target.value)}
+            />
           </div>
           <div className="field-group auto">
             <label htmlFor="description" className="help-wrapper">
@@ -96,7 +220,12 @@ function CreatePage() {
                 onMouseLeave={hidePopup}
               />
             </label>
-            <input id="description" placeholder="ex. Optional Description" />
+            <input 
+              id="description" 
+              placeholder="ex. Optional Description"
+              value={formData.description}
+              onChange={(e) => handleFieldChange('description', e.target.value)}
+            />
           </div>
         </div>
       </div>
@@ -116,7 +245,12 @@ function CreatePage() {
                 onMouseLeave={hidePopup}
               />
             </label>
-            <input id="id" placeholder="ex. urn:aas:example:aas:123456" />
+            <input 
+              id="id" 
+              placeholder="ex. urn:aas:example:aas:123456"
+              value={formData.id}
+              onChange={(e) => handleFieldChange('id', e.target.value)}
+            />
           </div>
           <div className="field-group auto">
             <label htmlFor="assetKind" className="help-wrapper">
@@ -130,7 +264,11 @@ function CreatePage() {
                 onMouseLeave={hidePopup}
               />
             </label>
-            <select id="assetKind">
+            <select 
+              id="assetKind"
+              value={formData.assetKind}
+              onChange={(e) => handleFieldChange('assetKind', e.target.value)}
+            >
               <option>Instance</option>
               <option>Type</option>
             </select>
@@ -153,7 +291,12 @@ function CreatePage() {
                 onMouseLeave={hidePopup}
               />
             </label>
-            <input id="globalAssetId" placeholder="ex. urn:aas:example:aas:123456" />
+            <input 
+              id="globalAssetId" 
+              placeholder="ex. urn:aas:example:aas:123456"
+              value={formData.globalAssetId}
+              onChange={(e) => handleFieldChange('globalAssetId', e.target.value)}
+            />
           </div>
           <div className="field-group auto">
             <label htmlFor="specificAssetId" className="help-wrapper">
@@ -167,7 +310,12 @@ function CreatePage() {
                 onMouseLeave={hidePopup}
               />
             </label>
-            <input id="specificAssetId" placeholder="name" />
+            <input 
+              id="specificAssetId" 
+              placeholder="name"
+              value={formData.specificAssetId}
+              onChange={(e) => handleFieldChange('specificAssetId', e.target.value)}
+            />
           </div>
           <div className="field-group auto">
             <label>Value</label>
@@ -183,13 +331,117 @@ function CreatePage() {
       <div className="section boxed">
         <h3>Submodel Templates</h3>
         <div className="field-block">
-          <button className="add-submodel">+ Add Submodel</button>
+          <div className="d-flex flex-wrap gap-3">
+            {/* Add Submodel Button Card */}
+            <div className="position-relative">
+              <Card
+                className="text-white text-center"
+                style={{
+                  width: "140px",
+                  height: "180px",
+                  padding: "1rem",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                  border: "3px solid #0E4175",
+                  background: "linear-gradient(180deg, #03386C 0%, #02376B 50%, #01366A 100%)"
+                }}
+                onClick={handleAddSubmodel}
+              >
+                <Card.Body className="d-flex flex-column align-items-center justify-content-center p-0 h-100">
+                  <div style={{ 
+                    fontSize: "3rem", 
+                    fontWeight: "bold",
+                    marginBottom: "0.5rem"
+                  }}>
+                    +
+                  </div>
+                  <Card.Text style={{ fontSize: "0.875rem", lineHeight: "1.2" }}>
+                    Add Submodel
+                  </Card.Text>
+                </Card.Body>
+              </Card>
+            </div>
+            
+            {/* Display added submodel templates */}
+            {submodelTemplates.map((template, index) => (
+                <div key={index} className="position-relative">
+                  <Card
+                    className="text-white text-center"
+                    style={{
+                      width: "140px",
+                      height: "180px",
+                      padding: "1rem",
+                      borderRadius: "5px",
+                      border: "3px solid #0E4175",
+                      background: "linear-gradient(180deg, #002C5A 0%, #002C59 50%, #002C5D 100%)"
+                    }}
+                  >
+                    <Card.Body className="d-flex flex-column align-items-center justify-content-center p-0 h-100">
+                      <Card.Img
+                        variant="top"
+                        src={tagIcon}
+                        style={{ width: "50px", margin: "0 auto 0.5rem auto" }}
+                        alt="Template Icon"
+                      />
+                      <Card.Text style={{ fontSize: "0.875rem", lineHeight: "1.2" }}>
+                        {template.title}
+                      </Card.Text>
+                    </Card.Body>
+                  </Card>
+                  <button 
+                    className="remove-submodel-card"
+                    onClick={() => handleRemoveTemplate(index)}
+                    style={{
+                      position: "absolute",
+                      top: "-8px",
+                      right: "-8px",
+                      background: "#dc3545",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "50%",
+                      width: "24px",
+                      height: "24px",
+                      fontSize: "12px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center"
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
         </div>
       </div>
 
       <div className="form-footer">
-        <button className="back-btn">← Back</button>
-        <button className="save-btn">💾 Save</button>
+        <Button 
+          style={{
+            backgroundColor: "#004277",
+            border: "2px solid #0D598B",
+            color: "white",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px"
+          }}
+        >
+          <ChevronLeftIcon style={{ fill: "white", width: "16px", height: "16px" }} />
+          Back
+        </Button>
+        <Button 
+          variant="primary"
+          onClick={handleSave}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px"
+          }}
+        >
+          <FloppyFillIcon style={{ fill: "white", width: "16px", height: "16px" }} />
+          Save
+        </Button>
       </div>
 
       <div className="ai-button" onClick={() => setShowChat(!showChat)}>

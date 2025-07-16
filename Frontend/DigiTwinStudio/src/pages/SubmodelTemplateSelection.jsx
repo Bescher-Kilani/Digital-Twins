@@ -1,5 +1,5 @@
 import { Container, Row, Col, Button, Card, Pagination } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 import "../styles/submodelTemplateSelection.css";
 
@@ -47,7 +47,26 @@ const templates = [
 ];
 
 export default function SubmodelTemplateSelection() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [currentPage, setCurrentPage] = useState(1);
+  
+  // Get the original form data passed from /create
+  const originalFormData = location.state?.formData;
+  
+  // Handle template selection
+  const handleTemplateSelect = (template) => {
+    navigate('/templates/create', {
+      state: {
+        selectedTemplate: {
+          id: template.title.toLowerCase().replace(/\s+/g, '-'),
+          title: template.title,
+          description: template.description
+        },
+        originalFormData: originalFormData // Pass through the original form data
+      }
+    });
+  };
   const templatesPerPage = 6;
   
   // Calculate pagination
@@ -65,7 +84,7 @@ export default function SubmodelTemplateSelection() {
       <Container className="py-4">
         <Button
           as={Link}
-          to="/dashboard"
+          to="/create"
           className="mb-3 back-button"
         >
           ← Back
@@ -122,7 +141,11 @@ export default function SubmodelTemplateSelection() {
                 <Card.Text className="flex-grow-1">
                   {template.description}
                 </Card.Text>
-                <Button variant="primary" className="align-self-start mt-2">
+                <Button 
+                  variant="primary" 
+                  className="align-self-start mt-2"
+                  onClick={() => handleTemplateSelect(template)}
+                >
                   Select
                 </Button>
               </Card.Body>
