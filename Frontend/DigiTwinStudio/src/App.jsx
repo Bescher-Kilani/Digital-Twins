@@ -6,6 +6,7 @@ import NotFound from "./pages/NotFound";
 import Signin from "./pages/sign_in";
 import CreatePage from "./pages/createPage";
 import Dashboard from "./pages/dashboard";
+import SubmodelTemplateSelection from "./pages/SubmodelTemplateSelection";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
           <Route index element={<Home />} />
           <Route path="signin" element={<Signin />} />
           <Route path="create" element={<CreatePage />} />
+          <Route path="templates" element={<SubmodelTemplateSelection />} />
           <Route path="dashboard" element={
             <ProtectedRoute>
               <Dashboard />
