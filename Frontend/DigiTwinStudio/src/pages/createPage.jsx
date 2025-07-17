@@ -136,7 +136,12 @@ function CreatePage() {
       sessionStorage.removeItem('submodelTemplates');
       setSubmodelTemplates([]);
       
-      alert('Model saved successfully! (Mock implementation)');
+      // Navigate to createComplete page with model name
+      navigate('/create/complete', { 
+        state: { 
+          modelName: formData.name || 'Untitled Model' 
+        } 
+      });
     } catch (error) {
       console.error('Error saving model:', error);
       alert('Error saving model');
