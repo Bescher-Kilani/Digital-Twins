@@ -1,0 +1,37 @@
+/* Create Complete Page Styles */
+
+.create-complete-card {
+  max-width: 1600px;
+  min-height: 300px;
+  background: linear-gradient(180deg, #00376A 0%, #01366A 50%, #01366A 100%) !important;
+  border-radius: 10px !important;
+  border: 3px solid #0E4175 !important;
+}
+
+.progress-bar-section {
+  flex: 1;
+  height: 4px;
+  background: green;
+  border-radius: 2px;
+}
+
+.progress-bar-left {
+  margin-right: 4px;
+}
+
+.progress-bar-right {
+  margin-left: 4px;
+}
+
+.create-complete-button {
+  background-color: #004277 !important;
+  border: 2px solid #0D598B !important;
+  color: white !important;
+  margin-right: 10px;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.create-complete-button svg {
+  margin-right: 8px !important;
+}
