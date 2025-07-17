@@ -33,6 +33,7 @@ public class AAS4jAdapter {
      * @param json the JSON representation of the submodel
      * @return a {@link Submodel} instance parsed from the JSON
      * @throws ExportException if the JSON parsing fails
+     * defaultsubmodel, node json
      */
     public Submodel parseSubmodelFromJson(String json) {
         try {

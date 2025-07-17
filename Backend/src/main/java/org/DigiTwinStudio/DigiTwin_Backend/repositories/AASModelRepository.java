@@ -10,8 +10,13 @@ import java.util.Optional;
 @Repository
 public interface AASModelRepository extends MongoRepository<AASModel, String> {
 
+    Optional<AASModel> findById(String id);
+
     // None deleted models for a specific owner
     List<AASModel> findByOwnerIdAndDeletedFalse(String ownerId);
+
+    // Finds a model by ID, owner, and ensures it's not deleted
+    Optional<AASModel> findByIdAndOwnerIdAndDeletedFalse(String id, String ownerId);
 
     // specific model by ID
     Optional<AASModel> findByIdAndDeletedFalse(String id);

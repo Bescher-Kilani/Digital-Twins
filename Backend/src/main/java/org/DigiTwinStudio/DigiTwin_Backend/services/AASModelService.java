@@ -15,6 +15,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultAssetAdministrationShell;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import de.fraunhofer.iosb.ilt.faaast.service.model.exception.ValidationException;
 
@@ -25,6 +26,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AASModelService {
 
     private final AASModelRepository aasModelRepository;
@@ -32,17 +34,21 @@ public class AASModelService {
     private final TagRepository tagRepository;
     private final UploadedFileRepository uploadedFileRepository;
     private final AASModelMapper aasModelMapper;
-    private final SubmodelMapper submodelMapper;
+    private final SubmodelMapper submodelMapper; //let's see if it is needed
 
+    @Transactional(readOnly = true)
     public List<AASModelDto> getAllForUser(String userId) {
         List<AASModel> models = aasModelRepository.findByOwnerIdAndDeletedFalse(userId);
         return models.stream().map(aasModelMapper::toDto).toList();
     }
 
+    // TODO: still needs a consistent error handling
+    @Transactional(readOnly = true)
     public Optional<AASModelDto> getById(String id, String userId) {
-        Optional<AASModel> model = aasModelRepository.findByIdAndDeletedFalse(id);
-        return model.filter(m -> m.getOwnerId().equals(userId))
-                .map(aasModelMapper::toDto);
+        //changed because loading all the users data from database and filtering it in the application code
+        // can expose the user data, that is why I added findByIdAndOwnerIdAndDeletedFalse method to AASModelRepository
+        Optional<AASModel> model = aasModelRepository.findByIdAndOwnerIdAndDeletedFalse(id, userId);
+        return model.map(aasModelMapper::toDto);
     }
 
     public AASModelDto createEmpty(String userId) {
@@ -51,23 +57,38 @@ public class AASModelService {
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .deleted(false)
+                .published(false)
                 // Not sure if initializing 'aas' and 'submodels' is strictly necessary here.
                 // Will verify if leaving them null causes NullPointerException in downstream logic.
                 .aas(new DefaultAssetAdministrationShell())
                 .submodels(new ArrayList<>())
-                .published(false).build();
-        return aasModelMapper.toDto(aasModelRepository.save(aasModel));
+                .build();
+
+        AASModel savedModel = aasModelRepository.save(aasModel);
+        return aasModelMapper.toDto(savedModel);
     }
 
     public AASModelDto saveModel(String id, String userId, AASModelDto aasModelDto) throws ValidationException {
-        AASModel existingModel = getModelOrThrow(id, userId);
-        AASModel modelToSave = aasModelMapper.fromDto(aasModelDto, userId);
-        modelToSave.setId(id);
-        modelToSave.setCreatedAt(existingModel.getCreatedAt());
-        modelToSave.setUpdatedAt(LocalDateTime.now());
+        AASModel existingModel = aasModelRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Model not found."));
 
-        aasModelValidator.validate(modelToSave);
-        return aasModelMapper.toDto(aasModelRepository.save(modelToSave));
+        validateOwnership(existingModel, userId);
+
+        AASModel updatedModel = aasModelMapper.fromDto(aasModelDto, userId);
+
+        aasModelValidator.validate(updatedModel);
+
+        updatedModel.setId(id);
+        updatedModel.setOwnerId(userId);
+        updatedModel.setCreatedAt(existingModel.getCreatedAt());
+        updatedModel.setUpdatedAt(LocalDateTime.now());
+        updatedModel.setDeleted(existingModel.isDeleted());
+        updatedModel.setPublished(existingModel.isPublished());
+        updatedModel.setPublishMetadata(existingModel.getPublishMetadata());
+
+        AASModel savedModel = aasModelRepository.save(updatedModel);
+
+        return aasModelMapper.toDto(savedModel);
     }
 
     public void deleteModel(String id, String userId) {
