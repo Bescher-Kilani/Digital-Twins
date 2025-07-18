@@ -22,12 +22,13 @@
 	</developers>
 	<scm>
 		<connection/>
+
 		<developerConnection/>
 		<tag/>
 		<url/>
 	</scm>
 	<properties>
-		<java.version>24</java.version>
+		<java.version>21</java.version>
 	</properties>
 
 	<dependencies>
@@ -184,8 +185,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.8.1</version>
 				<configuration>
-					<source>17</source>
-					<target>17</target>
+					<source>21</source>
+					<target>21</target>
 					<annotationProcessorPaths>
 						<!-- Lombok processor -->
 						<path>
