@@ -1,17 +1,16 @@
 package org.DigiTwinStudio.DigiTwin_Backend.validation;
 
 import lombok.RequiredArgsConstructor;
-import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShell;
-import org.springframework.stereotype.Component;
-
-
-import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultAssetAdministrationShell;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
 
 import de.fraunhofer.iosb.ilt.faaast.service.model.validation.ModelValidator;
 import de.fraunhofer.iosb.ilt.faaast.service.model.exception.ValidationException;
 
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.PublishMetadata;
+
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
@@ -39,7 +38,7 @@ public class AASModelValidator {
      */
     public void validate(AASModel model) throws ValidationException {
         // 1. Validate AAS structure
-        AssetAdministrationShell aas = model.getAas();
+        DefaultAssetAdministrationShell aas = model.getAas();
         if (aas == null) {
             throw new ValidationException("AASModel must contain an AssetAdministrationShell");
         }
@@ -47,9 +46,9 @@ public class AASModelValidator {
 
 
         // 2. Validate all submodels in env
-        List<Submodel> submodels = model.getSubmodels();
+        List<DefaultSubmodel> submodels = model.getSubmodels();
 
-        for (Submodel sm : submodels) {
+        for (DefaultSubmodel sm : submodels) {
             submodelValidator.validate(sm);
         }
 
