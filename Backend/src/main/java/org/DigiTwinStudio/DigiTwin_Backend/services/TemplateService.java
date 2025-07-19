@@ -2,8 +2,11 @@ package org.DigiTwinStudio.DigiTwin_Backend.services;
 
 
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.TemplateMapper;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.Template;
@@ -60,11 +63,56 @@ public class TemplateService {
      * its pulledAt timestamp is set to now, and it is marked active.
      *
      * @throws RuntimeException if fetching or mapping fails
+     * @throws NotFoundException if accessing a local template-object fails
      */
     public void syncTemplatesFromRepo() {
         log.info("syncTemplatesFromRepo");
         List<Template> fetchedTemplates = smtRepoClient.fetchTemplates();
         log.info("Fetched {} templates.", fetchedTemplates.size());
+
+        int newCount = 0;
+        int oldCount = 0;
+        int changedCount = 0;
+        for (Template template : fetchedTemplates) {
+            Template localTemplate = isInTemplateRepository(template.getName());
+            if (localTemplate != null) {
+                // a template-object with this name is already present in local repository
+                log.info("A template with the name \"{}\" and ID \"{}\" already exists in local repository.", localTemplate.getName(), localTemplate.getId());
+
+                // check if the version description or JSON have changed
+                log.info("Check if something has changed...");
+                boolean hasChanged = false;
+                // version
+                if (localTemplate.getVersion().equalsIgnoreCase(template.getVersion())) {
+                    hasChanged = true;
+                    log.info("Version has changed. From old Version \"{}\" to new Version \"{}\".", localTemplate.getVersion(), template.getVersion());
+                }
+                // descriptions
+                if (localTemplate.getDescriptions().equals(template.getDescriptions())) {
+                    hasChanged = true;
+                    log.info("Descriptions have changed. From \"{}\" to \"{}\".", localTemplate.getDescriptions(), template.getDescriptions());
+                }
+                // JSON
+                if (localTemplate.getJson().equals(template.getJson())) {
+                    hasChanged = true;
+                    log.info("JSON has changed.");
+                }
+                if (hasChanged) {
+                    // deactivate old template -> safe delete later
+                    localTemplate.setActive(false);
+                    // save changed Template
+                    this.templateRepository.save(template);
+                    changedCount++;
+                } else {
+                    oldCount++;
+                }
+
+            } else {
+                newCount++;
+                templateRepository.save(template);
+                log.info("New template: {} has been saved to local repository", template.getName());
+            }
+        }
         templateRepository.saveAll(fetchedTemplates);
         log.info("Saved {} templates in database.", fetchedTemplates.size());
         log.info("Template-Repository has {} templates.", templateRepository.count());
@@ -85,4 +133,20 @@ public class TemplateService {
         return templateRepository.findById(templateId)
                 .orElseThrow(() -> new NotFoundException("Template not found: " + templateId));
     }
+
+    /**
+     *
+     * @param templateName name of template
+     * @return local template-object with the same name, else null
+     */
+    private Template isInTemplateRepository(String templateName) {
+        List<Template> templatesInLocalRepo = this.templateRepository.findByActiveTrueOrderByNameAsc();
+        for (Template template : templatesInLocalRepo) {
+            if (template.getName().equalsIgnoreCase(templateName)) {
+                return template;
+            }
+        }
+        return null;
+    }
+
 }
