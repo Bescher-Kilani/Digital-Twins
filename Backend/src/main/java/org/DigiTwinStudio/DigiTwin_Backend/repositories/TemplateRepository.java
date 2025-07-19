@@ -18,5 +18,5 @@ public interface TemplateRepository extends MongoRepository<Template, String> {
     Optional<Template> findByIdAndActiveTrue(String id);
 
 
-    Optional<Template> findByName(String name);
+    Optional<Template> findByNameAndActiveTrue(String name);
 }

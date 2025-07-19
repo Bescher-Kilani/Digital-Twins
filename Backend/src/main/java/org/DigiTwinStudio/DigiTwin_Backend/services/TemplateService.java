@@ -71,7 +71,7 @@ public class TemplateService {
         int updatedCount = 0;
         for (Template template : fetchedTemplates) {
             log.info("Fetched Template: {}", template.getName());
-            if (this.templateRepository.findByName(template.getName()).isEmpty()) {
+            if (this.templateRepository.findByNameAndActiveTrue(template.getName()).isEmpty()) {
                 // no template with this name exists locally
                 newCount++;
                 this.templateRepository.save(template);
@@ -80,7 +80,7 @@ public class TemplateService {
                 log.info("Template with name \"{}\" already exists. Checking for updated Version.", template.getName());
 
                 // check for an updated version. keep only newest
-                Template localTemplate = this.templateRepository.findByName(template.getName()).get();
+                Template localTemplate = this.templateRepository.findByNameAndActiveTrue(template.getName()).get();
                 int localTemplateVersion = Integer.parseInt(localTemplate.getVersion());
                 int templateVersion = Integer.parseInt(template.getVersion());
                 int localTemplateRevision = Integer.parseInt(localTemplate.getRevision());
