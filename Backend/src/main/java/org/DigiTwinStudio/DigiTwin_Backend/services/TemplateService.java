@@ -67,6 +67,7 @@ public class TemplateService {
         log.info("Fetched {} templates.", fetchedTemplates.size());
         templateRepository.saveAll(fetchedTemplates);
         log.info("Saved {} templates in database.", fetchedTemplates.size());
+        log.info("Template-Repository has {} templates.", templateRepository.count());
         // ToDo: Scheduling.
         // ToDo: Nach Scheduling Logik implementieren, dass nur neue Templates (bzw Versionen) gespeichert werden, und der Rest ignoriert wird.
    }
