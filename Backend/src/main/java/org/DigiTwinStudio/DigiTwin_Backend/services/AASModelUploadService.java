@@ -116,4 +116,7 @@ public class AASModelUploadService {
                         contentType.equals("application/aasx+zip")
         );
     }
+
+    public static class ExportService {
+    }
 }
