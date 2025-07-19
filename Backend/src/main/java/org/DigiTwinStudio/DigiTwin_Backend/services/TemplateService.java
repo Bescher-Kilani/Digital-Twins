@@ -4,6 +4,7 @@ package org.DigiTwinStudio.DigiTwin_Backend.services;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import lombok.extern.slf4j.Slf4j;
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.TemplateMapper;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.Template;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.TemplateDto;
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TemplateService {
 
     private final TemplateRepository templateRepository;
@@ -60,8 +62,11 @@ public class TemplateService {
      * @throws RuntimeException if fetching or mapping fails
      */
     public void syncTemplatesFromRepo() {
+        log.info("syncTemplatesFromRepo");
         List<Template> fetchedTemplates = smtRepoClient.fetchTemplates();
+        log.info("Fetched {} templates.", fetchedTemplates.size());
         templateRepository.saveAll(fetchedTemplates);
+        log.info("Saved {} templates in database.", fetchedTemplates.size());
         // ToDo: Scheduling.
         // ToDo: Nach Scheduling Logik implementieren, dass nur neue Templates (bzw Versionen) gespeichert werden, und der Rest ignoriert wird.
    }
