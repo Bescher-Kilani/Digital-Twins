@@ -69,12 +69,14 @@ public class SMTRepoClient {
 
             // Version.Revision from administration
             String version = "";
+            String revision = "";
             JsonNode admin = item.path("administration");
             if (admin.hasNonNull("version") && admin.hasNonNull("revision")) {
-                version = admin.path("version").asText()
-                        + "." + admin.path("revision").asText();
-                log.info("Found version: {}", version);
+                version = admin.path("version").asText();
+                revision = admin.path("revision").asText();
+                log.info("Found version.Revision: {}.{}", version, revision);
             }
+
             // JSON
 
             // Constructing Template-domain-object using Lombok-Builder. No ID so MongoDB generates one
@@ -82,6 +84,7 @@ public class SMTRepoClient {
                     .name(name)
                     .descriptions(descriptions)
                     .version(version)
+                    .revision(revision)
                     .json(item)
                     .pulledAt(DateTimeUtil.nowUtc())
                     .active(true)

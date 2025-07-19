@@ -23,6 +23,8 @@ public class TemplateDto {
 
     private String version;
 
+    private String revision;
+
     private JsonNode json;
 
     private LocalDateTime pulledAt;

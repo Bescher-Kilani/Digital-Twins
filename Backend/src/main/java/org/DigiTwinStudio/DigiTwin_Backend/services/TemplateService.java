@@ -2,11 +2,8 @@ package org.DigiTwinStudio.DigiTwin_Backend.services;
 
 
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.TemplateMapper;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.Template;
@@ -72,53 +69,47 @@ public class TemplateService {
 
         int newCount = 0;
         int oldCount = 0;
-        int changedCount = 0;
+        int updatedCount = 0;
         for (Template template : fetchedTemplates) {
             log.info("Fetched Template: {}", template.getName());
-            Template localTemplate = isInTemplateRepository(template.getName());
-            if (localTemplate != null) {
-                // a template-object with this name is already present in local repository
-                log.info("A template with the name \"{}\" already exists in local repository and has ID \"{}\" .", localTemplate.getName(), localTemplate.getId());
-
-                // check if the version description or JSON have changed
-                log.info("Check if something has changed...");
-                boolean hasChanged = false;
-                // version
-                if (!localTemplate.getVersion().equalsIgnoreCase(template.getVersion())) {
-                    hasChanged = true;
-                    log.info("Version has changed. From old Version \"{}\" to new Version \"{}\".", localTemplate.getVersion(), template.getVersion());
-                }
-                // descriptions
-                if (!localTemplate.getDescriptions().equals(template.getDescriptions())) {
-                    hasChanged = true;
-                    log.info("Descriptions have changed. From \"{}\" to \"{}\".", localTemplate.getDescriptions(), template.getDescriptions());
-                }
-                // JSON
-                if (!localTemplate.getJson().equals(template.getJson())) {
-                    hasChanged = true;
-                    log.info("JSON has changed.");
-                }
-                if (hasChanged) {
-                    // deactivate old template -> safe delete later
-                    localTemplate.setActive(false);
-                    // save changed Template
-                    this.templateRepository.save(template);
-                    changedCount++;
-                } else {
-                    log.info("Nothing changed.");
-                    oldCount++;
-                }
-
-            } else {
+            if (this.templateRepository.findByName(template.getName()).isEmpty()) {
+                // no template with this name exists locally
                 newCount++;
-                templateRepository.save(template);
-                log.info("New template: {} has been saved to local repository", template.getName());
+                this.templateRepository.save(template);
+                log.info("New Template: \"{}\" saved in database.", template.getName());
+            } else {
+                log.info("Template with name \"{}\" already exists. Checking for updated Version.", template.getName());
+
+                // check for an updated version. keep only newest
+                Template localTemplate = this.templateRepository.findByName(template.getName()).get();
+                int localTemplateVersion = Integer.parseInt(localTemplate.getVersion());
+                int templateVersion = Integer.parseInt(template.getVersion());
+                int localTemplateRevision = Integer.parseInt(localTemplate.getRevision());
+                int templateRevision = Integer.parseInt(template.getRevision());
+
+                if (templateVersion > localTemplateVersion || (localTemplateVersion == templateVersion && templateRevision > localTemplateRevision)) {
+                    updatedCount++;
+                    log.info("Saved updated Version \"{}.{}\" (old: \"{}.{}\") in database.", templateVersion, templateRevision, localTemplateVersion, localTemplateRevision);
+                    this.templateRepository.save(template);
+
+                    // deactivate old template
+                    localTemplate.setActive(false);
+                    this.templateRepository.save(localTemplate);
+                    log.info("Deactivated older Version of \"{}\" in database.", localTemplate.getName());
+                    continue;
+                } else {
+                    // no changes
+                    oldCount++;
+                    log.info("Template in database is up to date. Skipping.");
+                }
+
             }
+
         }
         log.info("Saved {} new templates in database.", newCount);
-        log.info("Saved {} changed templates in database.", changedCount);
+        log.info("Updated {} templates in database.", updatedCount);
         log.info("Kept {} old templates in database.", oldCount);
-        log.info("Template-Repository has {} templates.", templateRepository.count());
+        log.info("Database holds {} templates", this.templateRepository.count());
         // ToDo: Scheduling.
         // ToDo: Nach Scheduling Logik implementieren, dass nur neue Templates (bzw Versionen) gespeichert werden, und der Rest ignoriert wird.
    }
@@ -135,21 +126,6 @@ public class TemplateService {
     public Template resolveTemplate(String templateId) {
         return templateRepository.findById(templateId)
                 .orElseThrow(() -> new NotFoundException("Template not found: " + templateId));
-    }
-
-    /**
-     *
-     * @param templateName name of template
-     * @return local template-object with the same name, else null
-     */
-    private Template isInTemplateRepository(String templateName) {
-        List<Template> templatesInLocalRepo = this.templateRepository.findByActiveTrueOrderByNameAsc();
-        for (Template template : templatesInLocalRepo) {
-            if (template.getName().equalsIgnoreCase(templateName)) {
-                return template;
-            }
-        }
-        return null;
     }
 
 }
