@@ -7,7 +7,6 @@ import org.DigiTwinStudio.DigiTwin_Backend.adapter.FaaastAdapter;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.ExportFormat;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
-import org.eclipse.digitaltwin.aas4j.v3.model.Environment;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultAssetAdministrationShell;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultEnvironment;
@@ -15,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -48,8 +48,9 @@ public class ExportService {
         environment.setAssetAdministrationShells(List.of(model.getAas()));
 
         // convert DefaultSubmodels to Submodels and add to Environment
-        List<Submodel> submodels = new ArrayList<>(model.getSubmodels().size());
-        submodels.addAll(model.getSubmodels());
+        List<Submodel> submodels = model.getSubmodels().stream()
+                .map(defaultSubmodel -> (Submodel) defaultSubmodel)
+                .collect(Collectors.toList());
         environment.setSubmodels(submodels);
 
         return environment;
