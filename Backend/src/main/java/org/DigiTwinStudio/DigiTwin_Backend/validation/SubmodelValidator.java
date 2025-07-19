@@ -1,6 +1,6 @@
 package org.DigiTwinStudio.DigiTwin_Backend.validation;
 
-import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.File;
@@ -36,7 +36,7 @@ public class SubmodelValidator {
      * @param submodel the Submodel to validate
      * @throws ValidationException if any structural or project-specific rule is violated
      */
-    public void validate(Submodel submodel) throws ValidationException {
+    public void validate(DefaultSubmodel submodel) throws ValidationException {
         // 1. Global metamodel validation using FAAAST
         ModelValidator.validate(submodel);
 

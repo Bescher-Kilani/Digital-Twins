@@ -1,8 +1,8 @@
 package org.DigiTwinStudio.DigiTwin_Backend.dtos;
 
 import lombok.*;
-import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShell;
-import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultAssetAdministrationShell;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
 
 
 import java.time.LocalDateTime;
@@ -16,9 +16,9 @@ public class AASModelDto {
 
     private String id;
 
-    private AssetAdministrationShell aas;
+    private DefaultAssetAdministrationShell aas;
 
-    private List<Submodel> submodels;
+    private List<DefaultSubmodel> submodels;
 
     private PublishMetadataDto publishMetadata;
 

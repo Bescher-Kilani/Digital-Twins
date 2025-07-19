@@ -13,7 +13,6 @@ import org.DigiTwinStudio.DigiTwin_Backend.repositories.AASModelRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.TemplateRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.UploadedFileRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.validation.SubmodelValidator;
-import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
 import org.springframework.stereotype.Service;
 
@@ -35,7 +34,7 @@ public class SubmodelService {
      * @throws ValidationException if validation fails
      */
     public void validate(SubmodelDto submodelDto) {
-        Submodel submodel = submodelMapper.fromDto(submodelDto);
+        DefaultSubmodel submodel = submodelMapper.fromDto(submodelDto);
         try {
             submodelValidator.validate(submodel);
         } catch (Exception e) {
@@ -69,7 +68,7 @@ public class SubmodelService {
 
         try {
             JsonNode json = template.getJson();
-            Submodel submodel = objectMapper.treeToValue(json, DefaultSubmodel.class);
+            DefaultSubmodel submodel = objectMapper.treeToValue(json, DefaultSubmodel.class);
             return SubmodelDto.builder()
                     .submodel(submodel)
                     .build();
