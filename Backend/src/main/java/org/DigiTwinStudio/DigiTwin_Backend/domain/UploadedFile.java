@@ -16,6 +16,8 @@ public class UploadedFile {
     @Id
     private String id;
 
+    private String modelId; // id of the model that uses the file
+
     private String filename;
 
     private String contentType; // e.g., "application/json", "image/png"

@@ -16,6 +16,10 @@ public interface UploadedFileRepository extends MongoRepository<UploadedFile, St
     // retrieves a specific file by its ID and owner ID
     Optional<UploadedFile> findByIdAndOwnerId(String id, String ownerId);
 
+    // ToDo: Mabye add ownerId for verification
+    List<UploadedFile> findAllByModelId(String modelId);
+
+
     // checks if a file exists by its storage path
     boolean existsByStoragePath(String path);
 }
