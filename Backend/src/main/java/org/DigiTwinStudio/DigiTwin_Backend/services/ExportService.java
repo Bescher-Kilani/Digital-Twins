@@ -35,7 +35,8 @@ public class ExportService {
             return new byte[0];
         }
     }
-    public byte[] exportAsAASX(AASModel model) {
+
+    public byte[] exportAsAasx(AASModel model) {
         DefaultEnvironment environment = aasModeltoDefaultEnvironment(model);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         // get files
