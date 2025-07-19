@@ -11,7 +11,7 @@ import org.DigiTwinStudio.DigiTwin_Backend.repositories.AASModelRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.TagRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.UploadedFileRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.validation.AASModelValidator;
-import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultAssetAdministrationShell;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -126,7 +126,7 @@ public class AASModelService {
 
     public AASModelDto attachSubmodel(String modelId, SubmodelDto dto, String userId) throws ValidationException {
         AASModel model = getModelOrThrow(modelId, userId);
-        Submodel submodel = submodelMapper.fromDto(dto);
+        DefaultSubmodel submodel = submodelMapper.fromDto(dto);
 
         model.getSubmodels().add(submodel);
         model.setUpdatedAt(LocalDateTime.now());
@@ -137,7 +137,7 @@ public class AASModelService {
 
     public AASModelDto updateSubmodel(String modelId, String submodelId, SubmodelDto dto, String userId) throws ValidationException {
         AASModel model = getModelOrThrow(modelId, userId);
-        List<Submodel> submodels = model.getSubmodels();
+        List<DefaultSubmodel> submodels = model.getSubmodels();
 
         boolean replaced = false;
         for (int i = 0; i < submodels.size(); i++) {
