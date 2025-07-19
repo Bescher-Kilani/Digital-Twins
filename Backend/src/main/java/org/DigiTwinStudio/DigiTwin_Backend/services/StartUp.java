@@ -21,10 +21,13 @@ public class StartUp implements ApplicationListener<ApplicationReadyEvent> {
         log.info("Application is ready – initiate StartUp.");
 
         // ToDo: TEMPORARY FIX BEFORE TEMPLATE FETCH IMPLEMENTATION
+        /*
         log.info("Reset Database");
+
         templateRepository.deleteAll();
         log.info("Database has {} templates.", templateRepository.count());
         log.info("Database has been deleted.");
+         */
 
 
 

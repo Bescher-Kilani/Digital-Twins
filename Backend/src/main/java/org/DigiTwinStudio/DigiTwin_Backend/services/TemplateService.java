@@ -74,26 +74,27 @@ public class TemplateService {
         int oldCount = 0;
         int changedCount = 0;
         for (Template template : fetchedTemplates) {
+            log.info("Fetched Template: {}", template.getName());
             Template localTemplate = isInTemplateRepository(template.getName());
             if (localTemplate != null) {
                 // a template-object with this name is already present in local repository
-                log.info("A template with the name \"{}\" and ID \"{}\" already exists in local repository.", localTemplate.getName(), localTemplate.getId());
+                log.info("A template with the name \"{}\" already exists in local repository and has ID \"{}\" .", localTemplate.getName(), localTemplate.getId());
 
                 // check if the version description or JSON have changed
                 log.info("Check if something has changed...");
                 boolean hasChanged = false;
                 // version
-                if (localTemplate.getVersion().equalsIgnoreCase(template.getVersion())) {
+                if (!localTemplate.getVersion().equalsIgnoreCase(template.getVersion())) {
                     hasChanged = true;
                     log.info("Version has changed. From old Version \"{}\" to new Version \"{}\".", localTemplate.getVersion(), template.getVersion());
                 }
                 // descriptions
-                if (localTemplate.getDescriptions().equals(template.getDescriptions())) {
+                if (!localTemplate.getDescriptions().equals(template.getDescriptions())) {
                     hasChanged = true;
                     log.info("Descriptions have changed. From \"{}\" to \"{}\".", localTemplate.getDescriptions(), template.getDescriptions());
                 }
                 // JSON
-                if (localTemplate.getJson().equals(template.getJson())) {
+                if (!localTemplate.getJson().equals(template.getJson())) {
                     hasChanged = true;
                     log.info("JSON has changed.");
                 }
@@ -104,6 +105,7 @@ public class TemplateService {
                     this.templateRepository.save(template);
                     changedCount++;
                 } else {
+                    log.info("Nothing changed.");
                     oldCount++;
                 }
 
@@ -113,8 +115,9 @@ public class TemplateService {
                 log.info("New template: {} has been saved to local repository", template.getName());
             }
         }
-        templateRepository.saveAll(fetchedTemplates);
-        log.info("Saved {} templates in database.", fetchedTemplates.size());
+        log.info("Saved {} new templates in database.", newCount);
+        log.info("Saved {} changed templates in database.", changedCount);
+        log.info("Kept {} old templates in database.", oldCount);
         log.info("Template-Repository has {} templates.", templateRepository.count());
         // ToDo: Scheduling.
         // ToDo: Nach Scheduling Logik implementieren, dass nur neue Templates (bzw Versionen) gespeichert werden, und der Rest ignoriert wird.
