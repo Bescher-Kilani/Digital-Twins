@@ -59,7 +59,6 @@ public class TemplateService {
      * its pulledAt timestamp is set to now, and it is marked active.
      *
      * @throws RuntimeException if fetching or mapping fails
-     * @throws NotFoundException if accessing a local template-object fails
      */
     public void syncTemplatesFromRepo() {
         log.info("syncTemplatesFromRepo");

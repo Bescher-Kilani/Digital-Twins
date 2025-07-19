@@ -52,6 +52,7 @@ public class AAS4jAdapter {
     public JsonNode serializeToJson(Object aasObject) {
         try {
             return objectMapper.valueToTree(aasObject);
+
         } catch (IllegalArgumentException e) {
             throw new ExportException("Failed to serialize AAS object to JSON", e);
         }

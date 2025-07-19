@@ -86,6 +86,11 @@
 		<!-- https://mvnrepository.com/artifact/de.fraunhofer.iosb.ilt.faaast.service/model -->
 		<dependency>
 			<groupId>de.fraunhofer.iosb.ilt.faaast.service</groupId>
+			<artifactId>dataformat-json</artifactId>
+			<version>1.2.0</version>
+		</dependency>
+		<dependency>
+			<groupId>de.fraunhofer.iosb.ilt.faaast.service</groupId>
 			<artifactId>model</artifactId>
 			<version>1.2.0</version>
 		</dependency>
