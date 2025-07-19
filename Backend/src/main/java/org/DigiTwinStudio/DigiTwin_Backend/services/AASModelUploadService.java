@@ -92,7 +92,7 @@ public class AASModelUploadService {
         } catch (DeserializationException | IOException e) {
             throw new UploadException("Failed to parse uploaded AAS JSON file", e);
         } catch (ValidationException e) {
-            throw e;
+            throw new ValidationException("File validation failed", e);
         } catch (Exception e) {
             throw new UploadException("Unexpected error during upload", e);
         }
@@ -106,17 +106,5 @@ public class AASModelUploadService {
         return deserializer.read(file.getInputStream(), Environment.class);
     }
 
-    /**
-     * Optional helper to check if the file format is supported.
-     */
-    public boolean isSupportedFormat(MultipartFile file) {
-        String contentType = file.getContentType();
-        return contentType != null && (
-                contentType.equals("application/json") ||
-                        contentType.equals("application/aasx+zip")
-        );
-    }
 
-    public static class ExportService {
-    }
 }
