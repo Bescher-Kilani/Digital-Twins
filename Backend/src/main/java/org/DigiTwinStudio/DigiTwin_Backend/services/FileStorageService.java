@@ -6,8 +6,17 @@ import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.UploadedFile;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.UploadedFileRepository;
 import org.springframework.stereotype.Service;
+import org.bson.types.ObjectId;
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.FileStorageException;
+import org.springframework.data.mongodb.gridfs.GridFsTemplate;
+import org.springframework.web.multipart.MultipartFile;
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+import static org.springframework.data.mongodb.core.query.Query.query;
+
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.UUID;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -16,6 +25,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FileStorageService {
     private final UploadedFileRepository uploadedFileRepository;
+    private final GridFsTemplate gridFsTemplate;
 
     /**
      * returns a list of InMemoryFiles of all files from the given model
@@ -37,4 +47,72 @@ public class FileStorageService {
                 })
                 .toList();
     }
+
+    /**
+     * Stores the uploaded file in MongoDB GridFS and saves metadata in a separate Mongo collection.
+     *
+     * @param file    the uploaded file (PDF, JSON, etc.)
+     * @param ownerId the ID of the user who is uploading the file
+     * @return UploadedFile metadata object saved in MongoDB
+     */
+    public UploadedFile store(MultipartFile file, String ownerId) {
+        try {
+            // Generate a random file ID for your domain logic
+            String fileId = UUID.randomUUID().toString();
+            String originalFilename = file.getOriginalFilename();
+
+            // Save the binary file into MongoDB GridFS
+            ObjectId gridFsId = gridFsTemplate.store(
+                    file.getInputStream(),
+                    originalFilename,
+                    file.getContentType()
+            );
+
+            // Create and save your domain-level metadata object
+            UploadedFile uploadedFile = UploadedFile.builder()
+                    .id(fileId)
+                    .filename(originalFilename)
+                    .contentType(file.getContentType())
+                    .size(file.getSize())
+                    .ownerId(ownerId)
+                    .storagePath(gridFsId.toHexString())  // link to GridFS file ID
+                    .uploadedAt(LocalDateTime.now())
+                    .build();
+
+            return uploadedFileRepository.save(uploadedFile);
+
+        } catch (IOException e) {
+            throw new FileStorageException("Could not store file in GridFS", e);
+        }
+    }
+
+    /**
+     * Deletes the file from GridFS and its metadata if the current user is the owner.
+     *
+     * @param fileId  the metadata ID stored in your UploadedFile document
+     * @param ownerId the ID of the authenticated user
+     */
+    public void delete(String fileId, String ownerId) {
+        // Load metadata document first
+        UploadedFile file = uploadedFileRepository.findById(fileId)
+                .orElseThrow(() -> new FileStorageException("File not found: " + fileId));
+
+        // Check if the current user is the file owner
+        if (!file.getOwnerId().equals(ownerId)) {
+            throw new FileStorageException("Access denied: not the file owner");
+        }
+
+        try {
+            // Delete binary data from GridFS using the ObjectId
+            ObjectId gridFsId = new ObjectId(file.getStoragePath());
+            gridFsTemplate.delete(query(where("_id").is(gridFsId)));
+
+            // Delete metadata from your MongoDB collection
+            uploadedFileRepository.deleteById(fileId);
+
+        } catch (Exception e) {
+            throw new FileStorageException("Error deleting file from GridFS", e);
+        }
+    }
+
 }

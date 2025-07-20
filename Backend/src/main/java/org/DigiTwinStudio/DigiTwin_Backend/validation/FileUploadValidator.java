@@ -5,7 +5,7 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
-import de.fraunhofer.iosb.ilt.faaast.service.model.exception.ValidationException;
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException;
 
 /**
  * Component responsible for validating uploaded files

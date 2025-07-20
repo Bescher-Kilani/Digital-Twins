@@ -43,11 +43,9 @@ public class AASModelUploadService {
      * @throws ValidationException  on model structure validation failure
      */
     public AASModelDto uploadAASModel(MultipartFile file, String ownerId) {
-        try {
+
             fileUploadValidator.validate(file);
-        } catch (de.fraunhofer.iosb.ilt.faaast.service.model.exception.ValidationException e) {
-            throw new org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException("File validation failed", e);
-        }
+
 
         try {
             // Step 1: parse the JSON content into a full AAS environment
