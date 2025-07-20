@@ -6,7 +6,8 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.File;
 
 import de.fraunhofer.iosb.ilt.faaast.service.model.validation.ModelValidator;
-import de.fraunhofer.iosb.ilt.faaast.service.model.exception.ValidationException;
+
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException;
 
 import org.springframework.stereotype.Component;
 
@@ -36,9 +37,13 @@ public class SubmodelValidator {
      * @param submodel the Submodel to validate
      * @throws ValidationException if any structural or project-specific rule is violated
      */
-    public void validate(Submodel submodel) throws ValidationException {
+    public void validate(Submodel submodel) {
         // 1. Global metamodel validation using FAAAST
-        ModelValidator.validate(submodel);
+        try {
+            ModelValidator.validate(submodel);
+        } catch (de.fraunhofer.iosb.ilt.faaast.service.model.exception.ValidationException ex) {
+            throw new ValidationException("FAAAST submodel validation failed: " + ex.getMessage(), ex);
+        }
 
         // 2. Project-specific checks for all SubmodelElements
         if (submodel.getSubmodelElements() != null) {
@@ -57,7 +62,7 @@ public class SubmodelValidator {
      * @param element the SubmodelElement to validate
      * @throws ValidationException if any rule is violated
      */
-    private void validateElement(SubmodelElement element) throws ValidationException {
+    private void validateElement(SubmodelElement element) {
         // idShort must be set and not empty
         if (element.getIdShort() == null || element.getIdShort().isBlank()) {
             throw new ValidationException("Element idShort must not be null or empty");

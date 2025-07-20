@@ -8,10 +8,10 @@ import org.springframework.stereotype.Component;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 
 import de.fraunhofer.iosb.ilt.faaast.service.model.validation.ModelValidator;
-import de.fraunhofer.iosb.ilt.faaast.service.model.exception.ValidationException;
 
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.PublishMetadata;
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException;
 
 import java.util.List;
 
@@ -37,23 +37,29 @@ public class AASModelValidator {
      * @param model the AASModel to validate
      * @throws ValidationException if any validation rule is violated
      */
-    public void validate(AASModel model) throws ValidationException {
+    public void validate(AASModel model) {
         // 1. Validate AAS structure
         AssetAdministrationShell aas = model.getAas();
         if (aas == null) {
             throw new ValidationException("AASModel must contain an AssetAdministrationShell");
         }
-        ModelValidator.validate(aas);
 
+        try {
+            ModelValidator.validate(aas);
+        } catch (de.fraunhofer.iosb.ilt.faaast.service.model.exception.ValidationException ex) {
+            throw new ValidationException("FAAAST validation failed: " + ex.getMessage(), ex);
+        }
 
         // 2. Validate all submodels in env
         List<Submodel> submodels = model.getSubmodels();
 
         for (Submodel sm : submodels) {
-            submodelValidator.validate(sm);
+            try {
+                submodelValidator.validate(sm);
+            } catch (RuntimeException ex) {
+                throw new ValidationException("Submodel validation failed: " + ex.getMessage(), ex);
+            }
         }
-
-
 
         // 3. Validate PublishMetadata
         if (model.isPublished()) {
@@ -61,7 +67,7 @@ public class AASModelValidator {
         }
     }
 
-    private void validatePublishMetadata(PublishMetadata metadata) throws ValidationException {
+    private void validatePublishMetadata(PublishMetadata metadata) {
         if (metadata == null) {
             throw new ValidationException("PublishMetadata must be provided when publishing a model");
         }
