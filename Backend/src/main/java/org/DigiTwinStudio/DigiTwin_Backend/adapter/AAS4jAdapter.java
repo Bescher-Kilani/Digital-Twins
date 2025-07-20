@@ -2,14 +2,15 @@ package org.DigiTwinStudio.DigiTwin_Backend.adapter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.adminshell.aas.v3.dataformat.aasx.AASXSerializer;
 import io.adminshell.aas.v3.dataformat.aasx.InMemoryFile;
 import io.adminshell.aas.v3.model.AssetAdministrationShellEnvironment;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ExportException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.UploadException;
+import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.DeserializationException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
+import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonDeserializer;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultAssetAdministrationShell;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
 import org.springframework.stereotype.Component;
@@ -22,7 +23,7 @@ import java.util.Collection;
 @Component
 public class AAS4jAdapter {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final JsonDeserializer jsonDeserializer = new JsonDeserializer();
     private final JsonSerializer jsonSerializer = new JsonSerializer();
     private final AASXSerializer aasxSerializer = new AASXSerializer();
 
@@ -48,9 +49,9 @@ public class AAS4jAdapter {
      */
     public DefaultSubmodel parseSubmodelFromJson(JsonNode json) {
         try {
-            return objectMapper.treeToValue(json, DefaultSubmodel.class);
-        } catch (JsonProcessingException e) {
-            throw new UploadException("Failed to parse Submodel from JSON", e);
+            return jsonDeserializer.read(json,DefaultSubmodel.class);
+        } catch (DeserializationException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -63,7 +64,7 @@ public class AAS4jAdapter {
      */
     public JsonNode serializeToJson(Object aasObject) {
         try {
-            return objectMapper.valueToTree(aasObject);
+            return jsonSerializer.toNode(aasObject);
 
         } catch (IllegalArgumentException e) {
             throw new ExportException("Failed to serialize AAS object to JSON", e);

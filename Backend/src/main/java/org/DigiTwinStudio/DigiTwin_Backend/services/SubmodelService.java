@@ -1,7 +1,6 @@
 package org.DigiTwinStudio.DigiTwin_Backend.services;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.SubmodelDto;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
@@ -14,7 +13,10 @@ import org.DigiTwinStudio.DigiTwin_Backend.repositories.TemplateRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.UploadedFileRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.validation.SubmodelValidator;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
+import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonDeserializer;
 import org.springframework.stereotype.Service;
+
+
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +27,7 @@ public class SubmodelService {
     private final SubmodelMapper submodelMapper;
     private final TemplateRepository templateRepository;
     private final AASModelRepository aasModelRepository;
-    private final ObjectMapper objectMapper;
+    private final JsonDeserializer jsonDeserializer = new JsonDeserializer();
 
     /**
      * Validate the given SubmodelDto against AAS4J structural rules.
@@ -68,7 +70,7 @@ public class SubmodelService {
 
         try {
             JsonNode json = template.getJson();
-            DefaultSubmodel submodel = objectMapper.treeToValue(json, DefaultSubmodel.class);
+            DefaultSubmodel submodel = jsonDeserializer.read(json, DefaultSubmodel.class);
             return SubmodelDto.builder()
                     .submodel(submodel)
                     .build();
