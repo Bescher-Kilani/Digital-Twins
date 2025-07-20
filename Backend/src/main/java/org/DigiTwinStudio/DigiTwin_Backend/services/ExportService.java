@@ -8,11 +8,13 @@ import org.DigiTwinStudio.DigiTwin_Backend.adapter.AAS4jAdapter;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.ExportFormat;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ExportException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultEnvironment;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -34,7 +36,7 @@ public class ExportService {
         }
     }
 
-    public byte[] exportAsAasx(AASModel model) {
+    public byte[] exportAsAasx(AASModel model) throws ExportException {
         // create aas environment
         DefaultEnvironment environment = aas4jAdapter.aasModelToDefaultEnvironment(model);
         // get file contents and convert to InMemoryFile-objects where the path is empty
@@ -46,8 +48,9 @@ public class ExportService {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
             this.aas4jAdapter.serializeToAASX((AssetAdministrationShellEnvironment) environment, inMemoryFiles, baos);
-        } catch (io.adminshell.aas.v3.dataformat.SerializationException | java.io.IOException e) {
+        } catch (SerializationException e) {
             log.error("Failed to serialize AAS object to AASX", e);
+            throw new ExportException("Failed to serialize AAS object to AASX");
         }
         return baos.toByteArray();
     }
