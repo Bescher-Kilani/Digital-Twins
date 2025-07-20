@@ -21,6 +21,7 @@ import org.springframework.stereotype.Component;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -80,8 +81,12 @@ public class AAS4jAdapter {
         return this.jsonSerializer.write(aasObject);
     }
 
-    public void serializeToAASX(AssetAdministrationShellEnvironment environment, Collection<InMemoryFile> files, OutputStream outputStream) throws io.adminshell.aas.v3.dataformat.SerializationException, IOException {
-        this.aasxSerializer.write(environment, files, outputStream);
+    public void serializeToAASX(AssetAdministrationShellEnvironment environment, Collection<InMemoryFile> files, OutputStream outputStream) throws SerializationException {
+        try {
+            this.aasxSerializer.write(environment, files, outputStream);
+        } catch (IOException | io.adminshell.aas.v3.dataformat.SerializationException e) {
+            throw new SerializationException("Failed to serialize environment to AASX", e);
+        }
     }
 
     /**
