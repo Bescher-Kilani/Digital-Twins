@@ -1,10 +1,12 @@
 package org.DigiTwinStudio.DigiTwin_Backend.services;
 
-import io.adminshell.aas.v3.dataformat.aasx.InMemoryFile;
+import com.mongodb.client.gridfs.model.GridFSFile;
 import lombok.RequiredArgsConstructor;
-import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.UploadedFile;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.UploadedFileRepository;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.gridfs.GridFsResource;
 import org.springframework.stereotype.Service;
 import org.bson.types.ObjectId;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.FileStorageException;
@@ -16,9 +18,8 @@ import static org.springframework.data.mongodb.core.query.Query.query;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.UUID;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 
 @Service
@@ -28,24 +29,36 @@ public class FileStorageService {
     private final GridFsTemplate gridFsTemplate;
 
     /**
-     * returns a list of InMemoryFiles of all files from the given model
-     * @param model model to get all files from
-     * @return InMemoryFile list of all files found
+     * Retrieves the binary contents of all files associated with the given model ID.
+     * This method queries the UploadedFile-repository for all entries matching the given modelId,
+     * then loads the actual file content from MongoDB GridFS using the stored GridFS ObjectId (found in storagePath).
+     *
+     * @param modelId the ID of the model whose associated files should be retrieved
+     * @return a list of byte arrays, each representing the full binary content of one file
+     * @throws RuntimeException if reading any file from GridFS fails or if a GridFS file is missing
      */
-    public List<InMemoryFile> getUploadedFilesFromModel(AASModel model) {
-        List<UploadedFile> uploadedFiles = this.uploadedFileRepository.findAllByModelId(model.getId());
-        // z.B. "/aasx/files/doc1.pdf"
-        return uploadedFiles.stream()
-                .map(file -> {
-                    try {
-                        String path = file.getStoragePath(); // z.B. "/aasx/files/doc1.pdf"
-                        byte[] content = Files.readAllBytes(Paths.get(path));
-                        return new InMemoryFile(content, path);
-                    } catch (IOException e) {
-                        throw new RuntimeException("Error when trying to read file: " + file.getId(), e);
-                    }
-                })
-                .toList();
+    public List<byte[]> getFileContentsByModelId(String modelId) {
+        List<UploadedFile> uploadedFiles = uploadedFileRepository.findAllByModelId(modelId);
+        List<byte[]> fileContents = new ArrayList<>();
+
+        for (UploadedFile file : uploadedFiles) {
+            try {
+                ObjectId gridFsId = new ObjectId(file.getStoragePath());
+                GridFSFile gridFSFile = gridFsTemplate.findOne(Query.query(Criteria.where("_id").is(gridFsId)));
+
+                if (gridFSFile != null) {
+                    GridFsResource resource = gridFsTemplate.getResource(gridFSFile);
+                    byte[] content = resource.getInputStream().readAllBytes();
+                    fileContents.add(content);
+                } else {
+                    System.err.println("GridFS file not found for ID: " + file.getStoragePath());
+                }
+            } catch (IOException | IllegalArgumentException e) {
+                throw new RuntimeException("Error reading file content from GridFS for ID: " + file.getStoragePath(), e);
+            }
+        }
+
+        return fileContents;
     }
 
     /**
