@@ -5,13 +5,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.adminshell.aas.v3.dataformat.aasx.AASXSerializer;
 import io.adminshell.aas.v3.dataformat.aasx.InMemoryFile;
 import io.adminshell.aas.v3.model.AssetAdministrationShellEnvironment;
+import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ExportException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.UploadException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.DeserializationException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonDeserializer;
+import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultAssetAdministrationShell;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultEnvironment;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +22,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class AAS4jAdapter {
@@ -77,5 +82,25 @@ public class AAS4jAdapter {
 
     public void serializeToAASX(AssetAdministrationShellEnvironment environment, Collection<InMemoryFile> files, OutputStream outputStream) throws io.adminshell.aas.v3.dataformat.SerializationException, IOException {
         this.aasxSerializer.write(environment, files, outputStream);
+    }
+
+    /**
+     * create a new DefaultEnvironment and embed the given AASModels DefaultAAS with its Submodels
+     * @param model AASModel with DefaultAAS to be embedded
+     * @return DefaultEnvironment containing given AASModels DefaultAAS
+     */
+    public DefaultEnvironment aasModelToDefaultEnvironment(AASModel model) {
+        // create Environment
+        DefaultEnvironment environment = new DefaultEnvironment();
+        // add AssetAdministrationShell
+        environment.setAssetAdministrationShells(List.of(model.getAas()));
+
+        // convert DefaultSubmodels to Submodels and add to Environment
+        List<Submodel> submodels = model.getSubmodels().stream()
+                .map(defaultSubmodel -> (Submodel) defaultSubmodel)
+                .collect(Collectors.toList());
+        environment.setSubmodels(submodels);
+
+        return environment;
     }
 }

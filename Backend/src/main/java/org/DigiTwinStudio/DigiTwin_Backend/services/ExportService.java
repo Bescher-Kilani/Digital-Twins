@@ -9,14 +9,12 @@ import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.ExportFormat;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
-import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultEnvironment;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +24,7 @@ public class ExportService {
     private final FileStorageService fileStorageService;
 
     public byte[] exportAsJson(AASModel model) {
-        DefaultEnvironment environment = aasModeltoDefaultEnvironment(model);
+        DefaultEnvironment environment = aas4jAdapter.aasModelToDefaultEnvironment(model);
         try {
             String jsonString = aas4jAdapter.serializeToJsonString(environment);
             return jsonString.getBytes(StandardCharsets.UTF_8);
@@ -37,10 +35,15 @@ public class ExportService {
     }
 
     public byte[] exportAsAasx(AASModel model) {
-        DefaultEnvironment environment = aasModeltoDefaultEnvironment(model);
+        // create aas environment
+        DefaultEnvironment environment = aas4jAdapter.aasModelToDefaultEnvironment(model);
+        // get file contents and convert to InMemoryFile-objects where the path is empty
+        List<InMemoryFile> inMemoryFiles = this.fileStorageService.getFileContentsByModelId(model.getId()).stream()
+                .map(content -> new InMemoryFile(content, ""))
+                .toList();
+
+        // call aasx serializer
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        // get files
-        List<InMemoryFile> inMemoryFiles = this.fileStorageService.getUploadedFilesFromModel(model);
         try {
             this.aas4jAdapter.serializeToAASX((AssetAdministrationShellEnvironment) environment, inMemoryFiles, baos);
         } catch (io.adminshell.aas.v3.dataformat.SerializationException | java.io.IOException e) {
@@ -58,18 +61,4 @@ public class ExportService {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    private DefaultEnvironment aasModeltoDefaultEnvironment(AASModel model) {
-        // create Environment
-        DefaultEnvironment environment = new DefaultEnvironment();
-        // add AssetAdministrationShell
-        environment.setAssetAdministrationShells(List.of(model.getAas()));
-
-        // convert DefaultSubmodels to Submodels and add to Environment
-        List<Submodel> submodels = model.getSubmodels().stream()
-                .map(defaultSubmodel -> (Submodel) defaultSubmodel)
-                .collect(Collectors.toList());
-        environment.setSubmodels(submodels);
-
-        return environment;
-    }
 }
