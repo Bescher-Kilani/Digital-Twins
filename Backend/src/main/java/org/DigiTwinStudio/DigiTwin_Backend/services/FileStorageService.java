@@ -55,7 +55,7 @@ public class FileStorageService {
      * @param ownerId the ID of the user who is uploading the file
      * @return UploadedFile metadata object saved in MongoDB
      */
-    public UploadedFile store(MultipartFile file, String ownerId) {
+    public UploadedFile store(MultipartFile file, String ownerId, String modelId) {
         try {
             // Generate a random file ID for your domain logic
             String fileId = UUID.randomUUID().toString();
@@ -71,6 +71,7 @@ public class FileStorageService {
             // Create and save your domain-level metadata object
             UploadedFile uploadedFile = UploadedFile.builder()
                     .id(fileId)
+                    .modelId(modelId)
                     .filename(originalFilename)
                     .contentType(file.getContentType())
                     .size(file.getSize())

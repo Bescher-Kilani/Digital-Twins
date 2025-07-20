@@ -27,13 +27,13 @@ public class PropertyFileUploadService {
      * @throws ValidationException      if file type, size, or name is invalid
      * @throws FileStorageException     if storage fails (I/O, permissions, etc.)
      */
-    public UploadResponseDto uploadFile(MultipartFile file) {
+    public UploadResponseDto uploadFile(MultipartFile file, String modelId) {
 
         // 1. Validate the file (throws ValidationException on failure)
         fileUploadValidator.validate(file);
 
         // 2. Save the file and associate it with the current user
-        UploadedFile savedFile = fileStorageService.store(file, getCurrentUserId());
+        UploadedFile savedFile = fileStorageService.store(file, getCurrentUserId(), modelId);
 
         // 3. Build response DTO with metadata
         return UploadResponseDto.builder()
