@@ -41,6 +41,7 @@ public class PropertyFileUploadService {
                 .filename(savedFile.getFilename())
                 .contentType(savedFile.getContentType())
                 .size(savedFile.getSize())
+                .uploadedAt(savedFile.getUploadedAt())
                 .build();
     }
 
