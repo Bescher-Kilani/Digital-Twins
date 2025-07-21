@@ -44,11 +44,13 @@ public class AASModelService {
 
     // TODO: still needs a consistent error handling
     @Transactional(readOnly = true)
-    public Optional<AASModelDto> getById(String id, String userId) {
+    public AASModelDto getById(String id, String userId) throws ResponseStatusException{
         //changed because loading all the users data from database and filtering it in the application code
         // can expose the user data, that is why I added findByIdAndOwnerIdAndDeletedFalse method to AASModelRepository
-        Optional<AASModel> model = aasModelRepository.findByIdAndOwnerIdAndDeletedFalse(id, userId);
-        return model.map(aasModelMapper::toDto);
+
+        // Changed to specify Error
+        AASModel model = getModelOrThrow(id, userId);
+        return this.aasModelMapper.toDto(model);
     }
 
     public AASModelDto createEmpty(String userId) {
@@ -171,9 +173,19 @@ public class AASModelService {
         return aasModelMapper.toDto(aasModelRepository.save(model));
     }
 
-    private AASModel getModelOrThrow(String id, String userId) {
-        return aasModelRepository.findByIdAndDeletedFalse(id)
-                .filter(m -> m.getOwnerId().equals(userId)).orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Model not found or access denied"));
+    private AASModel getModelOrThrow(String id, String userId) throws ResponseStatusException {
+        Optional<AASModel> optionalModel = aasModelRepository.findByIdAndDeletedFalse(id);
+
+        if (optionalModel.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Model not found");
+        }
+
+        AASModel model = optionalModel.get();
+
+        if (!model.getOwnerId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
+
+        return model;
     }
 }
