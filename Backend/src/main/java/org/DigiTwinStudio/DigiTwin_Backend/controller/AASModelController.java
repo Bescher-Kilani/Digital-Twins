@@ -80,7 +80,6 @@ public class AASModelController {
                     .body(e.getReason());
         }
     }
-    // ToDo: update vs save
 
     /**
      * delete model of user in a database
