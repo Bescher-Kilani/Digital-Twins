@@ -15,7 +15,7 @@ import java.util.List;
 public class MarketplaceEntry {
 
     @Id
-    private String id;
+    private String id; // ID of referenced Model
 
     private String name; // New. Visible name of the entry in the marketplace
 

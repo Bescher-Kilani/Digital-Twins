@@ -11,8 +11,12 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PublishMetadata {
+
     String author; // visible author name can be a user or organization
+
     String shortDescription; // description visible in the Marketplace
+
     List<String> tagIds; // references to Tag objects
+
     LocalDateTime publishedAt;
 }
