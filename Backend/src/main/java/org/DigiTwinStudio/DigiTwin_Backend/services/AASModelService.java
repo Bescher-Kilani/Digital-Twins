@@ -11,6 +11,7 @@ import org.DigiTwinStudio.DigiTwin_Backend.repositories.AASModelRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.TagRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.UploadedFileRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.validation.AASModelValidator;
+import org.apache.commons.lang3.NotImplementedException;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultAssetAdministrationShell;
 import org.springframework.http.HttpStatus;
@@ -69,8 +70,11 @@ public class AASModelService {
         AASModel savedModel = aasModelRepository.save(aasModel);
         return aasModelMapper.toDto(savedModel);
     }
-
-    public AASModelDto saveModel(String id, String userId, AASModelDto aasModelDto) throws ValidationException {
+    // ToDo: implement
+    public AASModelDto updateModel(String id, String userId, AASModelDto dto) {
+        throw new NotImplementedException();
+    }
+    public AASModelDto saveModel(String id, String userId, AASModelDto aasModelDto) throws ValidationException, ResponseStatusException {
         AASModel existingModel = aasModelRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Model not found."));
 
@@ -93,7 +97,7 @@ public class AASModelService {
         return aasModelMapper.toDto(savedModel);
     }
 
-    public void deleteModel(String id, String userId) {
+    public void deleteModel(String id, String userId) throws ResponseStatusException {
         AASModel model = getModelOrThrow(id, userId);
         model.setDeleted(true);
         model.setUpdatedAt(LocalDateTime.now());
@@ -106,7 +110,7 @@ public class AASModelService {
         }
     }
 
-    public AASModelDto publishModel(String id, String userId, PublishRequestDto request) throws ValidationException {
+    public AASModelDto publishModel(String id, String userId, PublishRequestDto request) throws ValidationException, ResponseStatusException {
         AASModel model = getModelOrThrow(id, userId);
 
         if (model.isPublished()) {
