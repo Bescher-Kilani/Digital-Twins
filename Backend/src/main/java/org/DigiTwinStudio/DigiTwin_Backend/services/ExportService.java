@@ -90,7 +90,7 @@ public class ExportService {
     }
 
     /**
-     * Export a model that has been edited by a Guest and therefore isnt saved in the repository.
+     * Export a model that has been edited by a Guest and therefore is not saved in the repository.
      * @param dto temporary modelDTO
      * @param format JSON or AASX
      * @return content of an exported file as byte[]
