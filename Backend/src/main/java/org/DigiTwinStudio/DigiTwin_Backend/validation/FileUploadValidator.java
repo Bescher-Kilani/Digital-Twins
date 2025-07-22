@@ -1,11 +1,11 @@
 package org.DigiTwinStudio.DigiTwin_Backend.validation;
 
-import java.util.Map;
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.BadRequestException;
 
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
-import de.fraunhofer.iosb.ilt.faaast.service.model.exception.ValidationException;
+import java.util.Map;
 
 /**
  * Component responsible for validating uploaded files
@@ -37,41 +37,40 @@ public class FileUploadValidator {
      * 5. Detected contentType must exactly match the expected MIME type for that extension.
      *
      * @param file the uploaded file to validate
-     * @throws ValidationException if any validation rule is violated
      */
-    public void validate(MultipartFile file) throws ValidationException {
+    public void validate(MultipartFile file) {
         // 1. Check presence
         if (file == null || file.isEmpty()) {
-            throw new ValidationException("Uploaded file must not be empty");
+            throw new BadRequestException("Uploaded file must not be empty");
         }
         // 2. Check size
         if (file.getSize() > MAX_FILE_SIZE) {
             double sizeMb = file.getSize() / 1024.0 / 1024.0;
             double maxMb  = MAX_FILE_SIZE / 1024.0 / 1024.0;
-            throw new ValidationException(
+            throw new BadRequestException(
                     String.format("File size (%.2f MB) exceeds maximum of %.2f MB", sizeMb, maxMb)
             );
         }
         // 3. Determine MIME type
         String contentType = file.getContentType();
         if (contentType == null) {
-            throw new ValidationException("Could not determine file MIME type");
+            throw new BadRequestException("Could not determine file MIME type");
         }
         // 4. Extract and validate file extension
         String filename = file.getOriginalFilename();
         if (filename == null || filename.isBlank() || !filename.contains(".")) {
-            throw new ValidationException("Original filename must not be blank and must contain an extension");
+            throw new BadRequestException("Original filename must not be blank and must contain an extension");
         }
         String ext = filename.substring(filename.lastIndexOf('.') + 1).toLowerCase();
 
         // 5. Look up the allowed MIME type for this extension
         String allowedMime = EXT_TO_MIME.get(ext);
         if (allowedMime == null) {
-            throw new ValidationException("Unsupported file extension: ." + ext);
+            throw new BadRequestException("Unsupported file extension: ." + ext);
         }
         // 6. Compare actual contentType with expected
         if (!allowedMime.equals(contentType)) {
-            throw new ValidationException(
+            throw new BadRequestException(
                     String.format("File content type '%s' does not match expected MIME type for '.%s'", contentType, ext)
             );
         }

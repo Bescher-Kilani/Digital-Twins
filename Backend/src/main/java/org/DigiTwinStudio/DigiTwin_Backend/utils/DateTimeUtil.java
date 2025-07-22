@@ -8,46 +8,47 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
 /**
- * Bietet Hilfsmethoden zur Verarbeitung und Formatierung von Datums- und Zeitwerten.
- * Als Spring-Komponente registriert, kann sie überall injiziert werden.
+ * Contains Help-Methods to assist in working with dates and timestamps.
+ * As Spring Component can be used anywhere.
  */
 @Component
 public class DateTimeUtil {
 
-    // ISO-8601-konformer Formatter, ohne Offset (z.B. 2025-07-13T15:30:00)
+    // ISO-8601-conform Formatter, without offset (e.g., 2025-07-13T15:30:00)
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     /**
-     * Formatiert ein LocalDateTime-Objekt in einen ISO-8601-konformen String.
+     * Formats LocalDateTime-Object to ISO-8601-conform String.
      *
-     * @param dateTime das zu formatierende LocalDateTime
-     * @return ISO-8601-konformer String (z.B. "2025-07-13T15:30:00")
+     * @param dateTime LocalDateTime to be formated
+     * @return ISO-8601-conform String (e.g., "2025-07-13T15:30:00")
+     * @throws IllegalArgumentException when dateTime object is null
      */
     public static String formatIsoLocalDateTime(LocalDateTime dateTime) {
         if (dateTime == null) {
-            throw new IllegalArgumentException("dateTime darf nicht null sein");
+            throw new IllegalArgumentException("dateTime can not be null");
         }
         return dateTime.format(ISO_FORMATTER);
     }
 
     /**
-     * Parst einen ISO-8601-konformen String zurück zu einem LocalDateTime-Objekt.
+     * Parse ISO-8601-conform String to LocalDateTime-Object.
      *
-     * @param dateTimeString der ISO-8601-konforme String
-     * @return das geparste LocalDateTime
-     * @throws DateTimeParseException wenn der String nicht dem Format entspricht
+     * @param dateTimeString ISO-8601-conform String
+     * @return parsed LocalDateTime-Object
+     * @throws DateTimeParseException when String does not match Format
      */
     public static LocalDateTime parseIsoLocalDateTime(String dateTimeString) {
         if (dateTimeString == null || dateTimeString.isEmpty()) {
-            throw new IllegalArgumentException("dateTimeString darf nicht null oder leer sein");
+            throw new IllegalArgumentException("dateTimeString can not be null or empty");
         }
-        return LocalDateTime.parse(dateTimeString, ISO_FORMATTER);
+        return LocalDateTime.parse(dateTimeString, ISO_FORMATTER);  // includes DateTimeParseException
     }
 
     /**
-     * Gibt die aktuelle UTC-Zeit als LocalDateTime zurück.
+     * Returns current UTC-time as LocalDateTime-Object
      *
-     * @return aktuelles Datum und Zeit in UTC
+     * @return current date and time in UTC
      */
     public static LocalDateTime nowUtc() {
         return LocalDateTime.now(Clock.systemUTC());

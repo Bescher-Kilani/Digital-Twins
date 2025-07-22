@@ -3,9 +3,15 @@ import "../styles/index.css";
 import { Button, Image, Container, Row, Col } from "react-bootstrap";
 import homepage_image from "../assets/homepage_model.png";
 import CheckIcon from "../assets/icons/check.svg?react";
+import { Link, useNavigate } from "react-router-dom";
 
 function Home() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  const handleCreatePage = () => {
+    navigate('/create');
+  };
 
   return (
     <div>
@@ -16,7 +22,10 @@ function Home() {
               <div className="text-container">
                 <h1>{t("home.hero.create")}</h1>
                 <p>{t("home.hero.createText")}</p>
-                <Button variant="primary">{t("home.hero.startNow")}</Button>
+                <Button 
+                  variant="primary"
+                  onClick={handleCreatePage}
+                >{t("home.hero.startNow")}</Button>
               </div>
             </Col>
             <Col md={6} className="g-0">
@@ -70,7 +79,10 @@ function Home() {
         </div>
         <div className="text-center pt-2 pb-3">
           <p>{t("home.why.digitalTwin.more")}</p>
-          <Button variant="primary">{t("home.hero.startNow")}</Button>
+          <Button 
+            variant="primary"
+            onClick={handleCreatePage}
+          >{t("home.hero.startNow")}</Button>
         </div>
       </div>
     </div>

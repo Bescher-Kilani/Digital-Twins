@@ -4,7 +4,11 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Home from "./pages/home"; 
 import NotFound from "./pages/NotFound";
 import Signin from "./pages/sign_in";
+import CreatePage from "./pages/createPage";
 import Dashboard from "./pages/dashboard";
+import SubmodelTemplateSelection from "./pages/SubmodelTemplateSelection";
+import CreateTemplate from "./pages/createTemplate";
+import CreateComplete from "./pages/createComplete";
 
 function App() {
   return (
@@ -13,6 +17,10 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="signin" element={<Signin />} />
+          <Route path="create" element={<CreatePage />} />
+          <Route path="create/complete" element={<CreateComplete />} />
+          <Route path="templates" element={<SubmodelTemplateSelection />} />
+          <Route path="templates/create" element={<CreateTemplate />} />
           <Route path="dashboard" element={
             <ProtectedRoute>
               <Dashboard />

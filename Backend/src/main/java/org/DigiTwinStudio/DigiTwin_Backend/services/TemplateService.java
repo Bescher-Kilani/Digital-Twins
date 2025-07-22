@@ -4,6 +4,7 @@ package org.DigiTwinStudio.DigiTwin_Backend.services;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import lombok.extern.slf4j.Slf4j;
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.TemplateMapper;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.Template;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.TemplateDto;
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TemplateService {
 
     private final TemplateRepository templateRepository;
@@ -53,17 +55,59 @@ public class TemplateService {
     /**
      * Fetches the latest templates from the external SMT-Repository
      * and upserts them into the local database.
-     *
      * Each fetched ExternalTemplateDto is mapped to a domain Template,
      * its pulledAt timestamp is set to now, and it is marked active.
      *
      * @throws RuntimeException if fetching or mapping fails
      */
     public void syncTemplatesFromRepo() {
+        log.info("syncTemplatesFromRepo");
         List<Template> fetchedTemplates = smtRepoClient.fetchTemplates();
-        templateRepository.saveAll(fetchedTemplates);
+        log.info("Fetched {} templates.", fetchedTemplates.size());
+
+        int newCount = 0;
+        int oldCount = 0;
+        int updatedCount = 0;
+        for (Template template : fetchedTemplates) {
+            log.info("Fetched Template: {}", template.getName());
+            if (this.templateRepository.findByNameAndActiveTrue(template.getName()).isEmpty()) {
+                // no template with this name exists locally
+                newCount++;
+                this.templateRepository.save(template);
+                log.info("New Template: \"{}\" saved in database.", template.getName());
+            } else {
+                log.info("Template with name \"{}\" already exists. Checking for updated Version.", template.getName());
+
+                // check for an updated version. keep only newest
+                Template localTemplate = this.templateRepository.findByNameAndActiveTrue(template.getName()).get();
+                int localTemplateVersion = Integer.parseInt(localTemplate.getVersion());
+                int templateVersion = Integer.parseInt(template.getVersion());
+                int localTemplateRevision = Integer.parseInt(localTemplate.getRevision());
+                int templateRevision = Integer.parseInt(template.getRevision());
+
+                if (templateVersion > localTemplateVersion || (localTemplateVersion == templateVersion && templateRevision > localTemplateRevision)) {
+                    updatedCount++;
+                    log.info("Saved updated Version \"{}.{}\" (old: \"{}.{}\") in database.", templateVersion, templateRevision, localTemplateVersion, localTemplateRevision);
+                    this.templateRepository.save(template);
+
+                    // deactivate old template
+                    localTemplate.setActive(false);
+                    this.templateRepository.save(localTemplate);
+                    log.info("Deactivated older Version of \"{}\" in database.", localTemplate.getName());
+                } else {
+                    // no changes
+                    oldCount++;
+                    log.info("Template in database is up to date. Skipping.");
+                }
+
+            }
+
+        }
+        log.info("Saved {} new templates in database.", newCount);
+        log.info("Updated {} templates in database.", updatedCount);
+        log.info("Kept {} old templates in database.", oldCount);
+        log.info("Database holds {} templates", this.templateRepository.count());
         // ToDo: Scheduling.
-        // ToDo: Nach Scheduling Logik implementieren, dass nur neue Templates (bzw Versionen) gespeichert werden, und der Rest ignoriert wird.
    }
 
     /**
@@ -79,4 +123,5 @@ public class TemplateService {
         return templateRepository.findById(templateId)
                 .orElseThrow(() -> new NotFoundException("Template not found: " + templateId));
     }
+
 }

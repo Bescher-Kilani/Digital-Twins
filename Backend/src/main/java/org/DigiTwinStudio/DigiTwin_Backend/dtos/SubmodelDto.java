@@ -2,7 +2,7 @@ package org.DigiTwinStudio.DigiTwin_Backend.dtos;
 
 import lombok.*;
 
-import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
 
 @Data
 @NoArgsConstructor
@@ -11,5 +11,5 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 public class SubmodelDto {
 
 
-    private Submodel submodel;
+    private DefaultSubmodel submodel;
 }

@@ -1,13 +1,14 @@
 package org.DigiTwinStudio.DigiTwin_Backend.validation;
 
-import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.BadRequestException;
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException;
+
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.File;
 
 import de.fraunhofer.iosb.ilt.faaast.service.model.validation.ModelValidator;
-
-import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException;
 
 import org.springframework.stereotype.Component;
 
@@ -37,12 +38,12 @@ public class SubmodelValidator {
      * @param submodel the Submodel to validate
      * @throws ValidationException if any structural or project-specific rule is violated
      */
-    public void validate(Submodel submodel) {
+    public void validate(DefaultSubmodel submodel) {
         // 1. Global metamodel validation using FAAAST
         try {
             ModelValidator.validate(submodel);
-        } catch (de.fraunhofer.iosb.ilt.faaast.service.model.exception.ValidationException ex) {
-            throw new ValidationException("FAAAST submodel validation failed: " + ex.getMessage(), ex);
+        } catch (de.fraunhofer.iosb.ilt.faaast.service.model.exception.ValidationException e) {
+            throw new BadRequestException("Submodel validation failed: " + e.getMessage(), e);
         }
 
         // 2. Project-specific checks for all SubmodelElements
@@ -65,13 +66,13 @@ public class SubmodelValidator {
     private void validateElement(SubmodelElement element) {
         // idShort must be set and not empty
         if (element.getIdShort() == null || element.getIdShort().isBlank()) {
-            throw new ValidationException("Element idShort must not be null or empty");
+            throw new BadRequestException("Element idShort must not be null or empty");
         }
         // For File elements, enforce allowed MIME types
         if (element instanceof File) {
             String mime = ((File) element).getContentType();
             if (!ALLOWED_MIME_TYPES.contains(mime)) {
-                throw new ValidationException("Unsupported MIME type: " + mime);
+                throw new BadRequestException("Unsupported MIME type: " + mime);
             }
         }
         // For collections, validate each member recursively

@@ -1,10 +1,11 @@
 package org.DigiTwinStudio.DigiTwin_Backend.domain;
 
 import lombok.*;
-import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultAssetAdministrationShell;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShell;
+
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,9 +22,9 @@ public class AASModel {
 
     private String ownerId;
 
-    private AssetAdministrationShell aas;
+    private DefaultAssetAdministrationShell aas;
 
-    private List<Submodel> submodels;
+    private List<DefaultSubmodel> submodels;
 
     private PublishMetadata publishMetadata;
 

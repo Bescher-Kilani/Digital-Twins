@@ -1,17 +1,17 @@
 package org.DigiTwinStudio.DigiTwin_Backend.validation;
 
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.BadRequestException;
+
 import lombok.RequiredArgsConstructor;
-import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShell;
-import org.springframework.stereotype.Component;
-
-
-import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultAssetAdministrationShell;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
 
 import de.fraunhofer.iosb.ilt.faaast.service.model.validation.ModelValidator;
 
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.PublishMetadata;
-import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException;
+
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
@@ -35,30 +35,25 @@ public class AASModelValidator {
      * 3. If model is marked as published, ensure PublishMetadata is complete.
      *
      * @param model the AASModel to validate
-     * @throws ValidationException if any validation rule is violated
      */
     public void validate(AASModel model) {
         // 1. Validate AAS structure
-        AssetAdministrationShell aas = model.getAas();
+        DefaultAssetAdministrationShell aas = model.getAas();
         if (aas == null) {
-            throw new ValidationException("AASModel must contain an AssetAdministrationShell");
+            throw new BadRequestException("AASModel must contain an AssetAdministrationShell");
         }
 
         try {
             ModelValidator.validate(aas);
-        } catch (de.fraunhofer.iosb.ilt.faaast.service.model.exception.ValidationException ex) {
-            throw new ValidationException("FAAAST validation failed: " + ex.getMessage(), ex);
+        } catch (de.fraunhofer.iosb.ilt.faaast.service.model.exception.ValidationException e) {
+            throw new BadRequestException("AAS validation failed: " + e.getMessage(), e);
         }
 
         // 2. Validate all submodels in env
-        List<Submodel> submodels = model.getSubmodels();
+        List<DefaultSubmodel> submodels = model.getSubmodels();
 
-        for (Submodel sm : submodels) {
-            try {
-                submodelValidator.validate(sm);
-            } catch (RuntimeException ex) {
-                throw new ValidationException("Submodel validation failed: " + ex.getMessage(), ex);
-            }
+        for (DefaultSubmodel sm : submodels) {
+            submodelValidator.validate(sm);
         }
 
         // 3. Validate PublishMetadata
@@ -69,16 +64,16 @@ public class AASModelValidator {
 
     private void validatePublishMetadata(PublishMetadata metadata) {
         if (metadata == null) {
-            throw new ValidationException("PublishMetadata must be provided when publishing a model");
+            throw new BadRequestException("PublishMetadata must be provided when publishing a model");
         }
         if (metadata.getAuthor() == null || metadata.getAuthor().isBlank()) {
-            throw new ValidationException("PublishMetadata.author must not be null or blank");
+            throw new BadRequestException("PublishMetadata.author must not be null or blank");
         }
         if (metadata.getShortDescription() == null || metadata.getShortDescription().isBlank()) {
-            throw new ValidationException("PublishMetadata.shortDescription must not be null or blank");
+            throw new BadRequestException("PublishMetadata.shortDescription must not be null or blank");
         }
         if (metadata.getTagIds() == null || metadata.getTagIds().isEmpty()) {
-            throw new ValidationException("PublishMetadata.tagIds must not be null or empty");
+            throw new BadRequestException("PublishMetadata.tagIds must not be null or empty");
         }
     }
 }

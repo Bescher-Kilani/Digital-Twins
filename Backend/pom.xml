@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.springframework.boot</groupId>
@@ -22,12 +22,13 @@
 	</developers>
 	<scm>
 		<connection/>
+
 		<developerConnection/>
 		<tag/>
 		<url/>
 	</scm>
 	<properties>
-		<java.version>24</java.version>
+		<java.version>21</java.version>
 	</properties>
 
 	<dependencies>
@@ -69,8 +70,25 @@
 			<version>1.0.4</version>
 		</dependency>
 
+		<dependency>
+			<groupId>org.eclipse.digitaltwin.aas4j</groupId>
+			<artifactId>aas4j-dataformat-core</artifactId>
+			<version>1.0.4</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.eclipse.digitaltwin.aas4j</groupId>
+			<artifactId>aas4j-dataformat-json</artifactId>
+			<version>1.0.4</version>
+		</dependency>
+
 
 		<!-- https://mvnrepository.com/artifact/de.fraunhofer.iosb.ilt.faaast.service/model -->
+		<dependency>
+			<groupId>de.fraunhofer.iosb.ilt.faaast.service</groupId>
+			<artifactId>dataformat-json</artifactId>
+			<version>1.2.0</version>
+		</dependency>
 		<dependency>
 			<groupId>de.fraunhofer.iosb.ilt.faaast.service</groupId>
 			<artifactId>model</artifactId>
@@ -166,6 +184,11 @@
 			<artifactId>dotenv-java</artifactId>
 			<version>2.2.0</version>
 		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
 	</dependencies>
 
 	<repositories>
@@ -184,8 +207,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.8.1</version>
 				<configuration>
-					<source>17</source>
-					<target>17</target>
+					<source>21</source>
+					<target>21</target>
 					<annotationProcessorPaths>
 						<!-- Lombok processor -->
 						<path>

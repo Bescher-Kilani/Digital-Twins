@@ -1,5 +1,6 @@
 import { Container, Row, Col, Button, Form, Card, Pagination } from "react-bootstrap";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import modelImage from "../assets/homepage_model.png";
 import "../styles/dashboard.css";
 import OpenIcon from "../assets/icons/arrow-up-right-square-fill.svg?react";
@@ -62,6 +63,7 @@ const models = [
 
 export default function Dashboard() {
   const [currentPage, setCurrentPage] = useState(1);
+  const navigate = useNavigate();
   const modelsPerPage = 4;
   
   // Calculate pagination
@@ -72,6 +74,10 @@ export default function Dashboard() {
   
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
+  };
+
+  const handleNewModel = () => {
+    navigate('/create');
   };
 
   return (
@@ -92,7 +98,7 @@ export default function Dashboard() {
           <Button variant="primary" className="me-2">
             <ImportIcon></ImportIcon> Import Model
           </Button>
-          <Button variant="primary"><PlusIcon></PlusIcon> New Model</Button>
+          <Button variant="primary" onClick={handleNewModel}><PlusIcon></PlusIcon> New Model</Button>
         </Col>
       </Row>
 
