@@ -22,10 +22,10 @@ public class SubmodelController {
     private final TemplateService templateService;
     private final AASModelService aasModelService;
 
-    /**
-     * TODO: replace @RequestHeader("userId") with
-     * @AuthenticationPrincipal Jwt jwt
-     */
+
+     // TODO: replace @RequestHeader("userId") with  @AuthenticationPrincipal Jwt jwt
+
+
 
 
     /**
