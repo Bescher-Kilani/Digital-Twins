@@ -1,6 +1,5 @@
 package org.DigiTwinStudio.DigiTwin_Backend.controller;
 
-import de.fraunhofer.iosb.ilt.faaast.service.model.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
@@ -70,10 +69,6 @@ public class AASModelController {
     public ResponseEntity<?> saveAASModel(@PathVariable String modelId,@RequestHeader("userId") String userId, @RequestBody AASModelDto dto) {
         try {
             return ResponseEntity.ok(this.aasModelService.saveModel(modelId, userId, dto));
-        } catch (ValidationException e) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(e.getMessage());
         } catch (ResponseStatusException e) {
             return ResponseEntity
                     .status(e.getStatusCode())
@@ -106,10 +101,6 @@ public class AASModelController {
         try {
             this.aasModelService.publishModel(modelId, userId, request);
             return ResponseEntity.ok("Published " + modelId);
-        } catch (ValidationException e) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(e.getMessage());
         } catch (ResponseStatusException e) {
             return ResponseEntity
                     .status(e.getStatusCode())

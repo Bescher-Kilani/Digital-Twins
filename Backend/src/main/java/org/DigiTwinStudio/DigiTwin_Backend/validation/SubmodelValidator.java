@@ -6,7 +6,8 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.File;
 
 import de.fraunhofer.iosb.ilt.faaast.service.model.validation.ModelValidator;
-import de.fraunhofer.iosb.ilt.faaast.service.model.exception.ValidationException;
+
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException;
 
 import org.springframework.stereotype.Component;
 
@@ -34,18 +35,23 @@ public class SubmodelValidator {
      * 2. Recursively validate each contained SubmodelElement.
      *
      * @param submodel the Submodel to validate
-     * @throws ValidationException if any structural or project-specific rule is violated
      */
-    public void validate(DefaultSubmodel submodel) throws ValidationException {
-        // 1. Global metamodel validation using FAAAST
-        ModelValidator.validate(submodel);
+    public void validate(DefaultSubmodel submodel){
 
-        // 2. Project-specific checks for all SubmodelElements
-        if (submodel.getSubmodelElements() != null) {
-            for (SubmodelElement element : submodel.getSubmodelElements()) {
-                validateElement(element);
+        try{
+            // 1. Global metamodel validation using FAAAST
+            ModelValidator.validate(submodel);
+
+            // 2. Project-specific checks for all SubmodelElements
+            if (submodel.getSubmodelElements() != null) {
+                for (SubmodelElement element : submodel.getSubmodelElements()) {
+                    validateElement(element);
+                }
             }
+        } catch (de.fraunhofer.iosb.ilt.faaast.service.model.exception.ValidationException e){
+            throw new ValidationException("Not Valid submodel" + e.getMessage(), e);
         }
+
     }
 
     /**
@@ -55,9 +61,8 @@ public class SubmodelValidator {
      * - For collections: apply checks recursively.
      *
      * @param element the SubmodelElement to validate
-     * @throws ValidationException if any rule is violated
      */
-    private void validateElement(SubmodelElement element) throws ValidationException {
+    private void validateElement(SubmodelElement element) {
         // idShort must be set and not empty
         if (element.getIdShort() == null || element.getIdShort().isBlank()) {
             throw new ValidationException("Element idShort must not be null or empty");

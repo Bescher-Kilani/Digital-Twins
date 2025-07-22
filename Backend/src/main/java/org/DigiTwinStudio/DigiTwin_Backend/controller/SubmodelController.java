@@ -42,7 +42,8 @@ public class SubmodelController {
      * @param templateId ID of the template to base the submodel on
      */
     @GetMapping("/submodels/new")
-    public ResponseEntity<SubmodelDto> getNewSubmodel(@RequestParam String templateId) {
+    public ResponseEntity<SubmodelDto> getNewSubmodel(
+            @RequestParam String templateId) {
         return ResponseEntity.ok(submodelService.createEmptySubmodelFromTemplate(templateId));
     }
 
@@ -56,7 +57,7 @@ public class SubmodelController {
     public ResponseEntity<AASModelDto> addSubmodelToModel(
             @PathVariable String modelId,
             @RequestHeader("userId") String userId,
-            @RequestBody SubmodelDto dto) throws ValidationException {
+            @RequestBody SubmodelDto dto)  {
         return ResponseEntity.ok(aasModelService.attachSubmodel(modelId, dto, userId));
     }
 
@@ -84,7 +85,7 @@ public class SubmodelController {
             @PathVariable String modelId,
             @PathVariable String submodelId,
             @RequestHeader("userId") String userId,
-            @RequestBody SubmodelDto dto) throws ValidationException {
+            @RequestBody SubmodelDto dto) {
         return ResponseEntity.ok(aasModelService.updateSubmodel(modelId, submodelId, dto, userId));
     }
 
@@ -98,7 +99,7 @@ public class SubmodelController {
     public ResponseEntity<AASModelDto> removeSubmodelFromModel(
             @PathVariable String modelId,
             @PathVariable String submodelId,
-            @RequestHeader("userId") String userId) throws ValidationException {
+            @RequestHeader("userId") String userId) {
         return ResponseEntity.ok(aasModelService.removeSubmodel(modelId, submodelId, userId));
     }
 }

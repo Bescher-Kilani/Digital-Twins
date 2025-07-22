@@ -18,7 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-import de.fraunhofer.iosb.ilt.faaast.service.model.exception.ValidationException;
+
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -72,7 +72,7 @@ public class AASModelService {
     }
 
 
-    public AASModelDto saveModel(String id, String userId, AASModelDto aasModelDto) throws ValidationException, ResponseStatusException {
+    public AASModelDto saveModel(String id, String userId, AASModelDto aasModelDto) throws  ResponseStatusException {
         AASModel existingModel = aasModelRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Model not found."));
 
@@ -108,7 +108,7 @@ public class AASModelService {
         }
     }
 
-    public AASModelDto publishModel(String id, String userId, PublishRequestDto request) throws ValidationException, ResponseStatusException {
+    public AASModelDto publishModel(String id, String userId, PublishRequestDto request) throws  ResponseStatusException {
         AASModel model = getModelOrThrow(id, userId);
 
         if (model.isPublished()) {
@@ -128,7 +128,7 @@ public class AASModelService {
         return aasModelMapper.toDto(aasModelRepository.save(model));
     }
 
-    public AASModelDto attachSubmodel(String modelId, SubmodelDto dto, String userId) throws ValidationException {
+    public AASModelDto attachSubmodel(String modelId, SubmodelDto dto, String userId)  {
         AASModel model = getModelOrThrow(modelId, userId);
         DefaultSubmodel submodel = submodelMapper.fromDto(dto);
 
@@ -139,7 +139,7 @@ public class AASModelService {
         return aasModelMapper.toDto(aasModelRepository.save(model));
     }
 
-    public AASModelDto updateSubmodel(String modelId, String submodelId, SubmodelDto dto, String userId) throws ValidationException {
+    public AASModelDto updateSubmodel(String modelId, String submodelId, SubmodelDto dto, String userId)  {
         AASModel model = getModelOrThrow(modelId, userId);
         List<DefaultSubmodel> submodels = model.getSubmodels();
 
@@ -161,7 +161,7 @@ public class AASModelService {
         return aasModelMapper.toDto(aasModelRepository.save(model));
     }
 
-    public AASModelDto removeSubmodel(String modelId, String submodelId, String userId) throws ValidationException {
+    public AASModelDto removeSubmodel(String modelId, String submodelId, String userId)  {
         AASModel model = getModelOrThrow(modelId, userId);
         boolean removed = model.getSubmodels().removeIf(submodel -> submodel.getId().equals(submodelId));
 

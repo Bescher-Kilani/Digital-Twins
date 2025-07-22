@@ -5,7 +5,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultAssetAdministrationShe
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
 
 import de.fraunhofer.iosb.ilt.faaast.service.model.validation.ModelValidator;
-import de.fraunhofer.iosb.ilt.faaast.service.model.exception.ValidationException;
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException;
 
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.PublishMetadata;
@@ -34,29 +34,33 @@ public class AASModelValidator {
      * 3. If model is marked as published, ensure PublishMetadata is complete.
      *
      * @param model the AASModel to validate
-     * @throws ValidationException if any validation rule is violated
      */
-    public void validate(AASModel model) throws ValidationException {
-        // 1. Validate AAS structure
-        DefaultAssetAdministrationShell aas = model.getAas();
-        if (aas == null) {
-            throw new ValidationException("AASModel must contain an AssetAdministrationShell");
-        }
-        ModelValidator.validate(aas);
+    public void validate(AASModel model) {
+
+        try {
+            // 1. Validate AAS structure
+            DefaultAssetAdministrationShell aas = model.getAas();
+            if (aas == null) {
+                throw new ValidationException("AASModel must contain an AssetAdministrationShell");
+            }
+            ModelValidator.validate(aas);
 
 
-        // 2. Validate all submodels in env
-        List<DefaultSubmodel> submodels = model.getSubmodels();
+            // 2. Validate all submodels in env
+            List<DefaultSubmodel> submodels = model.getSubmodels();
 
-        for (DefaultSubmodel sm : submodels) {
-            submodelValidator.validate(sm);
-        }
+            for (DefaultSubmodel sm : submodels) {
+                submodelValidator.validate(sm);
+            }
 
 
 
-        // 3. Validate PublishMetadata
-        if (model.isPublished()) {
-            validatePublishMetadata(model.getPublishMetadata());
+            // 3. Validate PublishMetadata
+            if (model.isPublished()) {
+                validatePublishMetadata(model.getPublishMetadata());
+            }
+        } catch (de.fraunhofer.iosb.ilt.faaast.service.model.exception.ValidationException e){
+            throw new ValidationException("Not Valid submodel" + e.getMessage(), e);
         }
     }
 
