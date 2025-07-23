@@ -61,5 +61,4 @@ public class SubmodelController {
         aasModelService.removeSubmodel(modelId, submodelId, principal.getName());
         return ResponseEntity.noContent().build();
     }
-
 }

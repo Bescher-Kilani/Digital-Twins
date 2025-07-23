@@ -24,7 +24,7 @@ public class UploadedFile {
 
     private long size; // Size in bytes
 
-    private String storagePath; // Path where the file is stored in the file system or cloud storage
+    private String storagePath; // GridFS-ID
 
     private String ownerId; // ID of the user who uploaded the file for authentication and authorization purposes
 

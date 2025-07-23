@@ -44,11 +44,9 @@ public class AASModelUploadService {
      * @throws ValidationException  on model structure validation failure
      */
     public AASModelDto uploadAASModel(MultipartFile file, String ownerId) {
-        try {
+
             fileUploadValidator.validate(file);
-        } catch (BadRequestException e) {
-            throw new BadRequestException("File validation failed", e);
-        }
+
 
         try {
             // Step 1: parse the JSON content into a full AAS environment

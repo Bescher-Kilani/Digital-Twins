@@ -1,11 +1,12 @@
 package org.DigiTwinStudio.DigiTwin_Backend.validation;
 
-import org.DigiTwinStudio.DigiTwin_Backend.exceptions.BadRequestException;
+import java.util.Map;
 
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.BadRequestException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Map;
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException;
 
 /**
  * Component responsible for validating uploaded files
@@ -37,8 +38,9 @@ public class FileUploadValidator {
      * 5. Detected contentType must exactly match the expected MIME type for that extension.
      *
      * @param file the uploaded file to validate
+     * @throws ValidationException if any validation rule is violated
      */
-    public void validate(MultipartFile file) {
+    public void validate(MultipartFile file) throws ValidationException {
         // 1. Check presence
         if (file == null || file.isEmpty()) {
             throw new BadRequestException("Uploaded file must not be empty");
