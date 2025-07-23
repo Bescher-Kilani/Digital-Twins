@@ -1,67 +1,85 @@
-import { Container, Row, Col, Button, Card, Pagination } from "react-bootstrap";
+import { Container, Row, Col, Button, Card, Pagination, Spinner, Alert } from "react-bootstrap";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import "../styles/submodelTemplateSelection.css";
-
-const templates = [
-  {
-    title: "Digital Nameplate For Industrial Equipment",
-    description: "Identification information of the asset",
-  },
-  {
-    title: "Carbon Footprint",
-    description: "Calculation of carbon footprint data",
-  },
-  {
-    title: "Technical Data",
-    description: "Technical specifications and parameters",
-  },
-  {
-    title: "Maintenance Information",
-    description: "Maintenance schedules and procedures",
-  },
-  {
-    title: "Safety Guidelines",
-    description: "Safety protocols and compliance data",
-  },
-  {
-    title: "Energy Efficiency",
-    description: "Energy consumption and efficiency metrics",
-  },
-  {
-    title: "Quality Assurance",
-    description: "Quality control and testing procedures",
-  },
-  {
-    title: "Supply Chain",
-    description: "Supply chain and logistics information",
-  },
-  {
-    title: "Environmental Impact",
-    description: "Environmental impact assessment data",
-  },
-  {
-    title: "Performance Metrics",
-    description: "Key performance indicators and analytics",
-  }
-];
 
 export default function SubmodelTemplateSelection() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { i18n } = useTranslation();
   const [currentPage, setCurrentPage] = useState(1);
+  const [templates, setTemplates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   // Get the original form data passed from /create
   const originalFormData = location.state?.formData;
+
+  // Helper function to get description in user's preferred language
+  const getLocalizedDescription = (descriptions) => {
+    if (!descriptions || typeof descriptions !== 'object') {
+      return 'No description available';
+    }
+    
+    const currentLanguage = i18n.language; // Current user language (e.g., 'en', 'de')
+    
+    // Try current language first
+    if (descriptions[currentLanguage]) {
+      return descriptions[currentLanguage];
+    }
+    
+    // Fallback to English
+    if (descriptions['en']) {
+      return descriptions['en'];
+    }
+    
+    // Fallback to any available language
+    const availableLanguages = Object.keys(descriptions);
+    if (availableLanguages.length > 0) {
+      return descriptions[availableLanguages[0]];
+    }
+    
+    return 'No description available';
+  };
+
+  // Fetch templates from backend API
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('http://localhost:9090/submodels/templates');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        setTemplates(data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching templates:', err);
+        setError(`Failed to load templates: ${err.message}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTemplates();
+  }, []);
   
   // Handle template selection
   const handleTemplateSelect = (template) => {
+    // Get description in user's preferred language
+    const description = getLocalizedDescription(template.descriptions);
+    
     navigate('/templates/create', {
       state: {
         selectedTemplate: {
-          id: template.title.toLowerCase().replace(/\s+/g, '-'),
-          title: template.title,
-          description: template.description
+          id: template.id,
+          title: template.name,
+          description: description,
+          templateData: template // Pass the full template data including JSON
         },
         originalFormData: originalFormData // Pass through the original form data
       }
@@ -131,67 +149,104 @@ export default function SubmodelTemplateSelection() {
       {/* Heading */}
       <h1 className="text-white mb-4">Select a Submodel</h1>
 
+      {/* Loading state */}
+      {loading && (
+        <div className="text-center py-5">
+          <Spinner animation="border" variant="light" />
+          <p className="text-white mt-3">Loading templates...</p>
+        </div>
+      )}
+
+      {/* Error state */}
+      {error && (
+        <Alert variant="danger" className="mb-4">
+          {error}
+          <Button 
+            variant="outline-danger" 
+            size="sm" 
+            className="ms-3"
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </Button>
+        </Alert>
+      )}
+
       {/* Template cards */}
-      <Row className="g-3">
-        {currentTemplates.map((template, idx) => (
-          <Col md={6} lg={6} key={idx}>
-            <Card className="text-white h-100 template-card">
-              <Card.Body className="d-flex flex-column">
-                <Card.Title>{template.title}</Card.Title>
-                <Card.Text className="flex-grow-1">
-                  {template.description}
-                </Card.Text>
-                <Button 
-                  variant="primary" 
-                  className="align-self-start mt-2"
-                  onClick={() => handleTemplateSelect(template)}
-                >
-                  Select
-                </Button>
-              </Card.Body>
-            </Card>
-          </Col>
-        ))}
-      </Row>
-      
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <Row className="mt-4">
-          <Col className="d-flex justify-content-center">
-            <Pagination>
-              <Pagination.First 
-                onClick={() => handlePageChange(1)} 
-                disabled={currentPage === 1}
-              />
-              <Pagination.Prev 
-                onClick={() => handlePageChange(currentPage - 1)} 
-                disabled={currentPage === 1}
-              />
+      {!loading && !error && (
+        <>
+          <Row className="g-3">
+            {currentTemplates.map((template, idx) => {
+              // Get description in user's preferred language
+              const description = getLocalizedDescription(template.descriptions);
               
-              {[...Array(totalPages)].map((_, index) => {
-                const pageNumber = index + 1;
-                return (
-                  <Pagination.Item
-                    key={pageNumber}
-                    active={pageNumber === currentPage}
-                    onClick={() => handlePageChange(pageNumber)}
-                  >
-                    {pageNumber}
-                  </Pagination.Item>
-                );
-              })}
-              
-              <Pagination.Next 
-                onClick={() => handlePageChange(currentPage + 1)} 
-                disabled={currentPage === totalPages}
-              />
-              <Pagination.Last 
-                onClick={() => handlePageChange(totalPages)} 
-                disabled={currentPage === totalPages}
-              />
-            </Pagination>
-          </Col>
-        </Row>
+              return (
+                <Col md={6} lg={6} key={template.id || idx}>
+                  <Card className="text-white h-100 template-card">
+                    <Card.Body className="d-flex flex-column">
+                      <Card.Title>{template.name}</Card.Title>
+                      <Card.Text className="flex-grow-1">
+                        {description}
+                      </Card.Text>
+                      <div className="mt-2">
+                        <small>
+                          Version: {template.version}.{template.revision}
+                        </small>
+                      </div>
+                      <Button 
+                        variant="primary" 
+                        className="align-self-start mt-2"
+                        onClick={() => handleTemplateSelect(template)}
+                      >
+                        Select
+                      </Button>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              );
+            })}
+          </Row>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Row className="mt-4">
+              <Col className="d-flex justify-content-center">
+                <Pagination>
+                  <Pagination.First 
+                    onClick={() => handlePageChange(1)} 
+                    disabled={currentPage === 1}
+                  />
+                  <Pagination.Prev 
+                    onClick={() => handlePageChange(currentPage - 1)} 
+                    disabled={currentPage === 1}
+                  />
+                  
+                  {[...Array(totalPages)].map((_, index) => {
+                    const pageNumber = index + 1;
+                    return (
+                      <Pagination.Item
+                        key={pageNumber}
+                        active={pageNumber === currentPage}
+                        onClick={() => handlePageChange(pageNumber)}
+                      >
+                        {pageNumber}
+                      </Pagination.Item>
+                    );
+                  })}
+                  
+                  <Pagination.Next 
+                    onClick={() => handlePageChange(currentPage + 1)} 
+                    disabled={currentPage === totalPages}
+                  />
+                  <Pagination.Last 
+                    onClick={() => handlePageChange(totalPages)} 
+                    disabled={currentPage === totalPages}
+                  />
+                </Pagination>
+              </Col>
+            </Row>
+          )}
+        </>
       )}
     </Container>
     </div>
