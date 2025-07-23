@@ -4,112 +4,188 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import AddressInformation from "../components/form_inputs/AddressInformation";
 import Prop from "../components/form_inputs/Prop";
 import MLP from "../components/form_inputs/MLP";
+import FileInput from "../components/form_inputs/FileInput";
+import CollectionInput from "../components/form_inputs/CollectionInput";
 import ChevronLeftIcon from "../assets/icons/chevron-left.svg?react";
+import ChevronRightIcon from "../assets/icons/chevron-right.svg?react";
+import ChevronDownIcon from "../assets/icons/chevron-down.svg?react";
 import FloppyFillIcon from "../assets/icons/floppy-fill.svg?react";
+import QuestionCircleIcon from "../assets/icons/question-circle.svg?react";
 import "../styles/createTemplate.css";
 
-// Mock API response for Digital Nameplate
-const mockDigitalNameplateConfig = {
-  title: "Digital Nameplate For Industrial Equipment",
-  fields: [
-    {
-      name: "uriOfTheProduct",
-      type: "prop",
-      label: "URI Of The Product",
-      placeholder: "https://www.domain-abc.com/Model-Nr-1234/Serial-Nr-5678",
-      tooltip: "unique global identification of the product instance using an universal resource identifier (URI)"
-    },
-    {
-      name: "manufacturerName",
-      type: "multiLanguage",
-      label: "ManufacturerName",
-      placeholder: "Example Company",
-      tooltip: "legally valid designation of the natural or judicial person which is directly responsible for the design, production, packaging and labeling of a product in respect to its being brought into circulation"
-    },
-    {
-      name: "manufacturerProductDesignation",
-      type: "multiLanguage",
-      label: "ManufacturerProductDesignation",
-      placeholder: "ABC-123",
-      tooltip: "short description of the product (short text), third or lowest level of a 3 level manufacturer specific product hierarchy"
-    },
-    {
-      name: "orderCode",
-      type: "prop",
-      label: "OrderCodeOfManufacturer",
-      placeholder: "FMABC1234",
-      tooltip: "unique combination of numbers and letters issued by themanufacturer that is used to identify the device for ordering"
-    },
-    {
-      name: "addressInformation",
-      type: "address",
-      label: "Address Information",
-      tooltip: "Address information details"
-    }
-  ]
-};
-
-// Mock API response for Carbon Footprint
-const mockCarbonFootprintConfig = {
-  title: "Carbon Footprint",
-  fields: [
-    {
-      name: "productCarbonFootprint",
-      type: "prop",
-      label: "Product Carbon Footprint",
-      placeholder: "12.5",
-      tooltip: "Total carbon footprint of the product in kg CO2 equivalent"
-    },
-    {
-      name: "calculationMethod",
-      type: "multiLanguage",
-      label: "Calculation Method",
-      placeholder: "ISO 14067:2018",
-      tooltip: "Method or standard used for carbon footprint calculation"
-    },
-    {
-      name: "assessmentScope",
-      type: "multiLanguage",
-      label: "Assessment Scope",
-      placeholder: "Cradle to gate",
-      tooltip: "Scope of the carbon footprint assessment (e.g., cradle to gate, cradle to grave)"
-    },
-    {
-      name: "referenceUnit",
-      type: "prop",
-      label: "Reference Unit",
-      placeholder: "kg",
-      tooltip: "Unit of measurement for the carbon footprint calculation"
-    },
-    {
-      name: "validityPeriod",
-      type: "prop",
-      label: "Validity Period",
-      placeholder: "2024-2026",
-      tooltip: "Time period for which the carbon footprint data is valid"
-    },
-    {
-      name: "certificationBody",
-      type: "multiLanguage",
-      label: "Certification Body",
-      placeholder: "TÜV SÜD",
-      tooltip: "Organization that certified the carbon footprint assessment"
-    }
-  ]
-};
-
-// Function to get template configuration based on selected template
-const getTemplateConfig = (selectedTemplate) => {
-  if (!selectedTemplate) return mockDigitalNameplateConfig;
-  
-  switch (selectedTemplate.id) {
-    case 'digital-nameplate-for-industrial-equipment':
-      return mockDigitalNameplateConfig;
-    case 'carbon-footprint':
-      return mockCarbonFootprintConfig;
-    default:
-      return mockDigitalNameplateConfig;
+// Function to extract cardinality from qualifiers
+const extractCardinality = (element) => {
+  if (!element.qualifiers || !Array.isArray(element.qualifiers)) {
+    return "Unknown";
   }
+  
+  const cardinalityQualifier = element.qualifiers.find(
+    qualifier => qualifier.type === "SMT/Cardinality"
+  );
+  
+  return cardinalityQualifier?.value || "Unknown";
+};
+
+// Function to parse AAS submodel elements and convert them to form configuration
+const parseSubmodelElements = (submodelElements) => {
+  const fields = [];
+  
+  if (!submodelElements || !Array.isArray(submodelElements)) {
+    return fields;
+  }
+  
+  submodelElements.forEach(element => {
+    const cardinality = extractCardinality(element);
+    
+    switch (element.modelType) {
+      case "Property":
+        fields.push({
+          name: element.idShort,
+          type: "prop",
+          label: element.idShort,
+          placeholder: element.value || `Enter ${element.idShort}`,
+          tooltip: element.description ? 
+                   (Array.isArray(element.description) ? 
+                    element.description[0]?.text || "" : 
+                    element.description) : 
+                   `Property: ${element.idShort}`,
+          valueType: element.valueType || "xs:string",
+          cardinality: cardinality,
+          originalElement: element
+        });
+        break;
+        
+      case "MultiLanguageProperty":
+        fields.push({
+          name: element.idShort,
+          type: "multiLanguage",
+          label: element.idShort,
+          placeholder: element.value && element.value.length > 0 ? 
+                      element.value[0].text.replace(/"/g, '') : `Enter ${element.idShort}`,
+          tooltip: element.description ? 
+                   (Array.isArray(element.description) ? 
+                    element.description[0]?.text || "" : 
+                    element.description) : 
+                   `Multi-language property: ${element.idShort}`,
+          cardinality: cardinality,
+          originalElement: element
+        });
+        break;
+        
+      case "File":
+        fields.push({
+          name: element.idShort,
+          type: "file",
+          label: element.idShort,
+          placeholder: `Upload ${element.contentType || 'file'}`,
+          tooltip: element.description ? 
+                   (Array.isArray(element.description) ? 
+                    element.description[0]?.text || "" : 
+                    element.description) : 
+                   `File: ${element.idShort} (${element.contentType || 'unknown type'})`,
+          contentType: element.contentType,
+          cardinality: cardinality,
+          originalElement: element
+        });
+        break;
+        
+      case "SubmodelElementList":
+        fields.push({
+          name: element.idShort,
+          type: "list",
+          label: element.idShort,
+          tooltip: element.description ? 
+                   (Array.isArray(element.description) ? 
+                    element.description[0]?.text || "" : 
+                    element.description) : 
+                   `List: ${element.idShort}`,
+          cardinality: cardinality,
+          elementTemplate: element,
+          originalElement: element
+        });
+        break;
+        
+      case "SubmodelElementCollection":
+        // Handle simple collections (like AddressInformation) that don't have nested elements in template
+        if (element.idShort === "AddressInformation" && (!element.value || element.value.length === 0)) {
+          fields.push({
+            name: element.idShort,
+            type: "address",
+            label: "Address Information",
+            tooltip: element.description ? 
+                     (Array.isArray(element.description) ? 
+                      element.description[0]?.text || "" : 
+                      element.description) : 
+                     "Address information details",
+            cardinality: cardinality,
+            originalElement: element
+          });
+        } else {
+          // Handle complex collections with multiple elements
+          fields.push({
+            name: element.idShort,
+            type: "collection",
+            label: element.idShort,
+            tooltip: element.description ? 
+                     (Array.isArray(element.description) ? 
+                      element.description[0]?.text || "" : 
+                      element.description) : 
+                     `Collection: ${element.idShort}`,
+            cardinality: cardinality,
+            elementTemplate: element,
+            originalElement: element
+          });
+        }
+        break;
+        
+      default:
+        // Handle unknown types as properties
+        fields.push({
+          name: element.idShort,
+          type: "prop",
+          label: element.idShort,
+          placeholder: "",
+          tooltip: `${element.modelType}: ${element.idShort}`,
+          cardinality: cardinality,
+          originalElement: element
+        });
+    }
+  });
+  
+  return fields;
+};
+
+// Function to get template configuration from selected template data
+const getTemplateConfig = (selectedTemplate) => {
+  if (!selectedTemplate || !selectedTemplate.templateData) {
+    return {
+      title: "Template Configuration",
+      description: "",
+      requiredFields: [],
+      advancedFields: [],
+      originalTemplate: null
+    };
+  }
+  
+  const templateData = selectedTemplate.templateData;
+  const submodelElements = templateData.json?.submodelElements || [];
+  const allFields = parseSubmodelElements(submodelElements);
+  
+  // Separate fields by cardinality - "One" and "OneToMany" are required fields
+  const requiredFields = allFields.filter(field => 
+    field.cardinality === "One" || field.cardinality === "OneToMany"
+  );
+  const advancedFields = allFields.filter(field => 
+    field.cardinality !== "One" && field.cardinality !== "OneToMany"
+  );
+  
+  return {
+    title: templateData.name || selectedTemplate.title || "Template Configuration",
+    description: selectedTemplate.description || "",
+    requiredFields: requiredFields,
+    advancedFields: advancedFields,
+    originalTemplate: templateData
+  };
 };
 
 export default function CreateTemplate() {
@@ -124,6 +200,9 @@ export default function CreateTemplate() {
   
   // Unified form state - dynamically initialized from API
   const [formData, setFormData] = useState({});
+  
+  // Advanced fields state
+  const [showAdvancedFields, setShowAdvancedFields] = useState(false);
 
   // TODO: Replace with actual API call to get template fields
   useEffect(() => {
@@ -136,7 +215,7 @@ export default function CreateTemplate() {
       // };
       // fetchTemplateFields();
       
-      // For now, use mock data based on selected template
+      // For now, use parsed data from selected template
       const templateConfig = getTemplateConfig(selectedTemplate);
       setFormConfig(templateConfig);
       console.log('Selected template:', selectedTemplate);
@@ -148,15 +227,22 @@ export default function CreateTemplate() {
     const initializeFormData = () => {
       const initialData = {};
       
-      formConfig.fields.forEach(field => {
+      // Initialize both required and advanced fields
+      const allFields = [...formConfig.requiredFields, ...formConfig.advancedFields];
+      
+      allFields.forEach(field => {
         switch (field.type) {
-          case "prop":
+          case "prop": {
+            // Initialize with empty value, template value is used as placeholder
             initialData[field.name] = "";
             break;
-          case "multiLanguage":
+          }
+          case "multiLanguage": {
+            // Initialize with empty values, template values are used as placeholders
             initialData[field.name] = [{ id: 1, language: "English", value: "" }];
             break;
-          case "address":
+          }
+          case "address": {
             initialData[field.name] = [{ 
               id: 1, 
               language: "English",
@@ -166,15 +252,46 @@ export default function CreateTemplate() {
               country: ""
             }];
             break;
-          default:
+          }
+          case "file": {
             initialData[field.name] = "";
+            break;
+          }
+          case "list": {
+            // Initialize lists with empty array
+            initialData[field.name] = [];
+            break;
+          }
+          case "collection": {
+            // Initialize collections with empty array (for complex collections)
+            if (field.type === "address" || field.name === "AddressInformation") {
+              // Keep the existing address handling
+              initialData[field.name] = [{ 
+                id: 1, 
+                language: "English",
+                street: "",
+                streetNumber: "",
+                city: "",
+                country: ""
+              }];
+            } else {
+              // For other collections, initialize as empty array
+              initialData[field.name] = [];
+            }
+            break;
+          }
+          default: {
+            initialData[field.name] = "";
+          }
         }
       });
       
       setFormData(initialData);
     };
 
-    initializeFormData();
+    if (formConfig.requiredFields.length > 0 || formConfig.advancedFields.length > 0) {
+      initializeFormData();
+    }
   }, [formConfig]);
 
   // Generic field update function
@@ -260,9 +377,9 @@ export default function CreateTemplate() {
           <Prop
             key={fieldConfig.name}
             label={fieldConfig.label}
-            placeholder={fieldConfig.placeholder}
+            placeholder={fieldConfig.valueType === "xs:date" ? "YYYY-MM-DD" : fieldConfig.placeholder}
             helpText={fieldConfig.tooltip}
-            type="text"
+            type={fieldConfig.valueType === "xs:date" ? "date" : "text"}
             value={fieldData}
             onChange={(e) => updateField(fieldConfig.name, e.target.value)}
             className="mb-4"
@@ -312,8 +429,126 @@ export default function CreateTemplate() {
           />
         ));
 
+      case "file":
+        return (
+          <FileInput
+            key={fieldConfig.name}
+            label={fieldConfig.label}
+            helpText={fieldConfig.tooltip}
+            contentType={fieldConfig.contentType}
+            onChange={(fileName) => updateField(fieldConfig.name, fileName)}
+            className="mb-4"
+          />
+        );
+
+      case "list":
+        return (
+          <CollectionInput
+            key={fieldConfig.name}
+            label={fieldConfig.label}
+            helpText={fieldConfig.tooltip}
+            value={fieldData}
+            onChange={(newValue) => updateField(fieldConfig.name, newValue)}
+            collectionType="SubmodelElementList"
+            elementTemplate={fieldConfig.elementTemplate}
+            className="mb-4"
+          />
+        );
+
+      case "collection":
+        // Handle complex collections (not AddressInformation)
+        if (fieldConfig.name === "AddressInformation" || fieldConfig.type === "address") {
+          // Keep existing address handling
+          return fieldData.map((entry, index) => (
+            <AddressInformation
+              key={entry.id}
+              label={fieldConfig.label}
+              helpText={fieldConfig.tooltip}
+              language={entry.language}
+              street={entry.street || ""}
+              streetNumber={entry.streetNumber || ""}
+              city={entry.city || ""}
+              country={entry.country || ""}
+              onLanguageChange={(newLanguage) => updateMultiLanguageField(fieldConfig.name, entry.id, { language: newLanguage })}
+              onStreetChange={(value) => updateMultiLanguageField(fieldConfig.name, entry.id, { street: value })}
+              onStreetNumberChange={(value) => updateMultiLanguageField(fieldConfig.name, entry.id, { streetNumber: value })}
+              onCityChange={(value) => updateMultiLanguageField(fieldConfig.name, entry.id, { city: value })}
+              onCountryChange={(value) => updateMultiLanguageField(fieldConfig.name, entry.id, { country: value })}
+              onRemove={() => removeMultiLanguageEntry(fieldConfig.name, entry.id)}
+              onAdd={() => addMultiLanguageEntry(fieldConfig.name)}
+              showLabel={index === 0}
+              showRemoveButton={fieldData.length > 1}
+              showAddButton={index === fieldData.length - 1}
+            />
+          ));
+        } else {
+          // Handle complex collections with CollectionInput
+          return (
+            <CollectionInput
+              key={fieldConfig.name}
+              label={fieldConfig.label}
+              helpText={fieldConfig.tooltip}
+              value={fieldData}
+              onChange={(newValue) => updateField(fieldConfig.name, newValue)}
+              collectionType="SubmodelElementCollection"
+              elementTemplate={fieldConfig.elementTemplate}
+              className="mb-4"
+            />
+          );
+        }
+
+      case "collection_legacy":
+        // Legacy fallback for collections without proper structure
+        return (
+          <div key={fieldConfig.name} className="mb-4">
+            <div className="p-3 border border-secondary rounded bg-dark">
+              <h6 className="text-warning mb-3">
+                {fieldConfig.label}
+                {fieldConfig.tooltip && (
+                  <OverlayTrigger
+                    placement="top"
+                    overlay={<Tooltip>{fieldConfig.tooltip}</Tooltip>}
+                  >
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        cursor: "pointer",
+                        transform: "scale(1.2)"
+                      }}
+                      className="ms-2"
+                    >
+                      <QuestionCircleIcon
+                        style={{
+                          fill: "white"
+                        }}
+                      />
+                    </span>
+                  </OverlayTrigger>
+                )}
+              </h6>
+              <p className="text-muted small">
+                This collection contains nested elements that are not currently supported in the form builder.
+                <br />
+                <small>Model Type: {fieldConfig.originalElement?.modelType}</small>
+              </p>
+            </div>
+          </div>
+        );
+
       default:
-        return null;
+        return (
+          <div key={fieldConfig.name} className="mb-4">
+            <div className="p-3 border border-warning rounded bg-dark">
+              <h6 className="text-warning mb-2">
+                {fieldConfig.label} 
+                <small className="text-muted ms-2">({fieldConfig.originalElement?.modelType || 'Unknown'})</small>
+              </h6>
+              <p className="text-muted small mb-0">
+                This field type is not yet supported in the form builder.
+              </p>
+            </div>
+          </div>
+        );
     }
   };
 
@@ -358,22 +593,64 @@ export default function CreateTemplate() {
         />
       </div>
 
-      {/* Digital Nameplate Template */}
+      {/* Required Fields Template */}
       <Card className="text-white mb-3 template-form-card">
         <Card.Body>
-          <Card.Title className="mb-4">{formConfig.title}</Card.Title>
+          <Card.Title className="mb-4">
+            {formConfig.title}
+          </Card.Title>
           
-          {/* Dynamically rendered fields based on API configuration */}
-          {formConfig.fields.map(fieldConfig => renderField(fieldConfig))}
+          {/* Dynamically rendered required fields */}
+          {formConfig.requiredFields.map(fieldConfig => renderField(fieldConfig))}
+          
+          {formConfig.requiredFields.length === 0 && (
+            <p className="text-muted">No required fields found in this template.</p>
+          )}
         </Card.Body>
       </Card>
 
       {/* Advanced Fields */}
       <div className="mb-4">
-        <Button variant="link" className="text-white">
-          Advanced Fields &gt;
+        <Button 
+          variant="link" 
+          className="text-white d-flex align-items-center"
+          onClick={() => setShowAdvancedFields(!showAdvancedFields)}
+        >
+          Advanced Fields
+          <span className="ms-2">
+            {showAdvancedFields ? (
+              <ChevronDownIcon style={{ fill: "white", width: "16px", height: "16px" }} />
+            ) : (
+              <ChevronRightIcon style={{ fill: "white", width: "16px", height: "16px" }} />
+            )}
+          </span>
+          {formConfig.advancedFields.length > 0 && (
+            <small className="ms-2">({formConfig.advancedFields.length})</small>
+          )}
         </Button>
       </div>
+
+      {/* Advanced Fields Card */}
+      {showAdvancedFields && (
+        <Card className="text-white mb-3 template-form-card">
+          <Card.Body>
+            <Card.Title className="mb-4">
+              Advanced Fields
+            </Card.Title>
+            
+            {/* Dynamically rendered advanced fields */}
+            {formConfig.advancedFields.map(fieldConfig => (
+              <div key={fieldConfig.name} className="mb-3">
+                {renderField(fieldConfig)}
+              </div>
+            ))}
+            
+            {formConfig.advancedFields.length === 0 && (
+              <p className="text-muted">No advanced fields found in this template.</p>
+            )}
+          </Card.Body>
+        </Card>
+      )}
 
       {/* Action Buttons */}
       <div className="d-flex gap-3">
