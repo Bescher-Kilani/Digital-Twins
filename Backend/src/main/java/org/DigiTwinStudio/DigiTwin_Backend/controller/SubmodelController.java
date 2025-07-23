@@ -1,20 +1,23 @@
 package org.DigiTwinStudio.DigiTwin_Backend.controller;
 
-import de.fraunhofer.iosb.ilt.faaast.service.model.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
+
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.SubmodelDto;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.TemplateDto;
 import org.DigiTwinStudio.DigiTwin_Backend.services.AASModelService;
 import org.DigiTwinStudio.DigiTwin_Backend.services.SubmodelService;
 import org.DigiTwinStudio.DigiTwin_Backend.services.TemplateService;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping
 @RequiredArgsConstructor
 public class SubmodelController {
 
@@ -22,84 +25,40 @@ public class SubmodelController {
     private final TemplateService templateService;
     private final AASModelService aasModelService;
 
-
-     // TODO: replace @RequestHeader("userId") with  @AuthenticationPrincipal Jwt jwt
-
-
-
-
-    /**
-     * Returns a list of all available submodel templates.
-     * These can be used to create new submodels.
-     */
     @GetMapping("/submodels/templates")
-    public ResponseEntity<List<TemplateDto>> listAvailableTemplates() {
-        return ResponseEntity.ok(templateService.getAvailableTemplates());
+    public ResponseEntity<List<TemplateDto>> listAvailableSubmodelTemplates() {
+        List<TemplateDto> templates = templateService.getAvailableTemplates();
+        return ResponseEntity.ok(templates);
     }
 
-    /**
-     * Creates a new empty submodel based on a selected template.
-     * @param templateId ID of the template to base the submodel on
-     */
     @GetMapping("/submodels/new")
-    public ResponseEntity<SubmodelDto> getNewSubmodel(
-            @RequestParam String templateId) {
-        return ResponseEntity.ok(submodelService.createEmptySubmodelFromTemplate(templateId));
+    public ResponseEntity<SubmodelDto> getNewSubmodel(@RequestParam String templateId) {
+        SubmodelDto dto = submodelService.createEmptySubmodelFromTemplate(templateId);
+        return ResponseEntity.ok(dto);
     }
 
-    /**
-     * Adds a submodel to an existing AAS model.
-     * @param modelId ID of the target AAS model
-     * @param userId ID of the user performing the operation (from header)
-     * @param dto Submodel data to attach
-     */
+    // forbidden and conflict exception used but not bad request exception
     @PostMapping("/models/{modelId}/submodels")
-    public ResponseEntity<AASModelDto> addSubmodelToModel(
-            @PathVariable String modelId,
-            @RequestHeader("userId") String userId,
-            @RequestBody SubmodelDto dto)  {
-        return ResponseEntity.ok(aasModelService.attachSubmodel(modelId, dto, userId));
+    public ResponseEntity<AASModelDto> addSubmodelToModel(@PathVariable String modelId, @RequestBody SubmodelDto dto, @AuthenticationPrincipal Principal principal) {
+        AASModelDto updated = aasModelService.attachSubmodel(modelId, dto, principal.getName());
+        return ResponseEntity.ok(updated);
     }
 
-    /**
-     * Returns a specific submodel by its ID from a given AAS model.
-     * @param modelId ID of the AAS model
-     * @param submodelId ID of the submodel to retrieve
-     */
     @GetMapping("/models/{modelId}/submodels/{submodelId}")
-    public ResponseEntity<SubmodelDto> getSubmodel(
-            @PathVariable String modelId,
-            @PathVariable String submodelId) {
-        return ResponseEntity.ok(submodelService.getSubmodel(modelId, submodelId));
+    public ResponseEntity<SubmodelDto> getSubmodel(@PathVariable String modelId, @PathVariable String submodelId) {
+        SubmodelDto dto = submodelService.getSubmodel(modelId, submodelId);
+        return ResponseEntity.ok(dto);
     }
-
-    /**
-     * Updates an existing submodel inside a given AAS model.
-     * @param modelId ID of the parent AAS model
-     * @param submodelId ID of the submodel to update
-     * @param userId user who performs the update
-     * @param dto updated submodel data
-     */
+    // forbidden exception used but not bad request exception
     @PutMapping("/models/{modelId}/submodels/{submodelId}")
-    public ResponseEntity<AASModelDto> updateSubmodel(
-            @PathVariable String modelId,
-            @PathVariable String submodelId,
-            @RequestHeader("userId") String userId,
-            @RequestBody SubmodelDto dto) {
-        return ResponseEntity.ok(aasModelService.updateSubmodel(modelId, submodelId, dto, userId));
+    public ResponseEntity<AASModelDto> updateSubmodel( @PathVariable String modelId, @PathVariable String submodelId, @RequestBody SubmodelDto dto, @AuthenticationPrincipal Principal principal) {
+        AASModelDto updated = aasModelService.updateSubmodel(modelId, submodelId, dto, principal.getName());
+        return ResponseEntity.ok(updated);
     }
 
-    /**
-     * Removes a submodel from the specified AAS model.
-     * @param modelId ID of the parent AAS model
-     * @param submodelId ID of the submodel to remove
-     * @param userId ID of the requesting user
-     */
     @DeleteMapping("/models/{modelId}/submodels/{submodelId}")
-    public ResponseEntity<AASModelDto> removeSubmodelFromModel(
-            @PathVariable String modelId,
-            @PathVariable String submodelId,
-            @RequestHeader("userId") String userId) {
-        return ResponseEntity.ok(aasModelService.removeSubmodel(modelId, submodelId, userId));
+    public ResponseEntity<AASModelDto> removeSubmodelFromModel( @PathVariable String modelId, @PathVariable String submodelId, @AuthenticationPrincipal Principal principal) {
+        aasModelService.removeSubmodel(modelId, submodelId, principal.getName());
+        return ResponseEntity.noContent().build();
     }
 }

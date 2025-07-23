@@ -9,9 +9,9 @@ public class DigiTwinBackendApplication {
 	public static void main(String[] args) {
 		Dotenv dotenv = Dotenv.load();
 
-		System.setProperty("APPLICATION_NAME", dotenv.get("APPLICATION_NAME"));
-		System.setProperty("MONGODB_URI", dotenv.get("MONGODB_URI"));
-		System.setProperty("MONGODB_DATABASE", dotenv.get("MONGODB_DATABASE"));
+		System.setProperty("spring.application.name", dotenv.get("APPLICATION_NAME"));
+		System.setProperty("spring.data.mongodb.uri", dotenv.get("MONGODB_URI"));
+		System.setProperty("spring.data.mongodb.database", dotenv.get("MONGODB_DATABASE"));
 
 		SpringApplication.run(DigiTwinBackendApplication.class, args);
 	}

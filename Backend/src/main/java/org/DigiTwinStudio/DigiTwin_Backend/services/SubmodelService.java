@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.SubmodelDto;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.Template;
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.BadRequestException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.NotFoundException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException;
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.SubmodelMapper;
@@ -40,7 +41,7 @@ public class SubmodelService {
         try {
             submodelValidator.validate(submodel);
         } catch (Exception e) {
-            throw new ValidationException("Submodel validation failed: " + e.getMessage(), e);
+            throw new BadRequestException("Submodel validation failed: " + e.getMessage(), e);
         }
     }
 
@@ -75,7 +76,7 @@ public class SubmodelService {
                     .submodel(submodel)
                     .build();
         } catch (Exception e) {
-            throw new ValidationException("Failed to parse template JSON for ID " + templateId, e);
+            throw new BadRequestException("Failed to parse template JSON for ID " + templateId, e);
         }
     }
 

@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.PublishMetadata;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.BadRequestException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.UploadException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException;
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.AASModelMapper;
@@ -90,7 +91,7 @@ public class AASModelUploadService {
         } catch (DeserializationException | IOException e) {
             throw new UploadException("Failed to parse uploaded AAS JSON file", e);
         } catch (ValidationException e) {
-            throw new ValidationException("File validation failed", e);
+            throw new BadRequestException("File validation failed", e);
         } catch (Exception e) {
             throw new UploadException("Unexpected error during upload", e);
         }

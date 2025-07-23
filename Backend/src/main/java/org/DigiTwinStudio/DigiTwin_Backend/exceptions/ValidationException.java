@@ -1,6 +1,8 @@
 package org.DigiTwinStudio.DigiTwin_Backend.exceptions;
 
-public class ValidationException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+public abstract class ValidationException extends RuntimeException {
 
     /**
      * Constructs a new ValidationException with a descriptive message.
@@ -19,4 +21,6 @@ public class ValidationException extends RuntimeException {
     public ValidationException(String message, Throwable cause) {
         super(message, cause);
     }
+
+    public abstract HttpStatus getHttpStatus();
 }

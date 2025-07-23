@@ -1,6 +1,7 @@
 package org.DigiTwinStudio.DigiTwin_Backend.validation;
 
 import lombok.RequiredArgsConstructor;
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.BadRequestException;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultAssetAdministrationShell;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
 
@@ -41,10 +42,9 @@ public class AASModelValidator {
             // 1. Validate AAS structure
             DefaultAssetAdministrationShell aas = model.getAas();
             if (aas == null) {
-                throw new ValidationException("AASModel must contain an AssetAdministrationShell");
+                throw new BadRequestException("AASModel must contain an AssetAdministrationShell");
             }
             ModelValidator.validate(aas);
-
 
             // 2. Validate all submodels in env
             List<DefaultSubmodel> submodels = model.getSubmodels();
@@ -53,29 +53,27 @@ public class AASModelValidator {
                 submodelValidator.validate(sm);
             }
 
-
-
             // 3. Validate PublishMetadata
             if (model.isPublished()) {
                 validatePublishMetadata(model.getPublishMetadata());
             }
         } catch (de.fraunhofer.iosb.ilt.faaast.service.model.exception.ValidationException e){
-            throw new ValidationException("Not Valid submodel" + e.getMessage(), e);
+            throw new BadRequestException("Not Valid submodel" + e.getMessage(), e);
         }
     }
 
     private void validatePublishMetadata(PublishMetadata metadata) throws ValidationException {
         if (metadata == null) {
-            throw new ValidationException("PublishMetadata must be provided when publishing a model");
+            throw new BadRequestException("PublishMetadata must be provided when publishing a model");
         }
         if (metadata.getAuthor() == null || metadata.getAuthor().isBlank()) {
-            throw new ValidationException("PublishMetadata.author must not be null or blank");
+            throw new BadRequestException("PublishMetadata.author must not be null or blank");
         }
         if (metadata.getShortDescription() == null || metadata.getShortDescription().isBlank()) {
-            throw new ValidationException("PublishMetadata.shortDescription must not be null or blank");
+            throw new BadRequestException("PublishMetadata.shortDescription must not be null or blank");
         }
         if (metadata.getTagIds() == null || metadata.getTagIds().isEmpty()) {
-            throw new ValidationException("PublishMetadata.tagIds must not be null or empty");
+            throw new BadRequestException("PublishMetadata.tagIds must not be null or empty");
         }
     }
 }
