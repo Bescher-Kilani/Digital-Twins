@@ -21,7 +21,7 @@ const MLP = ({
   return (
     <div className="mb-3">
       {showLabel && (
-        <Form.Label style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
+        <Form.Label className="text-white" style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
           {label}
           {helpText && (
             <OverlayTrigger

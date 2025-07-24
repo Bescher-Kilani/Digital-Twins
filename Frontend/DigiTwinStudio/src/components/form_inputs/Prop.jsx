@@ -5,7 +5,7 @@ import QuestionCircleIcon from "../../assets/icons/question-circle.svg?react";
 const Prop = ({ label, placeholder, helpText, type = "text", value, onChange, className = "mb-4" }) => {
   return (
     <Form.Group className={className}>
-      <Form.Label style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+      <Form.Label className="text-white" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
         {label}
         {helpText && (
           <OverlayTrigger
