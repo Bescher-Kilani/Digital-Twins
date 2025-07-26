@@ -6,7 +6,7 @@ import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.PublishRequestDto;
 
 import org.DigiTwinStudio.DigiTwin_Backend.services.AASModelService;
-
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -35,8 +35,8 @@ public class AASModelController {
     }
 
     @PostMapping("/new")
-    public ResponseEntity<AASModelDto> getNewModel(@AuthenticationPrincipal Principal principal) {
-        AASModelDto model = aasModelService.createEmpty(principal.getName());
+    public ResponseEntity<AASModelDto> getNewModel(@AuthenticationPrincipal Jwt jwt) {
+        AASModelDto model = aasModelService.createEmpty(jwt.getSubject());
         return ResponseEntity.status(HttpStatus.CREATED).body(model);
     }
 
