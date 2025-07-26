@@ -9,6 +9,7 @@ import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.MarketplaceEntryDto;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.PublishRequestDto;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.BadRequestException;
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ConflictException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ForbiddenException;
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.AASModelMapper;
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.MarketplaceMapper;
@@ -85,14 +86,14 @@ public class MarketPlaceService {
      * @throws BadRequestException if the model does not exist or is not published
      * @throws ForbiddenException if the user is not the owner of the model
      */
-    public void unpublish(String userId, String modelId) throws BadRequestException, ForbiddenException {
+    public void unpublish(String userId, String modelId) throws BadRequestException, ForbiddenException, ConflictException {
         AASModel model = aasModelRepository.findById(modelId)
                 .orElseThrow(() -> new BadRequestException("Model not found with id: " + modelId));
         if (!model.getOwnerId().equals(userId)) {
             throw new ForbiddenException("User is not owner of this model.");
         }
         if (!model.isPublished()) {
-            throw new BadRequestException("Model is not currently published.");
+            throw new ConflictException("Model is not currently published.");
         }
 
         model.setPublished(false);
