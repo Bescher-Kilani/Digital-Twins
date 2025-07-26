@@ -5,9 +5,11 @@ import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.MarketplaceEntry;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.PublishMetadata;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.Tag;
+import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.MarketplaceEntryDto;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.PublishRequestDto;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.BadRequestException;
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ForbiddenException;
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.AASModelMapper;
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.MarketplaceMapper;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.AASModelRepository;
@@ -57,6 +59,81 @@ public class MarketPlaceService {
         model.setPublished(true);
         model.setUpdatedAt(now);
         aasModelRepository.save(model);
+    }
+
+    /**
+     * Unpublishes the specified AAS model if it exists, is currently published,
+     * and the requesting user is the owner of the model.
+     *
+     * <p>This method performs the following checks:
+     * <ul>
+     *     <li>Verifies that the model with the given ID exists.</li>
+     *     <li>Checks if the user is the owner of the model; throws {@link ForbiddenException} otherwise.</li>
+     *     <li>Ensures the model is currently published; throws {@link BadRequestException} if not.</li>
+     * </ul>
+     *
+     * <p>If all validations pass, the method:
+     * <ul>
+     *     <li>Marks the model as unpublished.</li>
+     *     <li>Clears the publish metadata.</li>
+     *     <li>Updates the modification timestamp.</li>
+     *     <li>Saves the updated model back to the repository.</li>
+     * </ul>
+     *
+     * @param userId the ID of the user attempting to unpublish the model
+     * @param modelId the ID of the model to be unpublished
+     * @throws BadRequestException if the model does not exist or is not published
+     * @throws ForbiddenException if the user is not the owner of the model
+     */
+    public void unpublish(String userId, String modelId) throws BadRequestException, ForbiddenException {
+        AASModel model = aasModelRepository.findById(modelId)
+                .orElseThrow(() -> new BadRequestException("Model not found with id: " + modelId));
+        if (!model.getOwnerId().equals(userId)) {
+            throw new ForbiddenException("User is not owner of this model.");
+        }
+        if (!model.isPublished()) {
+            throw new BadRequestException("Model is not currently published.");
+        }
+
+        model.setPublished(false);
+        model.setPublishMetadata(null);
+        model.setUpdatedAt(LocalDateTime.now());
+        aasModelRepository.save(model);
+    }
+
+    /**
+     * Retrieves all marketplace entries from the repository and converts them to DTOs.
+     *
+     * <p>This method performs the following actions:
+     * <ul>
+     *     <li>Fetches all {@link MarketplaceEntry} entities from the {@code marketPlaceEntryRepository}.</li>
+     *     <li>Maps each entry to a {@link MarketplaceEntryDto} using the {@code marketplaceMapper}.</li>
+     *     <li>Returns the complete list of DTOs.</li>
+     * </ul>
+     *
+     * @return a list of all {@link MarketplaceEntryDto} objects in the system
+     */
+    public List<MarketplaceEntryDto> listAllEntries() {
+        return this.marketPlaceEntryRepository.findAll().stream().map(this.marketplaceMapper::toDto).toList();
+    }
+
+    /**
+     * Retrieves the published AAS model associated with the given marketplace entry DTO.
+     *
+     * <p>This method performs the following actions:
+     * <ul>
+     *     <li>Extracts the model ID from the given {@link MarketplaceEntryDto}.</li>
+     *     <li>Fetches the corresponding {@link AASModel} from the repository.</li>
+     *     <li>Throws a {@link BadRequestException} if no model is found with the given ID.</li>
+     *     <li>Maps the found model to a {@link AASModelDto} using {@code aasModelMapper}.</li>
+     * </ul>
+     *
+     * @param dto the {@link MarketplaceEntryDto} containing the ID of the model to retrieve
+     * @return the corresponding {@link AASModelDto}
+     * @throws BadRequestException if no model is found with the given ID
+     */
+    public AASModelDto getPublishedModel(MarketplaceEntryDto dto) throws BadRequestException {
+        return this.aasModelMapper.toDto(this.aasModelRepository.findById(dto.getId()).orElseThrow(() -> new BadRequestException("No entry found for id: " + dto.getId())));
     }
 
     /**
