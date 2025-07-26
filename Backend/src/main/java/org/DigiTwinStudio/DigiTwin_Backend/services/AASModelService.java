@@ -54,6 +54,7 @@ public class AASModelService {
     private final FileUploadValidator fileUploadValidator;
     private final AASModelMapper aasModelMapper;
     private final SubmodelMapper submodelMapper;
+    private final MarketPlaceService marketPlaceService;
 
     @Transactional(readOnly = true)
     public List<AASModelDto> getAllForUser(String userId) {
@@ -112,21 +113,9 @@ public class AASModelService {
             throw new ConflictException("Model is already published.");
         }
 
-        validateTagIds(request.getTagIds());
         validateReferencedFiles(model);
         aasModelValidator.validate(model);
-
-        LocalDateTime now = LocalDateTime.now();
-        PublishMetadata metadata = PublishMetadata.builder()
-                .publishedAt(now)
-                .author(request.getAuthor())
-                .shortDescription(request.getShortDescription())
-                .tagIds(request.getTagIds())
-                .build();
-        model.setPublishMetadata(metadata);
-        model.setPublished(true);
-        model.setUpdatedAt(now);
-        aasModelRepository.save(model);
+        this.marketPlaceService.publish(request, model);
     }
 
     // TODO: in here should we validate the model or just the submodel?
@@ -205,25 +194,6 @@ public class AASModelService {
         return model;
     }
 
-    // TODO: ask about tag requirements (if they are required or can be more than one)
-    private void validateTagIds(List<String> requestedTagIds) {
-        if (requestedTagIds == null || requestedTagIds.isEmpty()) {
-            throw new BadRequestException("At least one tag must be provided to publish a model.");
-        }
-
-        List<String> existingTagIds = tagRepository.findByIdIn(requestedTagIds)
-                .stream()
-                .map(Tag::getId)
-                .toList();
-
-        List<String> invalidTagIds = requestedTagIds.stream()
-                .filter(tagId -> !existingTagIds.contains(tagId))
-                .toList();
-
-        if (!invalidTagIds.isEmpty()) {
-            throw new BadRequestException("Invalid tag IDs: " + String.join(", ", invalidTagIds));
-        }
-    }
 
     public void validateReferencedFiles(AASModel model) {
         List<DefaultSubmodel> submodels = model.getSubmodels();
