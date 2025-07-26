@@ -63,39 +63,16 @@ public class MarketPlaceService {
     }
 
     /**
-     * Unpublishes the specified AAS model if it exists, is currently published,
-     * and the requesting user is the owner of the model.
+     * Unpublishes the given AAS model by marking it as unpublished,
+     * clearing its publish metadata, updating the timestamp, and saving it.
      *
-     * <p>This method performs the following checks:
-     * <ul>
-     *     <li>Verifies that the model with the given ID exists.</li>
-     *     <li>Checks if the user is the owner of the model; throws {@link ForbiddenException} otherwise.</li>
-     *     <li>Ensures the model is currently published; throws {@link BadRequestException} if not.</li>
-     * </ul>
+     * <p>This method assumes that any necessary validation (e.g., user ownership,
+     * model published status) has already been performed before calling.
      *
-     * <p>If all validations pass, the method:
-     * <ul>
-     *     <li>Marks the model as unpublished.</li>
-     *     <li>Clears the publish metadata.</li>
-     *     <li>Updates the modification timestamp.</li>
-     *     <li>Saves the updated model back to the repository.</li>
-     * </ul>
-     *
-     * @param userId the ID of the user attempting to unpublish the model
-     * @param modelId the ID of the model to be unpublished
-     * @throws BadRequestException if the model does not exist or is not published
-     * @throws ForbiddenException if the user is not the owner of the model
+     * @param userId the ID of the user requesting the unpublish operation (not used directly here)
+     * @param model the {@link AASModel} to unpublish and update
      */
-    public void unpublish(String userId, String modelId) throws BadRequestException, ForbiddenException, ConflictException {
-        AASModel model = aasModelRepository.findById(modelId)
-                .orElseThrow(() -> new BadRequestException("Model not found with id: " + modelId));
-        if (!model.getOwnerId().equals(userId)) {
-            throw new ForbiddenException("User is not owner of this model.");
-        }
-        if (!model.isPublished()) {
-            throw new ConflictException("Model is not currently published.");
-        }
-
+    public void unpublish(String userId, AASModel model) {
         model.setPublished(false);
         model.setPublishMetadata(null);
         model.setUpdatedAt(LocalDateTime.now());

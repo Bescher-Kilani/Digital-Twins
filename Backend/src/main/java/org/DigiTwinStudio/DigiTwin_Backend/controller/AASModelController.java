@@ -58,4 +58,11 @@ public class AASModelController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/{id}/unpublish")
+    public ResponseEntity<Void> unpublishAASModel(@PathVariable String id, @AuthenticationPrincipal Principal principal) {
+        this.aasModelService.unpublishModel(id, principal.getName());
+        return ResponseEntity.ok().build();
+    }
+
+
 }
