@@ -118,6 +118,36 @@ public class AASModelService {
         this.marketPlaceService.publish(request, model);
     }
 
+    /**
+     * Unpublishes the AAS model identified by the given ID if it exists,
+     * is currently published, and the requesting user is the owner.
+     *
+     * <p>This method performs the following validations:
+     * <ul>
+     *     <li>Retrieves the model using {@code getModelOrThrow} which may throw {@link BadRequestException}.</li>
+     *     <li>Checks if the requesting user is the owner of the model; throws {@link ForbiddenException} if not.</li>
+     *     <li>Verifies the model is currently published; throws {@link ConflictException} otherwise.</li>
+     * </ul>
+     *
+     * <p>If all validations pass, it delegates the unpublishing operation to {@code marketPlaceService.unpublish}.
+     *
+     * @param modelId the ID of the model to unpublish
+     * @param userId the ID of the user requesting to unpublish the model
+     * @throws BadRequestException if the model does not exist or cannot be retrieved
+     * @throws ConflictException if the model is not published
+     * @throws ForbiddenException if the user is not the owner of the model
+     */
+    public void unpublishModel(String modelId, String userId) throws BadRequestException, ConflictException, ForbiddenException {
+        AASModel model = getModelOrThrow(modelId, userId);
+        if (!model.getOwnerId().equals(userId)) {
+            throw new ForbiddenException("User is not owner of this model.");
+        }
+        if (!model.isPublished()) {
+            throw new ConflictException("Model is not published.");
+        }
+        this.marketPlaceService.unpublish(userId, model);
+    }
+
     // TODO: in here should we validate the model or just the submodel?
     public AASModelDto attachSubmodel(String modelId, SubmodelDto dto, String userId) {
         AASModel model = getModelOrThrow(modelId, userId);
