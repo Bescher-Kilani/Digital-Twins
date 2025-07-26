@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.DigiTwinStudio.DigiTwin_Backend.adapter.MultipartFileAdapter;
 
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
+import org.DigiTwinStudio.DigiTwin_Backend.domain.PublishMetadata;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.Tag;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.UploadedFile;
 
@@ -104,8 +105,7 @@ public class AASModelService {
         aasModelRepository.save(model);
     }
 
-    // TODO: add uploaded file validation
-    public AASModelDto publishModel(String id, String userId, PublishRequestDto request) {
+    public void publishModel(String id, String userId, PublishRequestDto request) throws ConflictException{
         AASModel model = getModelOrThrow(id, userId);
 
         if (model.isPublished()) {
@@ -116,10 +116,17 @@ public class AASModelService {
         validateReferencedFiles(model);
         aasModelValidator.validate(model);
 
+        LocalDateTime now = LocalDateTime.now();
+        PublishMetadata metadata = PublishMetadata.builder()
+                .publishedAt(now)
+                .author(request.getAuthor())
+                .shortDescription(request.getShortDescription())
+                .tagIds(request.getTagIds())
+                .build();
+        model.setPublishMetadata(metadata);
         model.setPublished(true);
-        model.setUpdatedAt(LocalDateTime.now());
-
-        return aasModelMapper.toDto(aasModelRepository.save(model));
+        model.setUpdatedAt(now);
+        aasModelRepository.save(model);
     }
 
     // TODO: in here should we validate the model or just the submodel?

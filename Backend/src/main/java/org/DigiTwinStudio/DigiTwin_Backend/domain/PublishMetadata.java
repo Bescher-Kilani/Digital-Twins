@@ -1,6 +1,7 @@
 package org.DigiTwinStudio.DigiTwin_Backend.domain;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -10,6 +11,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class PublishMetadata {
 
     String author; // visible author name can be a user or organization
