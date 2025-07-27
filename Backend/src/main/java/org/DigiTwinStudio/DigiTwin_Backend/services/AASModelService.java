@@ -148,6 +148,26 @@ public class AASModelService {
         this.marketPlaceService.unpublish(userId, model);
     }
 
+    /**
+     * Creates a new empty AAS model for the specified user and attaches the published model
+     * from the given marketplace entry to it.
+     *
+     * <p>This method performs the following actions:
+     * <ul>
+     *     <li>Creates a new empty AAS model for the given {@code userId}.</li>
+     *     <li>Retrieves the published model associated with the specified {@code entryId}.</li>
+     *     <li>Saves the published model into the newly created user model.</li>
+     * </ul>
+     *
+     * @param entryId the ID of the marketplace entry containing the published model to be copied
+     * @param userId the ID of the user to whom the model should be added
+     * @throws BadRequestException if the published model for the given entry ID does not exist
+     */
+    public void addEntryModelToUser(String entryId, String userId)  throws BadRequestException {
+        String newModelId = this.createEmpty(userId).getId();
+        this.saveModel(newModelId, userId, this.marketPlaceService.getPublishedModel(entryId));
+    }
+
     // TODO: in here should we validate the model or just the submodel?
     public AASModelDto attachSubmodel(String modelId, SubmodelDto dto, String userId) {
         AASModel model = getModelOrThrow(modelId, userId);

@@ -3,6 +3,7 @@ package org.DigiTwinStudio.DigiTwin_Backend.controller;
 import lombok.RequiredArgsConstructor;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.MarketplaceEntryDto;
+import org.DigiTwinStudio.DigiTwin_Backend.services.AASModelService;
 import org.DigiTwinStudio.DigiTwin_Backend.services.MarketPlaceService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -16,6 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MarketplaceController {
     private final MarketPlaceService  marketPlaceService;
+    private final AASModelService aasModelService;
 
     /**
      * Retrieves a list of all published marketplace entries.
@@ -85,7 +87,7 @@ public class MarketplaceController {
      **/
     @PostMapping("/{entryId}/add-to-user")
     public ResponseEntity<Void> addEntryToUser(@PathVariable String entryId, @AuthenticationPrincipal Jwt jwt) {
-        marketPlaceService.addEntryModelToUser(entryId, jwt.getSubject());
+        aasModelService.addEntryModelToUser(entryId, jwt.getSubject());
         return ResponseEntity.ok().build();
     }
 
