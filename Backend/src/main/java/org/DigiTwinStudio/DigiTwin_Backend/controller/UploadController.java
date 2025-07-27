@@ -7,10 +7,12 @@ import org.DigiTwinStudio.DigiTwin_Backend.services.PropertyFileUploadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.security.Principal;
+
 
 /**
  * REST controller for handling upload operations of AAS models and property files.
@@ -27,15 +29,15 @@ public class UploadController {
      * Uploads an AAS model file (.json or .aasx) and returns its parsed DTO.
      *
      * @param file the uploaded model file
-     * @param principal the authenticated user principal
+     * @param jwt the authenticated user
      * @return the parsed AAS model DTO
      */
     @PostMapping("/model")
     public ResponseEntity<AASModelDto> uploadModelFile(
             @RequestParam("file") MultipartFile file,
-            Principal principal) {
+            @AuthenticationPrincipal Jwt jwt) {
 
-        String userId = principal.getName(); // Extract user ID from Principal
+        String userId = jwt.getSubject(); // Extract user ID from Principal
         AASModelDto dto = aasModelUploadService.uploadAASModel(file, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
@@ -50,9 +52,9 @@ public class UploadController {
     public ResponseEntity<UploadResponseDto> uploadPropertyFile(
             @RequestParam("file") MultipartFile file,
             @RequestParam("modelId") String modelId,
-            Principal principal) {
+            @AuthenticationPrincipal Jwt jwt) {
 
-        String userId = principal.getName();
+        String userId = jwt.getSubject();
         UploadResponseDto response = propertyFileUploadService.uploadFile(file, modelId, userId);
         return ResponseEntity.ok(response);
     }
@@ -62,14 +64,14 @@ public class UploadController {
      * Deletes an uploaded file by its ID.
      *
      * @param fileId ID of the file to delete
-     * @param principal the authenticated user principal
+     * @param jwt the authenticated user
      * @return HTTP 204 if deletion was successful
      */
     @DeleteMapping("/{fileId}")
     public ResponseEntity<Void> deleteFile(
             @PathVariable String fileId,
-            Principal principal) {
-        propertyFileUploadService.deleteFile(fileId, principal.getName());
+            @AuthenticationPrincipal Jwt jwt){
+        propertyFileUploadService.deleteFile(fileId, jwt.getSubject());
         return ResponseEntity.noContent().build();
     }
 
