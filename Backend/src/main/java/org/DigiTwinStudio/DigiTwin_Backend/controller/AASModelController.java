@@ -23,14 +23,14 @@ public class AASModelController {
     private final AASModelService aasModelService;
 
     @GetMapping
-    public ResponseEntity<List<AASModelDto>> listAASModels(@AuthenticationPrincipal Principal principal) {
-        List<AASModelDto> models = aasModelService.getAllForUser(principal.getName());
+    public ResponseEntity<List<AASModelDto>> listAASModels(@AuthenticationPrincipal Jwt jwt) {
+        List<AASModelDto> models = aasModelService.getAllForUser(jwt.getSubject());
         return ResponseEntity.ok(models);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<AASModelDto> getAASModel(@PathVariable String id, @AuthenticationPrincipal Principal principal) {
-        AASModelDto model = aasModelService.getById(id, principal.getName());
+    public ResponseEntity<AASModelDto> getAASModel(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
+        AASModelDto model = aasModelService.getById(id, jwt.getSubject());
         return ResponseEntity.ok(model);
     }
 
@@ -41,26 +41,26 @@ public class AASModelController {
     }
 
     @PutMapping("/{id}/save")
-    public ResponseEntity<AASModelDto> saveAASModel(@PathVariable String id, @RequestBody AASModelDto dto, @AuthenticationPrincipal Principal principal) {
-        AASModelDto saved = aasModelService.saveModel(id, principal.getName(), dto);
+    public ResponseEntity<AASModelDto> saveAASModel(@PathVariable String id, @RequestBody AASModelDto dto, @AuthenticationPrincipal Jwt jwt) {
+        AASModelDto saved = aasModelService.saveModel(id, jwt.getSubject(), dto);
         return ResponseEntity.ok(saved);
     }
 
     @DeleteMapping("/{id}/delete")
-    public ResponseEntity<Void> deleteAASModel(@PathVariable String id, @AuthenticationPrincipal Principal principal) {
-        aasModelService.deleteModel(id, principal.getName());
+    public ResponseEntity<Void> deleteAASModel(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
+        aasModelService.deleteModel(id, jwt.getSubject());
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/publish")
-    public ResponseEntity<Void> publishAASModel(@PathVariable String id, @RequestBody PublishRequestDto request, @AuthenticationPrincipal Principal principal) {
-        aasModelService.publishModel(id, principal.getName(), request);
+    public ResponseEntity<Void> publishAASModel(@PathVariable String id, @RequestBody PublishRequestDto request, @AuthenticationPrincipal Jwt jwt) {
+        aasModelService.publishModel(id, jwt.getSubject(), request);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{id}/unpublish")
-    public ResponseEntity<Void> unpublishAASModel(@PathVariable String id, @AuthenticationPrincipal Principal principal) {
-        this.aasModelService.unpublishModel(id, principal.getName());
+    public ResponseEntity<Void> unpublishAASModel(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
+        this.aasModelService.unpublishModel(id, jwt.getSubject());
         return ResponseEntity.ok().build();
     }
 

@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.ExportFormat;
 import org.DigiTwinStudio.DigiTwin_Backend.services.ExportService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -16,9 +18,9 @@ public class ExportController {
     private final ExportService exportService;
 
     @GetMapping("/models/{ModelId}/export/{format}")
-    public ResponseEntity<byte[]> exportStoredModel(@PathVariable String ModelId, @PathVariable String format, Principal principal) {
+    public ResponseEntity<byte[]> exportStoredModel(@PathVariable String ModelId, @PathVariable String format, @AuthenticationPrincipal Jwt jwt) {
         // ToDo: Add Guest-logic
-        String userId = principal.getName();
+        String userId = jwt.getSubject();
         return ResponseEntity.ok(this.exportService.exportStoredModel(ModelId, ExportFormat.valueOf(format)));
     }
 
