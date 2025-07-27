@@ -11,6 +11,7 @@ import org.DigiTwinStudio.DigiTwin_Backend.services.TemplateService;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -39,8 +40,8 @@ public class SubmodelController {
 
     // forbidden and conflict exception used but not bad request exception
     @PostMapping("/models/{modelId}/submodels")
-    public ResponseEntity<AASModelDto> addSubmodelToModel(@PathVariable String modelId, @RequestBody SubmodelDto dto, @AuthenticationPrincipal Principal principal) {
-        AASModelDto updated = aasModelService.attachSubmodel(modelId, dto, principal.getName());
+    public ResponseEntity<AASModelDto> addSubmodelToModel(@PathVariable String modelId, @RequestBody SubmodelDto dto, @AuthenticationPrincipal Jwt jwt) {
+        AASModelDto updated = aasModelService.attachSubmodel(modelId, dto, jwt.getSubject());
         return ResponseEntity.ok(updated);
     }
 
@@ -51,14 +52,14 @@ public class SubmodelController {
     }
     // forbidden exception used but not bad request exception
     @PutMapping("/models/{modelId}/submodels/{submodelId}")
-    public ResponseEntity<AASModelDto> updateSubmodel( @PathVariable String modelId, @PathVariable String submodelId, @RequestBody SubmodelDto dto, @AuthenticationPrincipal Principal principal) {
-        AASModelDto updated = aasModelService.updateSubmodel(modelId, submodelId, dto, principal.getName());
+    public ResponseEntity<AASModelDto> updateSubmodel( @PathVariable String modelId, @PathVariable String submodelId, @RequestBody SubmodelDto dto, @AuthenticationPrincipal Jwt jwt) {
+        AASModelDto updated = aasModelService.updateSubmodel(modelId, submodelId, dto, jwt.getSubject());
         return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/models/{modelId}/submodels/{submodelId}")
-    public ResponseEntity<AASModelDto> removeSubmodelFromModel( @PathVariable String modelId, @PathVariable String submodelId, @AuthenticationPrincipal Principal principal) {
-        aasModelService.removeSubmodel(modelId, submodelId, principal.getName());
+    public ResponseEntity<AASModelDto> removeSubmodelFromModel( @PathVariable String modelId, @PathVariable String submodelId, @AuthenticationPrincipal Jwt jwt) {
+        aasModelService.removeSubmodel(modelId, submodelId, jwt.getSubject());
         return ResponseEntity.noContent().build();
     }
 }
