@@ -91,4 +91,6 @@ public class MarketplaceController {
         return ResponseEntity.ok().build();
     }
 
+    //ToDo: Endpoint to get available tags from. Initialize Tags.
+
 }
