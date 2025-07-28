@@ -1,20 +1,51 @@
-Digital Twin
-Predictive Maintenance
-Asset Management
-Process Simulation
-Industrial IoT
-Real-time Monitoring
-3D Modeling
-Data Integration
-Smart Factory
-Machine Learning
-Sensor Data
-Product Lifecycle Management
-SCADA
-CNC Machinery
-Condition Monitoring
-Cyber-Physical Systems
-Digital Thread
-Simulation Model
-BIM Integration
-Interoperability
+Digital Twin:Technology
+Predictive Maintenance:Use Case
+Asset Management:Use Case
+Industrial IoT:Technology
+Process Simulation:Technology
+Smart Factory:Concept
+3D Modeling:Technology
+Sensor Data:Data
+Machine Learning:Technology
+Artificial Intelligence:Technology
+Big Data:Data
+Cloud Computing:Infrastructure
+Edge Computing:Infrastructure
+Real-time Monitoring:Use Case
+Digital Thread:Standard
+Interoperability:Standard
+Cyber-Physical Systems:Concept
+PLM Integration:Integration
+SCADA:System
+MES Integration:Integration
+ERP Integration:Integration
+Digital Shadow:Concept
+Simulation Model:Model
+Product Lifecycle Management:Process
+Condition Monitoring:Use Case
+Virtual Commissioning:Use Case
+Data Analytics:Technology
+Automation:Concept
+Human-Machine Interface:System
+Energy Efficiency:Sustainability
+Carbon Footprint:Sustainability
+CNC Machinery:Hardware
+CAD Integration:Integration
+BIM Integration:Integration
+System Reliability:Quality
+Downtime Analysis:Use Case
+Remote Diagnostics:Use Case
+Quality Assurance:Process
+Industrial Cloud:Infrastructure
+Smart Maintenance:Use Case
+Anomaly Detection:Technology
+Industry 4.0:Concept
+Factory Digitalization:Concept
+Process Optimization:Use Case
+Real-Time Data:Data
+Augmented Reality:Technology
+Digital Maturity:Concept
+Lifecycle Assessment:Process
+Digital Verification:Process
+KPI Monitoring:Use Case
+Data Interoperability:Standard

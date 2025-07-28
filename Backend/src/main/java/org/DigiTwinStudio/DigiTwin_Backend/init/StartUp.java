@@ -22,8 +22,8 @@ import java.util.stream.Stream;
 public class StartUp implements ApplicationListener<ApplicationReadyEvent> {
 
     private final TemplateService templateService;
-    private final TemplateRepository templateRepository;
     private final TagRepository tagRepository;
+    private final TemplateRepository templateRepository;
 
     /**
      * Handles the {@link ApplicationReadyEvent}, which is triggered when the Spring Boot application has fully started.
@@ -48,14 +48,13 @@ public class StartUp implements ApplicationListener<ApplicationReadyEvent> {
     public void onApplicationEvent(ApplicationReadyEvent event) {
         log.info("Application is ready – initiate StartUp.");
 
-        // ToDo: TEMPORARY FIX BEFORE TEMPLATE FETCH IMPLEMENTATION
-        /*
-        log.info("Reset Database");
+        // TEMPORARY SOLUTION TO RESET TEMPLATE AND TAG DATABASE
+        this.templateRepository.deleteAll();
+        log.info("Deleted all templates.");
+        this.tagRepository.deleteAll();
+        log.info("Deleted all tags.");
 
-        templateRepository.deleteAll();
-        log.info("Database has {} templates.", templateRepository.count());
-        log.info("Database has been deleted.");
-        */
+        // INITIALIZATION
         log.info("Initialize templates.");
         templateService.syncTemplatesFromRepo();
 
@@ -68,10 +67,12 @@ public class StartUp implements ApplicationListener<ApplicationReadyEvent> {
     /**
      * Initializes the MongoDB 'tags' collection with entries from the {@code tags.txt} file located in the classpath.
      * <p>
-     * Each non-empty line in the file is treated as a tag name. If a tag with the same name (case-insensitive)
-     * does not already exist in the database, it will be created and saved with:
+     * Each non-empty line in the file must follow the format: {@code TagName:Category}.
+     * If a tag with the same name (case-insensitive) does not already exist in the database,
+     * it will be created and saved with:
      * <ul>
-     *     <li>an empty {@code category}</li>
+     *     <li>{@code name} from the left side of the line</li>
+     *     <li>{@code category} from the right side of the line</li>
      *     <li>{@code usageCount} set to {@code 0}</li>
      * </ul>
      * <p>
@@ -80,9 +81,9 @@ public class StartUp implements ApplicationListener<ApplicationReadyEvent> {
      * <p>
      * Example content of {@code tags.txt}:
      * <pre>
-     *     AI
-     *     Simulation
-     *     IoT
+     *     Digital Twin:Technology
+     *     Predictive Maintenance:Use Case
+     *     SCADA:System
      * </pre>
      *
      * <p><b>Note:</b> Existing tags in the database will not be modified or duplicated.
@@ -97,19 +98,26 @@ public class StartUp implements ApplicationListener<ApplicationReadyEvent> {
                     .filter(line -> !line.isEmpty());
 
             int oldCount = (int) tagRepository.count();
-            tagStream.forEach(tagName -> tagRepository.findByNameIgnoreCase(tagName)
-                    .orElseGet(() -> {
-                        Tag tag = Tag.builder()
-                                .name(tagName)
-                                .category("")       // Leer beim Start
-                                .usageCount(0)      // Startwert 0
-                                .build();
-                        log.info("Adding tag {}", tag);
-                        return tagRepository.save(tag);
-                    }));
 
-            log.info("Tag initialization complete.");
+            tagStream.forEach(line -> {
+                String[] parts = line.split(":", 2);
+                String tagName = parts[0].trim();
+                String category = parts.length > 1 ? parts[1].trim() : "";
+
+                tagRepository.findByNameIgnoreCase(tagName)
+                        .orElseGet(() -> {
+                            Tag tag = Tag.builder()
+                                    .name(tagName)
+                                    .category(category)
+                                    .usageCount(0)
+                                    .build();
+                            log.info("Adding tag: {} (Category: {})", tagName, category);
+                            return tagRepository.save(tag);
+                        });
+            });
+
             log.info("Added {} new Tags.", tagRepository.count() - oldCount);
+            log.info("Tag initialization complete.");
         } catch (Exception e) {
             log.error("Failed to initialize tags from file", e);
         }
