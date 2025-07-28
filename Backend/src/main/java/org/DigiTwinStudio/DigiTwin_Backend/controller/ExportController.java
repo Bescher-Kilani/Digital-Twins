@@ -17,11 +17,11 @@ public class ExportController {
 
     private final ExportService exportService;
 
-    @GetMapping("/models/{ModelId}/export/{format}")
-    public ResponseEntity<byte[]> exportStoredModel(@PathVariable String ModelId, @PathVariable String format, @AuthenticationPrincipal Jwt jwt) {
+    @GetMapping("/models/{modelId}/export/{format}")
+    public ResponseEntity<byte[]> exportStoredModel(@PathVariable String modelId, @PathVariable String format, @AuthenticationPrincipal Jwt jwt) {
         // ToDo: Add Guest-logic
         String userId = jwt.getSubject();
-        return ResponseEntity.ok(this.exportService.exportStoredModel(ModelId, ExportFormat.valueOf(format)));
+        return ResponseEntity.ok(this.exportService.exportStoredModel(modelId, ExportFormat.valueOf(format)));
     }
 
 }
