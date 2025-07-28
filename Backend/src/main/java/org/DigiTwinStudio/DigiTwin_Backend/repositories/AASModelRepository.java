@@ -4,6 +4,7 @@ import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,4 +24,17 @@ public interface AASModelRepository extends MongoRepository<AASModel, String> {
 
     // ownership check for a specific model
     boolean existsByIdAndOwnerId(String id, String ownerId);
+
+    /**
+     * Retrieves all AAS models that belong to the specified owner, are not marked as deleted,
+     * and were created before the given timestamp.
+     *
+     * <p>This is typically used to find outdated guest models for automatic cleanup.</p>
+     *
+     * @param ownerId the ID of the model owner (e.g. "GUEST")
+     * @param threshold the cutoff timestamp; only models created before this will be returned
+     * @return a list of matching {@link AASModel} entities
+     */
+    List<AASModel> findByOwnerIdAndDeletedFalseAndCreatedAtBefore(String ownerId, LocalDateTime threshold);
+
 }
