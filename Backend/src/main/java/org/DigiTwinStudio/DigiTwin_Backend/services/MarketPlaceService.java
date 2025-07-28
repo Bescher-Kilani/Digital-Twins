@@ -18,9 +18,8 @@ import org.DigiTwinStudio.DigiTwin_Backend.repositories.TagRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -171,6 +170,57 @@ public class MarketPlaceService {
         if (!invalidTagIds.isEmpty()) {
             throw new BadRequestException("Invalid tag IDs: " + String.join(", ", invalidTagIds));
         }
+    }
+
+    /**
+     * Searches for marketplace entries that have at least one tag belonging to the specified category.
+     *
+     * <p>This method performs the following steps:
+     * <ul>
+     *     <li>Validates that the provided category is not null or empty.</li>
+     *     <li>Retrieves all tags associated with the given category (case-insensitive).</li>
+     *     <li>If no tags are found for the category, returns an empty list.</li>
+     *     <li>Finds all marketplace entries that contain at least one tag from the retrieved tags.</li>
+     *     <li>Maps the filtered marketplace entries to {@link MarketplaceEntryDto} objects and returns the result.</li>
+     * </ul>
+     *
+     * @param category the category name to filter marketplace entries by (case-insensitive)
+     * @return a list of {@link MarketplaceEntryDto} objects whose tags belong to the specified category
+     * @throws BadRequestException if the category is null or empty
+     */
+    public List<MarketplaceEntryDto> searchByCategory(String category) throws BadRequestException {
+        if (category == null || category.isBlank()) {
+            throw new BadRequestException("Category must not be null or empty");
+        }
+
+        // Find all tags for the given category (case-insensitive)
+        List<Tag> tagsInCategory = tagRepository.findByCategoryIgnoreCase(category);
+
+        if (tagsInCategory.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Set<String> tagIdsInCategory = tagsInCategory.stream()
+                .map(Tag::getId)
+                .collect(Collectors.toSet());
+
+        // Filter entries that contain at least one tag from this category
+        List<MarketplaceEntry> matchingEntries = marketPlaceEntryRepository.findAll().stream()
+                .filter(entry -> entry.getTagIds().stream().anyMatch(tagIdsInCategory::contains))
+                .toList();
+
+        return matchingEntries.stream()
+                .map(marketplaceMapper::toDto)
+                .toList();
+    }
+
+    /**
+     * Retrieves all tags from the database.
+     *
+     * @return a list of all {@link Tag} entities currently stored
+     */
+    public List<Tag> getAllTags() {
+        return tagRepository.findAll();
     }
 
 }

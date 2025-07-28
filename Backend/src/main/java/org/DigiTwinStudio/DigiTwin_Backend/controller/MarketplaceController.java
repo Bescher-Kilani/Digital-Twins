@@ -1,6 +1,7 @@
 package org.DigiTwinStudio.DigiTwin_Backend.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.DigiTwinStudio.DigiTwin_Backend.domain.Tag;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.MarketplaceEntryDto;
 import org.DigiTwinStudio.DigiTwin_Backend.services.AASModelService;
@@ -91,6 +92,35 @@ public class MarketplaceController {
         return ResponseEntity.ok().build();
     }
 
-    //ToDo: Endpoint to get available tags from. Initialize Tags.
+    /**
+     * Filters marketplace entries by a tag category.
+     *
+     * <p>Example request:
+     * <pre>
+     * GET /marketplace?category=Technology
+     * </pre>
+     *
+     * @param category the category to filter entries by
+     * @return a list of matching {@link MarketplaceEntryDto} objects
+     */
+    @GetMapping(params = "category")
+    public ResponseEntity<List<MarketplaceEntryDto>> filterByCategory(@RequestParam String category) {
+        return ResponseEntity.ok(marketPlaceService.searchByCategory(category));
+    }
 
+    /**
+     * Returns all tags available in the system.
+     *
+     * <p>Example request:
+     * <pre>
+     * GET /tags
+     * </pre>
+     *
+     * @return a list of all {@link Tag} objects
+     */
+    @GetMapping("/tags")
+    public ResponseEntity<List<Tag>> getAllTags() {
+        List<Tag> tags = marketPlaceService.getAllTags();
+        return ResponseEntity.ok(tags);
+    }
 }

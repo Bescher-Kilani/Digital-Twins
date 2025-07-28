@@ -20,4 +20,6 @@ public interface TagRepository extends MongoRepository<Tag, String> {
 
     // Find tags by their IDs, e.g., from the list in publishMetadata
     List<Tag> findByIdIn(List<String> ids);
+
+    List<Tag> findByCategoryIgnoreCase(String category);
 }
