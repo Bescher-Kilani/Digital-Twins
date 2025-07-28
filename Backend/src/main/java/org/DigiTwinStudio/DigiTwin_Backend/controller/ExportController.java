@@ -19,8 +19,6 @@ public class ExportController {
 
     @GetMapping("/models/{modelId}/export/{format}")
     public ResponseEntity<byte[]> exportStoredModel(@PathVariable String modelId, @PathVariable String format, @AuthenticationPrincipal Jwt jwt) {
-        // ToDo: Add Guest-logic
-        String userId = jwt.getSubject();
         return ResponseEntity.ok(this.exportService.exportStoredModel(modelId, ExportFormat.valueOf(format)));
     }
 

@@ -143,21 +143,6 @@ public class GuestController {
         return ResponseEntity.ok(saved);
     }
 
-    /**
-     * Exports a stored model in the specified format for a guest user.
-     *
-     * @param modelId the ID of the model to export
-     * @param format  the export format (e.g., JSON, XML, etc.)
-     * @return the exported model as byte stream
-     */
-    @GetMapping("/models/{modelId}/export/{format}")
-    public ResponseEntity<byte[]> exportModelAsGuest(
-            @PathVariable String modelId,
-            @PathVariable String format) {
-
-        byte[] exported = exportService.exportStoredModel(modelId, ExportFormat.valueOf(format));
-        return ResponseEntity.ok(exported);
-    }
 
     /**
      * Uploads a property file (e.g. PDF, image) for a guest user.
