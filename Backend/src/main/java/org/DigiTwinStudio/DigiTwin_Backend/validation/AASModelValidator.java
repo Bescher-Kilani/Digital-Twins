@@ -48,9 +48,11 @@ public class AASModelValidator {
 
             // 2. Validate all submodels in env
             List<DefaultSubmodel> submodels = model.getSubmodels();
+            if (submodels != null && !submodels.isEmpty()) {
 
-            for (DefaultSubmodel sm : submodels) {
-                submodelValidator.validate(sm);
+                for (DefaultSubmodel sm : submodels) {
+                    submodelValidator.validate(sm);
+                }
             }
 
             // 3. Validate PublishMetadata

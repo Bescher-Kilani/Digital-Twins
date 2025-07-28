@@ -98,11 +98,13 @@ public class AAS4jAdapter {
         // add AssetAdministrationShell
         environment.setAssetAdministrationShells(List.of(model.getAas()));
 
-        // convert DefaultSubmodels to Submodels and add to Environment
-        List<Submodel> submodels = model.getSubmodels().stream()
-                .map(defaultSubmodel -> (Submodel) defaultSubmodel)
-                .collect(Collectors.toList());
-        environment.setSubmodels(submodels);
+        if (model.getSubmodels() != null && !model.getSubmodels().isEmpty()) {
+            // convert DefaultSubmodels to Submodels and add to Environment
+            List<Submodel> submodels = model.getSubmodels().stream()
+                    .map(defaultSubmodel -> (Submodel) defaultSubmodel)
+                    .collect(Collectors.toList());
+            environment.setSubmodels(submodels);
+        }
 
         return environment;
     }

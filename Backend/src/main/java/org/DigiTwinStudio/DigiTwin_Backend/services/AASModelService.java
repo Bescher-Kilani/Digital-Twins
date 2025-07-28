@@ -239,27 +239,30 @@ public class AASModelService {
 
     private AASModel getModelOrThrow(String id, String userId) {
         AASModel model = aasModelRepository.findByIdAndDeletedFalse(id)
-                .orElseThrow(() -> new NotFoundException("Model not found."));
+                .orElseThrow(() -> new NotFoundException("Model with ID '" + id + "' not found."));
         validateOwnership(model, userId);
         return model;
     }
 
 
     public void validateReferencedFiles(AASModel model) {
+
         List<DefaultSubmodel> submodels = model.getSubmodels();
 
-        for (DefaultSubmodel submodel : submodels) {
-            List<SubmodelElement> elements = submodel.getSubmodelElements();
+        if (submodels != null && !submodels.isEmpty()) {
+            for (DefaultSubmodel submodel : submodels) {
+                List<SubmodelElement> elements = submodel.getSubmodelElements();
 
-            for (SubmodelElement element : elements) {
-                if (element instanceof File fileElement) {
-                    String fileId = fileElement.getValue();
+                for (SubmodelElement element : elements) {
+                    if (element instanceof File fileElement) {
+                        String fileId = fileElement.getValue();
 
-                    UploadedFile file = uploadedFileRepository.findById(fileId)
-                            .orElseThrow(() -> new NotFoundException("Referenced file not found: " + fileId));
+                        UploadedFile file = uploadedFileRepository.findById(fileId)
+                                .orElseThrow(() -> new NotFoundException("Referenced file not found: " + fileId));
 
-                    MultipartFile multipartFile = new MultipartFileAdapter(file);
-                    fileUploadValidator.validate(multipartFile);
+                        MultipartFile multipartFile = new MultipartFileAdapter(file);
+                        fileUploadValidator.validate(multipartFile);
+                    }
                 }
             }
         }
