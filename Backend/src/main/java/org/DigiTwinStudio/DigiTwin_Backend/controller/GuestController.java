@@ -8,7 +8,7 @@ import org.DigiTwinStudio.DigiTwin_Backend.dtos.TemplateDto;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.UploadResponseDto;
 import org.DigiTwinStudio.DigiTwin_Backend.services.*;
 
-import org.springframework.http.HttpStatus;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
