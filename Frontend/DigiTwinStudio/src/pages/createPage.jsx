@@ -202,7 +202,7 @@ function CreatePage() {
       console.log('Saving AASX model:', finalData);
       console.log('Request headers:', headers);
       
-      const response = await fetch('http://localhost:9090/submodels/new', {
+      const response = await fetch('http://localhost:9090/models/new', {
         method: 'POST',
         headers: headers,
         body: JSON.stringify(finalData)
