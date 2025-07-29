@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import "../styles/createPage.css";
 import helpIcon from "../assets/icons/help.png";
 import aiAssistantIcon from "../assets/ai-chatbot-assistant.png";
@@ -8,11 +8,13 @@ import FloppyFillIcon from "../assets/icons/floppy-fill.svg?react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, Button } from "react-bootstrap";
+import { KeycloakContext } from "../KeycloakContext";
 
 function CreatePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+  const { keycloak, authenticated } = useContext(KeycloakContext);
 
   const [tooltipVisible, setTooltipVisible] = useState(null);
   const [tooltipStyle, setTooltipStyle] = useState({});
@@ -120,31 +122,77 @@ function CreatePage() {
     };
     
     try {
-      // TODO: Replace with actual API endpoint
+      // Prepare headers
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      
+      // Add Authorization header if user is logged in
+      let token = null;
+      
+      // Try multiple sources for the token
+      token = sessionStorage.getItem('access_token') || 
+              localStorage.getItem('authToken') || 
+              (keycloak && keycloak.token) ||
+              null;
+      
+      console.log('Authentication status:', authenticated);
+      console.log('Keycloak object:', keycloak);
+      console.log('SessionStorage access_token:', sessionStorage.getItem('access_token') ? 'Present' : 'Missing');
+      console.log('Using token:', token ? `Present (${token.substring(0, 20)}...)` : 'No token');
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       console.log('Saving AASX model:', finalData);
-      // const response = await fetch('/api/create-aasx', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(finalData)
-      // });
-      // if (response.ok) {
-      //   sessionStorage.removeItem('submodelTemplates'); // Clear saved templates
-      //   navigate('/dashboard');
-      // }
+      console.log('Request headers:', headers);
       
-      // Clear the templates after successful save
-      sessionStorage.removeItem('submodelTemplates');
-      setSubmodelTemplates([]);
-      
-      // Navigate to createComplete page with model name
-      navigate('/create/complete', { 
-        state: { 
-          modelName: formData.name || 'Untitled Model' 
-        } 
+      const response = await fetch('http://localhost:9090/submodels/new', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(finalData)
       });
+      
+      if (response.ok) {
+        // Clear the templates after successful save
+        sessionStorage.removeItem('submodelTemplates');
+        setSubmodelTemplates([]);
+        
+        // Navigate to createComplete page with model name
+        navigate('/create/complete', { 
+          state: { 
+            modelName: formData.name || 'Untitled Model' 
+          } 
+        });
+      } else {
+        // Handle error response
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || `Error: ${response.status} ${response.statusText}`;
+        console.error('Error saving model:', errorMessage);
+        
+        if (response.status === 401) {
+          alert('Authentication required. Please sign in and try again.');
+        } else if (response.status === 403) {
+          alert('Access denied. You do not have permission to create models.');
+        } else {
+          alert(`Failed to save model: ${errorMessage}`);
+        }
+      }
     } catch (error) {
-      console.error('Error saving model:', error);
-      alert('Error saving model');
+      console.error('Network error saving model:', error);
+      console.error('Error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
+      
+      // Check if it's a CORS or network error
+      if (error.message.includes('Load failed') || error.message.includes('CORS') || error.message.includes('Network request failed')) {
+        alert(`Connection error: Unable to reach the server.`);
+      } else {
+        alert('Network error: Unable to save model. Please check your connection and try again.');
+      }
     }
   };
 
