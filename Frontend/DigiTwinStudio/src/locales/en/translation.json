@@ -43,5 +43,13 @@
         "more": "...and much more"
       }
     }
+  },
+  "signin": {
+    "title": "We recommend signing into the website to experience all of the features we offer such as saving your files, but you can continue as a guest if you wish",
+    "signIn": "Sign in",
+    "register": "Register",
+    "continueAsGuest": "Continue as Guest",
+    "policy": "By using our services, you accept our Terms and Conditions and Privacy Policy",
+    "or": "or"
   }
 }

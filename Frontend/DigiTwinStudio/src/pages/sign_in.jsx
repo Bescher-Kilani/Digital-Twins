@@ -37,11 +37,7 @@ function Signin() {
         <img src={Logo} alt="Logo" style={{ width: 100, marginBottom: 16 }} />
 
           <div className="signin-container text-white pt-5 pl-5 pr-5 pb-1">
-            <p>
-              We recommend signing into the website to experience all of the
-              features we offer such as saving your files, but you can continue
-              as a guest if you wish
-            </p>
+            <p>{t("signin.title")}</p>
             <div className="mt-4">
               <Button
                 variant="primary"
@@ -49,14 +45,14 @@ function Signin() {
                 onClick={handleLogin}
                 disabled={!ready || !keycloak}
               >
-                Sign in
+                {t("signin.signIn")}
               </Button>
               <Button
                 variant="secondary"
                 onClick={handleRegister}
                 disabled={!ready || !keycloak}
               >
-                Register
+                {t("signin.register")}
               </Button>
             </div>
             <div className="d-flex align-items-center my-3">
@@ -64,7 +60,7 @@ function Signin() {
                 className="flex-grow-1 mx-3"
                 style={{ borderTop: "1px solid #fff" }}
               ></div>
-              <span className="mx-2 text-white">or</span>
+              <span className="mx-2 text-white">{t("signin.or")}</span>
               <div
                 className="flex-grow-1 mx-3"
                 style={{ borderTop: "1px solid #fff" }}
@@ -75,11 +71,10 @@ function Signin() {
               className="me-2"
               onClick={handleContinueAsGuest}
             >
-              Continue as Guest
+              {t("signin.continueAsGuest")}
             </Button>
             <p className="pt-4">
-              By using our services, you accept our Terms and Conditions and
-              Privacy Policy
+              {t("signin.policy")}
             </p>
           </div>
         </div>
