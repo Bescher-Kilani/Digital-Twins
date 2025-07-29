@@ -1,4 +1,5 @@
 import { Container, Row, Col, Button, Form, Card, Pagination } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import modelImage from "../assets/homepage_model.png";
@@ -62,6 +63,7 @@ const models = [
 ];
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const [currentPage, setCurrentPage] = useState(1);
   const navigate = useNavigate();
   const modelsPerPage = 4;
@@ -83,7 +85,7 @@ export default function Dashboard() {
   return (
     <div className="dashboard-container">
         <Container className="py-4">
-      <h2 className="text-white mb-3">Your Models</h2>
+      <h2 className="text-white mb-3">{t("dashboard.yourModels")}</h2>
 
       {/* Actions */}
       <Row className="mb-3">
@@ -96,9 +98,9 @@ export default function Dashboard() {
         </Col>
         <Col md={4} className="text-md-end">
           <Button variant="primary" className="me-2">
-            <ImportIcon></ImportIcon> Import Model
+            <ImportIcon></ImportIcon> {t("dashboard.importModel")}
           </Button>
-          <Button variant="primary" onClick={handleNewModel}><PlusIcon></PlusIcon> New Model</Button>
+          <Button variant="primary" onClick={handleNewModel}><PlusIcon></PlusIcon> {t("dashboard.newModel")}</Button>
         </Col>
       </Row>
 
@@ -115,14 +117,14 @@ export default function Dashboard() {
               <div className="flex-grow-1">
                 <h5 className="mb-1">{model.title}</h5>
                 <p className="mb-1">{model.description}</p>
-                <small>Last edit: {model.lastEdit}</small>
+                <small>{t("dashboard.lastEdit")}: {model.lastEdit}</small>
               </div>
               <div className="d-flex flex-column gap-2">
                 <Button size="sm" variant="primary">
-                  <OpenIcon></OpenIcon> Open
+                  <OpenIcon></OpenIcon> {t("dashboard.open")}
                 </Button>
                 <Button size="sm" variant="primary">
-                  <DownloadIcon></DownloadIcon> Download
+                  <DownloadIcon></DownloadIcon> {t("dashboard.download")}
                 </Button>
               </div>
             </Card.Body>

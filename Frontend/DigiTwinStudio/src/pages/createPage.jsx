@@ -7,7 +7,7 @@ import ChevronLeftIcon from "../assets/icons/chevron-left.svg?react";
 import FloppyFillIcon from "../assets/icons/floppy-fill.svg?react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Card, Button } from "react-bootstrap";
+import { Card, Button, Toast, ToastContainer } from "react-bootstrap";
 import { KeycloakContext } from "../KeycloakContext";
 
 function CreatePage() {
@@ -19,6 +19,9 @@ function CreatePage() {
   const [tooltipVisible, setTooltipVisible] = useState(null);
   const [tooltipStyle, setTooltipStyle] = useState({});
   const [showChat, setShowChat] = useState(false);
+  
+  // Toast state for error notifications
+  const [toasts, setToasts] = useState([]);
   
   // State for form data
   const [formData, setFormData] = useState({
@@ -132,6 +135,28 @@ function CreatePage() {
     setTooltipVisible(null);
   };
 
+  // Function to show toast notifications
+  const showToast = (message, variant = 'danger') => {
+    const id = Date.now();
+    const newToast = {
+      id,
+      message,
+      variant,
+      show: true
+    };
+    setToasts(prev => [...prev, newToast]);
+    
+    // Auto-hide toast after 5 seconds
+    setTimeout(() => {
+      setToasts(prev => prev.filter(toast => toast.id !== id));
+    }, 5000);
+  };
+
+  // Function to manually close a toast
+  const closeToast = (id) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  };
+
   // Handle adding submodel
   const handleAddSubmodel = () => {
     // Pass current form data to maintain context
@@ -213,7 +238,7 @@ function CreatePage() {
         sessionStorage.removeItem('submodelTemplates');
         setSubmodelTemplates([]);
         
-        // Navigate to createComplete page with model name
+        // Navigate to createComplete page with model name immediately
         navigate('/create/complete', { 
           state: { 
             modelName: formData.name || 'Untitled Model' 
@@ -226,11 +251,11 @@ function CreatePage() {
         console.error('Error saving model:', errorMessage);
         
         if (response.status === 401) {
-          alert('Authentication required. Please sign in and try again.');
+          showToast('Authentication required. Please sign in and try again.', 'warning');
         } else if (response.status === 403) {
-          alert('Access denied. You do not have permission to create models.');
+          showToast('Access denied. You do not have permission to create models.', 'danger');
         } else {
-          alert(`Failed to save model: ${errorMessage}`);
+          showToast(`Failed to save model: ${errorMessage}`, 'danger');
         }
       }
     } catch (error) {
@@ -243,9 +268,9 @@ function CreatePage() {
       
       // Check if it's a CORS or network error
       if (error.message.includes('Load failed') || error.message.includes('CORS') || error.message.includes('Network request failed')) {
-        alert(`Connection error: Unable to reach the server.`);
+        showToast('Connection error: Unable to reach the server.', 'danger');
       } else {
-        alert('Network error: Unable to save model. Please check your connection and try again.');
+        showToast('Network error: Unable to save model. Please check your connection and try again.', 'danger');
       }
     }
   };
@@ -600,6 +625,41 @@ function CreatePage() {
           <p style={{ marginBottom: 0 }}>{tooltipText[tooltipVisible][1]}</p>
         </div>
       )}
+
+      {/* Toast notifications positioned at top right */}
+      <ToastContainer 
+        position="top-end" 
+        className="p-3" 
+        style={{ 
+          position: 'fixed', 
+          top: '20px', 
+          right: '20px', 
+          zIndex: 9999 
+        }}
+      >
+        {toasts.map((toast) => (
+          <Toast
+            key={toast.id}
+            show={toast.show}
+            onClose={() => closeToast(toast.id)}
+            bg={toast.variant}
+            text={toast.variant === 'warning' ? 'dark' : 'white'}
+            autohide
+            delay={5000}
+          >
+            <Toast.Header>
+              <strong className="me-auto">
+                {toast.variant === 'danger' ? 'Error' : 
+                 toast.variant === 'warning' ? 'Warning' : 
+                 toast.variant === 'success' ? 'Success' : 'Notification'}
+              </strong>
+            </Toast.Header>
+            <Toast.Body>
+              {toast.message}
+            </Toast.Body>
+          </Toast>
+        ))}
+      </ToastContainer>
     </div>
   );
 }
