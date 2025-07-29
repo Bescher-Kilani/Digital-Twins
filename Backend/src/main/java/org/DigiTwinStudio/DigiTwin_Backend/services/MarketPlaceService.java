@@ -31,7 +31,8 @@ public class MarketPlaceService {
     private final AASModelMapper aasModelMapper;
 
     /**
-     * Publishes the given {@link AASModel} by setting its publication metadata and updating its state.
+     * Publishes the given {@link AASModel} by setting its publication metadata, updating its state,
+     * and incrementing the usage count of associated tags.
      *
      * <p>This method performs the following actions:
      * <ul>
@@ -39,14 +40,16 @@ public class MarketPlaceService {
      *     <li>Builds a {@link PublishMetadata} object using the request data and current timestamp.</li>
      *     <li>Updates the model's publish metadata, sets its published flag to {@code true}, and updates the timestamp.</li>
      *     <li>Persists the updated model using {@code aasModelRepository}.</li>
+     *     <li>Retrieves all tags associated with the model and increments their {@code usageCount} by 1.</li>
+     *     <li>Persists the updated tag usage counts using {@code tagRepository}.</li>
      * </ul>
      *
-     * @param request the DTO containing the data required to publish the model, including author, short description, and tag IDs.
-     * @param model the {@link AASModel} instance to be published.
-     * @throws BadRequestException if the provided tag IDs are invalid.
+     * @param request the DTO containing the data required to publish the model, including author, short description, and tag IDs
+     * @param model the {@link AASModel} instance to be published
+     * @throws BadRequestException if the provided tag IDs are invalid
      */
     public void publish(PublishRequestDto request, AASModel model) throws BadRequestException {
-
+        // update Metadata
         validateTagIds(request.getTagIds());
         LocalDateTime now = LocalDateTime.now();
         PublishMetadata metadata = PublishMetadata.builder()
@@ -58,23 +61,51 @@ public class MarketPlaceService {
         model.setPublishMetadata(metadata);
         model.setPublished(true);
         model.setUpdatedAt(now);
+
+        // save model changes in the database
         aasModelRepository.save(model);
+
+        //update tag counters
+        List<Tag> tagsToUpdate = tagRepository.findByIdIn(request.getTagIds());
+
+        tagsToUpdate.forEach(tag -> {
+            tag.setUsageCount(tag.getUsageCount() + 1);
+        });
+        tagRepository.saveAll(tagsToUpdate);
+
     }
 
     /**
      * Unpublishes the given AAS model by marking it as unpublished,
      * clearing its publish metadata, updating the timestamp, and saving it.
+     * Also decrements the usage count of all associated tags.
      *
      * <p>This method assumes that any necessary validation (e.g., user ownership,
      * model published status) has already been performed before calling.
      *
-     * @param userId the ID of the user requesting the unpublish operation (not used directly here)
+     * @param userId the ID of the user requesting the unpublish operation
      * @param model the {@link AASModel} to unpublish and update
+     * @throws ForbiddenException if the user does not own the model
      */
     public void unpublish(String userId, AASModel model) {
         if (!Objects.equals(userId, model.getOwnerId())) {
             throw new ForbiddenException("Current user does not have permission to unpublish model.");
         }
+
+        // Decrement usage count for each tag (if any)
+        if (model.getPublishMetadata() != null && model.getPublishMetadata().getTagIds() != null) {
+            List<String> tagIds = model.getPublishMetadata().getTagIds();
+            List<Tag> tagsToUpdate = tagRepository.findByIdIn(tagIds);
+
+            tagsToUpdate.forEach(tag -> {
+                int currentCount = tag.getUsageCount();
+                tag.setUsageCount(Math.max(currentCount - 1, 0)); // Avoid negative values
+            });
+
+            tagRepository.saveAll(tagsToUpdate);
+        }
+
+        // Unpublish model
         model.setPublished(false);
         model.setPublishMetadata(null);
         model.setUpdatedAt(LocalDateTime.now());
