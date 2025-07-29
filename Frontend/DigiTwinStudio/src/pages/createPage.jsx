@@ -501,7 +501,17 @@ function CreatePage() {
                         style={{ width: "50px", margin: "0 auto 0.5rem auto", pointerEvents: "none" }}
                         alt="Template Icon"
                       />
-                      <Card.Text style={{ fontSize: "0.875rem", lineHeight: "1.2", pointerEvents: "none" }}>
+                      <Card.Text style={{ 
+                        fontSize: "0.875rem", 
+                        lineHeight: "1.1", 
+                        pointerEvents: "none",
+                        textAlign: "center",
+                        wordWrap: "break-word",
+                        overflowWrap: "break-word",
+                        hyphens: "auto",
+                        maxWidth: "100%",
+                        padding: "0 4px"
+                      }}>
                         {template.title}
                       </Card.Text>
                     </Card.Body>
