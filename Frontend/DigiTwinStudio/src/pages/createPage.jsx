@@ -45,14 +45,30 @@ function CreatePage() {
   useEffect(() => {
     if (location.state?.templateData) {
       const newTemplate = location.state.templateData;
-      console.log('Adding new template:', newTemplate);
+      console.log('Template data received:', newTemplate);
       
-      setSubmodelTemplates(prev => {
-        console.log('Current templates before adding:', prev);
-        const updated = [...prev, newTemplate];
-        console.log('Updated templates:', updated);
-        return updated;
-      });
+      // Check if this is an edit operation
+      if (location.state?.editingTemplateIndex !== undefined) {
+        const editIndex = location.state.editingTemplateIndex;
+        console.log('Updating existing template at index:', editIndex);
+        
+        setSubmodelTemplates(prev => {
+          const updated = [...prev];
+          updated[editIndex] = newTemplate;
+          console.log('Updated templates after edit:', updated);
+          return updated;
+        });
+      } else {
+        // Adding new template
+        console.log('Adding new template:', newTemplate);
+        
+        setSubmodelTemplates(prev => {
+          console.log('Current templates before adding:', prev);
+          const updated = [...prev, newTemplate];
+          console.log('Updated templates:', updated);
+          return updated;
+        });
+      }
       
       // Restore the original form data if it exists
       if (location.state?.originalFormData) {
@@ -60,6 +76,24 @@ function CreatePage() {
       }
       
       // Clear the state to prevent re-adding on refresh
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+    
+    // Handle form data restoration from back navigation
+    if (location.state?.restoredFormData) {
+      console.log('Restoring form data from back navigation:', location.state.restoredFormData);
+      setFormData(location.state.restoredFormData);
+      
+      // Only restore submodel templates if they are explicitly provided
+      // Otherwise, let the sessionStorage initialization handle templates
+      if (location.state?.restoredSubmodelTemplates !== undefined) {
+        console.log('Restoring submodel templates from back navigation:', location.state.restoredSubmodelTemplates);
+        setSubmodelTemplates(location.state.restoredSubmodelTemplates);
+      } else {
+        console.log('No restored templates provided, keeping current templates from sessionStorage');
+      }
+      
+      // Clear the state to prevent re-restoration on refresh
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location.state, navigate, location.pathname]);
@@ -101,11 +135,31 @@ function CreatePage() {
   // Handle adding submodel
   const handleAddSubmodel = () => {
     // Pass current form data to maintain context
+    // Templates are preserved by sessionStorage, so no need to pass them
     navigate('/templates', { 
       state: { 
         fromCreate: true,
-        formData: formData 
+        formData: formData
       } 
+    });
+  };
+
+  // Handle editing existing submodel template
+  const handleEditTemplate = (templateIndex) => {
+    const templateToEdit = submodelTemplates[templateIndex];
+    
+    // Navigate to template creation page with existing template data for editing
+    navigate('/templates/create', {
+      state: {
+        fromCreate: true,
+        formData: formData,
+        currentSubmodelTemplates: submodelTemplates, // Include current templates
+        editingTemplate: {
+          index: templateIndex,
+          data: templateToEdit
+        },
+        selectedTemplate: templateToEdit.selectedTemplate
+      }
     });
   };
 
@@ -419,31 +473,45 @@ function CreatePage() {
             {submodelTemplates.map((template, index) => (
                 <div key={index} className="position-relative">
                   <Card
-                    className="text-white text-center"
+                    className="text-white text-center template-card-editable"
                     style={{
                       width: "140px",
                       height: "180px",
                       padding: "1rem",
                       borderRadius: "5px",
                       border: "3px solid #0E4175",
-                      background: "linear-gradient(180deg, #002C5A 0%, #002C59 50%, #002C5D 100%)"
+                      background: "linear-gradient(180deg, #002C5A 0%, #002C59 50%, #002C5D 100%)",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease-in-out"
+                    }}
+                    onClick={() => handleEditTemplate(index)}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "scale(1.05)";
+                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.3)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "scale(1)";
+                      e.currentTarget.style.boxShadow = "none";
                     }}
                   >
                     <Card.Body className="d-flex flex-column align-items-center justify-content-center p-0 h-100">
                       <Card.Img
                         variant="top"
                         src={tagIcon}
-                        style={{ width: "50px", margin: "0 auto 0.5rem auto" }}
+                        style={{ width: "50px", margin: "0 auto 0.5rem auto", pointerEvents: "none" }}
                         alt="Template Icon"
                       />
-                      <Card.Text style={{ fontSize: "0.875rem", lineHeight: "1.2" }}>
+                      <Card.Text style={{ fontSize: "0.875rem", lineHeight: "1.2", pointerEvents: "none" }}>
                         {template.title}
                       </Card.Text>
                     </Card.Body>
                   </Card>
                   <button 
                     className="remove-submodel-card"
-                    onClick={() => handleRemoveTemplate(index)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent triggering the card click
+                      handleRemoveTemplate(index);
+                    }}
                     style={{
                       position: "absolute",
                       top: "-8px",
@@ -458,7 +526,8 @@ function CreatePage() {
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "center"
+                      justifyContent: "center",
+                      zIndex: 10
                     }}
                   >
                     ✕

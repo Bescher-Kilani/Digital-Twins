@@ -113,12 +113,21 @@ export default function SubmodelTemplateSelection() {
     setCurrentPage(pageNumber);
   };
 
+  // Handle back navigation with preserved form data
+  const handleBackToCreate = () => {
+    navigate('/create', {
+      state: {
+        restoredFormData: originalFormData
+        // Don't pass restoredSubmodelTemplates here since they're preserved in sessionStorage
+      }
+    });
+  };
+
   return (
     <div className="submodel-template-container">
       <Container className="py-4">
         <Button
-          as={Link}
-          to="/create"
+          onClick={handleBackToCreate}
           className="mb-3 back-button"
         >
           ← Back

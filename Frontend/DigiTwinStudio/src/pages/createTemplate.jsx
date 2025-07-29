@@ -195,6 +195,9 @@ export default function CreateTemplate() {
   // Get selected template from location state (passed from /templates)
   const selectedTemplate = location.state?.selectedTemplate;
   
+  // Check if we're editing an existing template
+  const editingTemplate = location.state?.editingTemplate;
+  
   // Form configuration from API - dynamically set based on selected template
   const [formConfig, setFormConfig] = useState(() => getTemplateConfig(selectedTemplate));
   
@@ -233,17 +236,17 @@ export default function CreateTemplate() {
       allFields.forEach(field => {
         switch (field.type) {
           case "prop": {
-            // Initialize with empty value, template value is used as placeholder
-            initialData[field.name] = "";
+            // If editing, use existing data; otherwise initialize with empty value
+            initialData[field.name] = editingTemplate?.data?.data?.[field.name] || "";
             break;
           }
           case "multiLanguage": {
-            // Initialize with empty values, template values are used as placeholders
-            initialData[field.name] = [{ id: 1, language: "English", value: "" }];
+            // If editing, use existing data; otherwise initialize with empty values
+            initialData[field.name] = editingTemplate?.data?.data?.[field.name] || [{ id: 1, language: "English", value: "" }];
             break;
           }
           case "address": {
-            initialData[field.name] = [{ 
+            initialData[field.name] = editingTemplate?.data?.data?.[field.name] || [{ 
               id: 1, 
               language: "English",
               street: "",
@@ -254,19 +257,19 @@ export default function CreateTemplate() {
             break;
           }
           case "file": {
-            initialData[field.name] = "";
+            initialData[field.name] = editingTemplate?.data?.data?.[field.name] || "";
             break;
           }
           case "list": {
-            // Initialize lists with empty array
-            initialData[field.name] = [];
+            // Initialize lists with existing data or empty array
+            initialData[field.name] = editingTemplate?.data?.data?.[field.name] || [];
             break;
           }
           case "collection": {
-            // Initialize collections with empty array (for complex collections)
+            // Initialize collections with existing data or appropriate defaults
             if (field.type === "address" || field.name === "AddressInformation") {
               // Keep the existing address handling
-              initialData[field.name] = [{ 
+              initialData[field.name] = editingTemplate?.data?.data?.[field.name] || [{ 
                 id: 1, 
                 language: "English",
                 street: "",
@@ -275,13 +278,13 @@ export default function CreateTemplate() {
                 country: ""
               }];
             } else {
-              // For other collections, initialize as empty array
-              initialData[field.name] = [];
+              // For other collections, initialize with existing data or empty array
+              initialData[field.name] = editingTemplate?.data?.data?.[field.name] || [];
             }
             break;
           }
           default: {
-            initialData[field.name] = "";
+            initialData[field.name] = editingTemplate?.data?.data?.[field.name] || "";
           }
         }
       });
@@ -292,7 +295,7 @@ export default function CreateTemplate() {
     if (formConfig.requiredFields.length > 0 || formConfig.advancedFields.length > 0) {
       initializeFormData();
     }
-  }, [formConfig]);
+  }, [formConfig, editingTemplate]);
 
   // Generic field update function
   const updateField = (fieldName, value) => {
@@ -354,15 +357,49 @@ export default function CreateTemplate() {
     };
 
     // Get the original form data passed from /create via /templates
-    const originalFormData = location.state?.originalFormData;
+    const originalFormData = location.state?.originalFormData || location.state?.formData;
+
+    // If editing, include the template index to update
+    const stateData = { 
+      templateData: templateData,
+      originalFormData: originalFormData
+    };
+
+    // If editing an existing template, pass the index
+    if (editingTemplate) {
+      stateData.editingTemplateIndex = editingTemplate.index;
+    }
 
     // Navigate back to /create with template data and original form data
     navigate('/create', { 
-      state: { 
-        templateData: templateData,
-        originalFormData: originalFormData
-      } 
+      state: stateData
     });
+  };
+
+  // Handle back navigation with preserved form data
+  const handleBackNavigation = () => {
+    const originalFormData = location.state?.originalFormData || location.state?.formData;
+    const currentSubmodelTemplates = location.state?.currentSubmodelTemplates || [];
+    
+    if (editingTemplate) {
+      // If editing, go back to create page with preserved form data and templates
+      // Need to pass templates here since we're mid-edit and sessionStorage might be stale
+      navigate('/create', {
+        state: {
+          restoredFormData: originalFormData,
+          restoredSubmodelTemplates: currentSubmodelTemplates
+        }
+      });
+    } else {
+      // If creating new template, go back to template selection with preserved form data
+      // Don't need to pass templates since they're preserved in sessionStorage
+      navigate('/templates', {
+        state: {
+          formData: originalFormData,
+          currentSubmodelTemplates: currentSubmodelTemplates
+        }
+      });
+    }
   };
 
   // Dynamic field rendering based on API configuration
@@ -655,8 +692,7 @@ export default function CreateTemplate() {
       {/* Action Buttons */}
       <div className="d-flex gap-3">
         <Button 
-          as={Link} 
-          to="/templates"
+          onClick={handleBackNavigation}
           style={{
             backgroundColor: "#004277",
             border: "2px solid #0D598B",
