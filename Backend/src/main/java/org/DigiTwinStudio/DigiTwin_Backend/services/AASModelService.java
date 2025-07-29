@@ -98,6 +98,27 @@ public class AASModelService {
         return aasModelMapper.toDto(aasModelRepository.save(existingModel));
     }
 
+    public AASModelDto createModel(String userId,AASModelDto aasModelDto) {
+        LocalDateTime now = LocalDateTime.now();
+
+        AASModel model = AASModel.builder()
+                .ownerId(userId)
+                .createdAt(now)
+                .updatedAt(now)
+                .deleted(false)
+                .published(false)
+                .aas(aasModelDto.getAas())
+                .submodels(aasModelDto.getSubmodels())
+                .build();
+
+
+
+        validateReferencedFiles(model);
+        aasModelValidator.validate(model);
+
+        return aasModelMapper.toDto(aasModelRepository.save(model));
+    }
+
     public void deleteModel(String id, String userId) {
         AASModel model = getModelOrThrow(id, userId);
 

@@ -16,7 +16,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import java.util.List;
 
 @RestController
-@RequestMapping
+@RequestMapping("/models")
 @RequiredArgsConstructor
 public class AASModelController {
 
@@ -35,9 +35,9 @@ public class AASModelController {
     }
 
     @PostMapping("/new")
-    public ResponseEntity<AASModelDto> getNewModel(@AuthenticationPrincipal Jwt jwt) {
-        AASModelDto model = aasModelService.createEmpty(jwt.getSubject());
-        return ResponseEntity.status(HttpStatus.CREATED).body(model);
+    public ResponseEntity<AASModelDto> createNewModel(@AuthenticationPrincipal Jwt jwt, @RequestBody AASModelDto dto) {
+        AASModelDto saved = aasModelService.createModel(jwt.getSubject(), dto);
+        return ResponseEntity.ok(saved);
     }
 
     @PutMapping("/{id}/save")

@@ -122,9 +122,9 @@ public class GuestController {
      * @return the empty model
      */
     @PostMapping("/models/new")
-    public ResponseEntity<AASModelDto> getNewModelAsGuest() {
-        AASModelDto model = aasModelService.createEmpty("GUEST");
-        return ResponseEntity.status(HttpStatus.CREATED).body(model);
+    public ResponseEntity<AASModelDto> createModelAsGuest(@RequestBody AASModelDto dto) {
+        AASModelDto saved = aasModelService.createModel("GUEST", dto);
+        return ResponseEntity.ok(saved);
     }
 
     /**
