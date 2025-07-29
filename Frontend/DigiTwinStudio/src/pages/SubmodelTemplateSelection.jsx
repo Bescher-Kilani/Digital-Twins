@@ -1,7 +1,8 @@
-import { Container, Row, Col, Button, Card, Pagination, Spinner, Alert } from "react-bootstrap";
+import { Container, Row, Col, Button, Card, Pagination, Spinner, Alert, Form, InputGroup } from "react-bootstrap";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import searchIcon from "../assets/icons/search.svg";
 import "../styles/submodelTemplateSelection.css";
 
 export default function SubmodelTemplateSelection() {
@@ -12,6 +13,7 @@ export default function SubmodelTemplateSelection() {
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
   
   // Get the original form data passed from /create
   const originalFormData = location.state?.formData;
@@ -87,11 +89,25 @@ export default function SubmodelTemplateSelection() {
   };
   const templatesPerPage = 6;
   
-  // Calculate pagination
+  // Filter templates based on search term
+  const filteredTemplates = templates.filter(template => {
+    const searchLower = searchTerm.toLowerCase();
+    const templateName = template.name?.toLowerCase() || '';
+    const templateDescription = getLocalizedDescription(template.descriptions).toLowerCase();
+    
+    return templateName.includes(searchLower) || templateDescription.includes(searchLower);
+  });
+  
+  // Calculate pagination based on filtered templates
   const indexOfLastTemplate = currentPage * templatesPerPage;
   const indexOfFirstTemplate = indexOfLastTemplate - templatesPerPage;
-  const currentTemplates = templates.slice(indexOfFirstTemplate, indexOfLastTemplate);
-  const totalPages = Math.ceil(templates.length / templatesPerPage);
+  const currentTemplates = filteredTemplates.slice(indexOfFirstTemplate, indexOfLastTemplate);
+  const totalPages = Math.ceil(filteredTemplates.length / templatesPerPage);
+  
+  // Reset to page 1 when search term changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
   
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -149,6 +165,38 @@ export default function SubmodelTemplateSelection() {
       {/* Heading */}
       <h1 className="text-white mb-4">Select a Submodel</h1>
 
+      {/* Search Bar */}
+      <Row className="mb-4">
+        <Col md={8} lg={6}>
+          <InputGroup>
+            <Form.Control
+              type="text"
+              placeholder="Search templates by name or description..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+            <InputGroup.Text className="search-icon">
+              <img src={searchIcon} alt="Search" width="16" height="16" className="search-icon-img" />
+            </InputGroup.Text>
+          </InputGroup>
+        </Col>
+      </Row>
+
+      {/* Results count */}
+      {!loading && !error && (
+        <div className="text-white mb-3">
+          {searchTerm ? (
+            <small>
+              Found {filteredTemplates.length} template{filteredTemplates.length !== 1 ? 's' : ''} 
+              {searchTerm && ` matching "${searchTerm}"`}
+            </small>
+          ) : (
+            <small>Showing all {templates.length} templates</small>
+          )}
+        </div>
+      )}
+
       {/* Loading state */}
       {loading && (
         <div className="text-center py-5">
@@ -175,76 +223,101 @@ export default function SubmodelTemplateSelection() {
       {/* Template cards */}
       {!loading && !error && (
         <>
-          <Row className="g-3">
-            {currentTemplates.map((template, idx) => {
-              // Get description in user's preferred language
-              const description = getLocalizedDescription(template.descriptions);
+          {filteredTemplates.length === 0 ? (
+            <div className="text-center py-5">
+              <div className="text-white">
+                <h4>No templates found</h4>
+                <p>
+                  {searchTerm 
+                    ? `No templates match your search "${searchTerm}". Try different keywords.`
+                    : "No templates are available at the moment."
+                  }
+                </p>
+                {searchTerm && (
+                  <Button 
+                    variant="outline-light" 
+                    onClick={() => setSearchTerm("")}
+                    className="mt-2"
+                  >
+                    Clear Search
+                  </Button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <>
+              <Row className="g-3">
+                {currentTemplates.map((template, idx) => {
+                  // Get description in user's preferred language
+                  const description = getLocalizedDescription(template.descriptions);
+                  
+                  return (
+                    <Col md={6} lg={6} key={template.id || idx}>
+                      <Card className="text-white h-100 template-card">
+                        <Card.Body className="d-flex flex-column">
+                          <Card.Title>{template.name}</Card.Title>
+                          <Card.Text className="flex-grow-1">
+                            {description}
+                          </Card.Text>
+                          <div className="mt-2">
+                            <small>
+                              Version: {template.version}.{template.revision}
+                            </small>
+                          </div>
+                          <Button 
+                            variant="primary" 
+                            className="align-self-start mt-2"
+                            onClick={() => handleTemplateSelect(template)}
+                          >
+                            Select
+                          </Button>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  );
+                })}
+              </Row>
               
-              return (
-                <Col md={6} lg={6} key={template.id || idx}>
-                  <Card className="text-white h-100 template-card">
-                    <Card.Body className="d-flex flex-column">
-                      <Card.Title>{template.name}</Card.Title>
-                      <Card.Text className="flex-grow-1">
-                        {description}
-                      </Card.Text>
-                      <div className="mt-2">
-                        <small>
-                          Version: {template.version}.{template.revision}
-                        </small>
-                      </div>
-                      <Button 
-                        variant="primary" 
-                        className="align-self-start mt-2"
-                        onClick={() => handleTemplateSelect(template)}
-                      >
-                        Select
-                      </Button>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              );
-            })}
-          </Row>
-          
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <Row className="mt-4">
-              <Col className="d-flex justify-content-center">
-                <Pagination>
-                  <Pagination.First 
-                    onClick={() => handlePageChange(1)} 
-                    disabled={currentPage === 1}
-                  />
-                  <Pagination.Prev 
-                    onClick={() => handlePageChange(currentPage - 1)} 
-                    disabled={currentPage === 1}
-                  />
-                  
-                  {[...Array(totalPages)].map((_, index) => {
-                    const pageNumber = index + 1;
-                    return (
-                      <Pagination.Item
-                        key={pageNumber}
-                        active={pageNumber === currentPage}
-                        onClick={() => handlePageChange(pageNumber)}
-                      >
-                        {pageNumber}
-                      </Pagination.Item>
-                    );
-                  })}
-                  
-                  <Pagination.Next 
-                    onClick={() => handlePageChange(currentPage + 1)} 
-                    disabled={currentPage === totalPages}
-                  />
-                  <Pagination.Last 
-                    onClick={() => handlePageChange(totalPages)} 
-                    disabled={currentPage === totalPages}
-                  />
-                </Pagination>
-              </Col>
-            </Row>
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <Row className="mt-4">
+                  <Col className="d-flex justify-content-center">
+                    <Pagination>
+                      <Pagination.First 
+                        onClick={() => handlePageChange(1)} 
+                        disabled={currentPage === 1}
+                      />
+                      <Pagination.Prev 
+                        onClick={() => handlePageChange(currentPage - 1)} 
+                        disabled={currentPage === 1}
+                      />
+                      
+                      {[...Array(totalPages)].map((_, index) => {
+                        const pageNumber = index + 1;
+                        return (
+                          <Pagination.Item
+                            key={pageNumber}
+                            active={pageNumber === currentPage}
+                            onClick={() => handlePageChange(pageNumber)}
+                          >
+                            {pageNumber}
+                          </Pagination.Item>
+                        );
+                      })}
+                      
+                      <Pagination.Next 
+                        onClick={() => handlePageChange(currentPage + 1)} 
+                        disabled={currentPage === totalPages}
+                      />
+                      <Pagination.Last 
+                        onClick={() => handlePageChange(totalPages)} 
+                        disabled={currentPage === totalPages}
+                      />
+                    </Pagination>
+                  </Col>
+                </Row>
+              )}
+            </>
           )}
         </>
       )}

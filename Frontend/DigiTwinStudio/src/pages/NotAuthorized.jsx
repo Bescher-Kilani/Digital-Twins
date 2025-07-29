@@ -1,6 +1,7 @@
 import { Container, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import shieldLockIcon from "../assets/icons/shield-lock-fill.svg";
 import "../styles/not-authorized.css";
 
 function NotAuthorized() {
@@ -19,7 +20,9 @@ function NotAuthorized() {
     <div className="not-authorized-container">
       <Container className="text-center py-5">
         <div className="mb-4">
-          <h1 className="display-4 text-danger">🔒</h1>
+          <div className="mb-3">
+            <img src={shieldLockIcon} alt="Access Denied" width="80" height="80" className="shield-lock-icon" />
+          </div>
           <h2 className="mb-3">Access Denied</h2>
           <p className="lead">
             You need to be signed in to access this page.
