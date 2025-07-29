@@ -6,6 +6,7 @@ import Prop from "../components/form_inputs/Prop";
 import MLP from "../components/form_inputs/MLP";
 import FileInput from "../components/form_inputs/FileInput";
 import CollectionInput from "../components/form_inputs/CollectionInput";
+import Entity from "../components/form_inputs/Entity";
 import ChevronLeftIcon from "../assets/icons/chevron-left.svg?react";
 import ChevronRightIcon from "../assets/icons/chevron-right.svg?react";
 import ChevronDownIcon from "../assets/icons/chevron-down.svg?react";
@@ -99,6 +100,24 @@ const parseSubmodelElements = (submodelElements) => {
                     element.description[0]?.text || "" : 
                     element.description) : 
                    `List: ${element.idShort}`,
+          cardinality: cardinality,
+          elementTemplate: element,
+          originalElement: element
+        });
+        break;
+        
+      case "Entity":
+        fields.push({
+          name: element.idShort,
+          type: "entity",
+          label: element.idShort,
+          tooltip: element.description ? 
+                   (Array.isArray(element.description) ? 
+                    element.description[0]?.text || "" : 
+                    element.description) : 
+                   `Entity: ${element.idShort} (${element.entityType || 'Unknown type'})`,
+          entityType: element.entityType,
+          globalAssetId: element.globalAssetId,
           cardinality: cardinality,
           elementTemplate: element,
           originalElement: element
@@ -225,6 +244,13 @@ export default function CreateTemplate() {
     }
   }, [selectedTemplate]);
 
+  // Auto-open advanced fields if no required fields exist
+  useEffect(() => {
+    if (formConfig.requiredFields.length === 0 && formConfig.advancedFields.length > 0) {
+      setShowAdvancedFields(true);
+    }
+  }, [formConfig]);
+
   // Initialize form data based on API configuration
   useEffect(() => {
     const initializeFormData = () => {
@@ -262,6 +288,11 @@ export default function CreateTemplate() {
           }
           case "list": {
             // Initialize lists with existing data or empty array
+            initialData[field.name] = editingTemplate?.data?.data?.[field.name] || [];
+            break;
+          }
+          case "entity": {
+            // Initialize entities with existing data or empty array
             initialData[field.name] = editingTemplate?.data?.data?.[field.name] || [];
             break;
           }
@@ -492,6 +523,19 @@ export default function CreateTemplate() {
           />
         );
 
+      case "entity":
+        return (
+          <Entity
+            key={fieldConfig.name}
+            label={fieldConfig.label}
+            helpText={fieldConfig.tooltip}
+            value={fieldData}
+            onChange={(newValue) => updateField(fieldConfig.name, newValue)}
+            entityTemplate={fieldConfig.elementTemplate}
+            className="mb-4"
+          />
+        );
+
       case "collection":
         // Handle complex collections (not AddressInformation)
         if (fieldConfig.name === "AddressInformation" || fieldConfig.type === "address") {
@@ -563,7 +607,7 @@ export default function CreateTemplate() {
                   </OverlayTrigger>
                 )}
               </h6>
-              <p className="text-muted small">
+              <p className="text-white small">
                 This collection contains nested elements that are not currently supported in the form builder.
                 <br />
                 <small>Model Type: {fieldConfig.originalElement?.modelType}</small>
@@ -578,9 +622,9 @@ export default function CreateTemplate() {
             <div className="p-3 border border-warning rounded bg-dark">
               <h6 className="text-warning mb-2">
                 {fieldConfig.label} 
-                <small className="text-muted ms-2">({fieldConfig.originalElement?.modelType || 'Unknown'})</small>
+                <small className="text-white ms-2">({fieldConfig.originalElement?.modelType || 'Unknown'})</small>
               </h6>
-              <p className="text-muted small mb-0">
+              <p className="text-white small mb-0">
                 This field type is not yet supported in the form builder.
               </p>
             </div>
@@ -641,7 +685,7 @@ export default function CreateTemplate() {
           {formConfig.requiredFields.map(fieldConfig => renderField(fieldConfig))}
           
           {formConfig.requiredFields.length === 0 && (
-            <p className="text-muted">No required fields found in this template.</p>
+            <p className="text-white">No required fields found in this template.</p>
           )}
         </Card.Body>
       </Card>
@@ -683,7 +727,7 @@ export default function CreateTemplate() {
             ))}
             
             {formConfig.advancedFields.length === 0 && (
-              <p className="text-muted">No advanced fields found in this template.</p>
+              <p className="text-white">No advanced fields found in this template.</p>
             )}
           </Card.Body>
         </Card>
