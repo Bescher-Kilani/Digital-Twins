@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, Button, Form, OverlayTrigger, Tooltip } from "react-bootstrap";
+import { Card, Button, Form, OverlayTrigger, Tooltip, Accordion, Badge } from "react-bootstrap";
 import Prop from "./Prop";
 import MLP from "./MLP";
 import FileInput from "./FileInput";
@@ -12,6 +12,7 @@ export default function CollectionInput({
   helpText,
   value = [],
   onChange,
+  // eslint-disable-next-line no-unused-vars
   collectionType = "SubmodelElementCollection", // or "SubmodelElementList"
   elementTemplate,
   className = ""
@@ -314,7 +315,7 @@ export default function CollectionInput({
                                 const updatedNestedData = { ...nestedEntryData, [nestedElement.idShort]: e.target.value };
                                 updateEntry(entryId, element.idShort, updatedNestedData);
                               }}
-                              className="bg-dark text-white border-secondary"
+                              style={{ backgroundColor: "#003368", border: "2px solid #1A4D82", color: "white" }}
                             />
                           </Form.Group>
                         </div>
@@ -380,7 +381,7 @@ export default function CollectionInput({
                 placeholder={`Enter ${element.idShort}`}
                 value={fieldData || ""}
                 onChange={(e) => updateEntry(entryId, element.idShort, e.target.value)}
-                className="bg-dark text-white border-secondary"
+                style={{ backgroundColor: "#003368", border: "2px solid #1A4D82", color: "white" }}
               />
             </Form.Group>
           </div>
@@ -426,39 +427,50 @@ export default function CollectionInput({
       </div>
 
       {value.length === 0 && (
-        <div className="p-3 border border-secondary rounded bg-dark">
+        <div className="p-3 border border-secondary rounded text-center" style={{ background: "#003368" }}>
           <p className="text-white mb-0 small">
             No entries added yet. Click "Add Entry" to create the first entry.
           </p>
         </div>
       )}
 
-      {value.map((entry, index) => (
-        <Card key={entry.id} className="mb-3 bg-dark border-secondary">
-          <Card.Header className="bg-secondary d-flex justify-content-between align-items-center py-2">
-            <small className="text-white mb-0">Entry {index + 1}</small>
-            <Button
-              variant="outline-danger"
-              size="sm"
-              onClick={() => removeEntry(entry.id)}
-              className="p-1"
-            >
-              ×
-            </Button>
-          </Card.Header>
-          <Card.Body className="py-3">
-            {elementTemplate && elementTemplate.value && Array.isArray(elementTemplate.value) ? (
-              elementTemplate.value.map(element => 
-                renderCollectionField(element, entry.id, entry.data)
-              )
-            ) : (
-              <p className="text-muted small mb-0">
-                No template structure available for this collection.
-              </p>
-            )}
-          </Card.Body>
-        </Card>
-      ))}
+      {value.length > 0 && (
+        <Accordion>
+          {value.map((entry, index) => (
+            <Accordion.Item key={entry.id} eventKey={index.toString()}>
+              <Accordion.Header>
+                <div className="d-flex align-items-center gap-2 w-100">
+                  <Badge bg="primary">Collection</Badge>
+                  <span>Entry {index + 1}</span>
+                </div>
+              </Accordion.Header>
+              <Accordion.Body style={{ background: "#003368" }}>
+                {/* Remove button inside accordion body */}
+                <div className="d-flex justify-content-end mb-3">
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    onClick={() => removeEntry(entry.id)}
+                  >
+                    Remove Entry
+                  </Button>
+                </div>
+                
+                {/* Collection fields */}
+                {elementTemplate && elementTemplate.value && Array.isArray(elementTemplate.value) ? (
+                  elementTemplate.value.map(element => 
+                    renderCollectionField(element, entry.id, entry.data)
+                  )
+                ) : (
+                  <p className="text-white small mb-0">
+                    No template structure available for this collection.
+                  </p>
+                )}
+              </Accordion.Body>
+            </Accordion.Item>
+          ))}
+        </Accordion>
+      )}
     </div>
   );
 }
