@@ -193,11 +193,110 @@ function CreatePage() {
     setSubmodelTemplates(prev => prev.filter((_, index) => index !== templateIndex));
   };
 
+  // Function to merge user input data into template structure
+  const mergeDataIntoTemplate = (template, userData) => {
+    // Create a deep copy of the template JSON structure
+    const mergedTemplate = JSON.parse(JSON.stringify(template.selectedTemplate.templateData.json));
+    
+    // Function to recursively update values in submodel elements
+    const updateSubmodelElements = (elements, data) => {
+      if (!elements || !Array.isArray(elements)) return;
+      
+      elements.forEach(element => {
+        const idShort = element.idShort;
+        
+        if (data && Object.prototype.hasOwnProperty.call(data, idShort)) {
+          const value = data[idShort];
+          
+          // Handle different element types
+          switch (element.modelType) {
+            case 'Property':
+              if (typeof value === 'string') {
+                element.value = value;
+              }
+              break;
+              
+            case 'MultiLanguageProperty':
+              if (Array.isArray(value)) {
+                element.value = value.map(item => ({
+                  language: item.language === 'English' ? 'en' : 
+                           item.language === 'German' ? 'de' : 
+                           item.language.toLowerCase().substring(0, 2),
+                  text: `"${item.value}"`
+                }));
+              }
+              break;
+              
+            case 'SubmodelElementCollection':
+              if (Array.isArray(value) && value.length > 0) {
+                // Handle collections like AddressInformation
+                const firstItem = value[0];
+                if (element.value && Array.isArray(element.value)) {
+                  updateSubmodelElements(element.value, firstItem);
+                }
+              }
+              break;
+              
+            case 'SubmodelElementList':
+              if (Array.isArray(value) && value.length > 0) {
+                // Handle lists like Markings
+                element.value = value.map(item => {
+                  if (item.data && item.data[""]) {
+                    // Create a copy of the template element structure
+                    const listElement = JSON.parse(JSON.stringify(element.value[0]));
+                    updateSubmodelElements(listElement.value, item.data[""]);
+                    return listElement;
+                  }
+                  return element.value[0]; // fallback to template
+                });
+              }
+              break;
+              
+            case 'File':
+              if (typeof value === 'string') {
+                element.value = value;
+              }
+              break;
+          }
+        }
+        
+        // Recursively handle nested elements
+        if (element.value && Array.isArray(element.value)) {
+          updateSubmodelElements(element.value, data);
+        }
+      });
+    };
+    
+    // Update the submodel elements with user data
+    if (mergedTemplate.submodelElements && userData) {
+      updateSubmodelElements(mergedTemplate.submodelElements, userData);
+    }
+    
+    return mergedTemplate;
+  };
+
   // Handle final save
   const handleSave = async () => {
+    // Transform submodel templates into the new format
+    const transformedSubmodels = submodelTemplates.map(template => {
+      return mergeDataIntoTemplate(template, template.data);
+    });
+    
+    // Transform AAS data to match the new format
+    const transformedAAS = {
+      idShort: formData.name,
+      description: formData.description 
+        ? [{ "language": "en", "text": formData.description }]
+        : [],
+      id: formData.id,
+      assetKind: formData.assetKind,
+      globalAssetId: formData.globalAssetId,
+      specificAssetId: formData.specificAssetId
+    };
+    
     const finalData = {
-      aasData: formData,
-      submodelTemplates: submodelTemplates
+      aas: transformedAAS,
+      submodels: transformedSubmodels
     };
     
     try {
@@ -227,7 +326,7 @@ function CreatePage() {
       console.log('Saving AASX model:', finalData);
       console.log('Request headers:', headers);
       
-      const response = await fetch('http://localhost:9090/models/new', {
+      const response = await fetch('http://localhost:9090/guest/models/new', {
         method: 'POST',
         headers: headers,
         body: JSON.stringify(finalData)
