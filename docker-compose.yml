@@ -1,0 +1,94 @@
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: digitwin-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_ROOT_PASSWORD:-password123}
+      MONGO_INITDB_DATABASE: ${MONGODB_DATABASE:-digitwin}
+    ports:
+      - "${MONGODB_PORT:-27017}:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init:/docker-entrypoint-initdb.d
+    networks:
+      - digitwin-network
+    restart: unless-stopped
+
+  # Keycloak Identity Provider
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.2
+    container_name: digitwin-keycloak
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin123}
+      KC_DB: dev-file
+      KC_DB_URL_DATABASE: /opt/keycloak/data/keycloak
+      KC_HOSTNAME_STRICT: false
+      KC_HOSTNAME_STRICT_HTTPS: false
+      KC_HTTP_ENABLED: true
+    ports:
+      - "${KEYCLOAK_PORT:-8080}:8080"
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+      # Import DigiTwinStudio realm configuration
+      - ./keycloak-import:/opt/keycloak/data/import
+    command: ["start-dev", "--import-realm"]
+    networks:
+      - digitwin-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/realms/master"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Backend Service
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: digitwin-backend
+    environment:
+      MONGODB_URI: mongodb://${MONGODB_ROOT_USERNAME:-admin}:${MONGODB_ROOT_PASSWORD:-password123}@mongodb:27017/${MONGODB_DATABASE:-digitwin}?authSource=admin
+      MONGODB_DATABASE: ${MONGODB_DATABASE:-digitwin}
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "${BACKEND_PORT:-9090}:9090"
+    depends_on:
+      - mongodb
+      - keycloak
+    networks:
+      - digitwin-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Frontend Service
+  frontend:
+    build:
+      context: ./Frontend/DigiTwinStudio
+      dockerfile: Dockerfile
+    container_name: digitwin-frontend
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      - backend
+      - keycloak
+    networks:
+      - digitwin-network
+    restart: unless-stopped
+
+networks:
+  digitwin-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
+  keycloak_data:
+    driver: local

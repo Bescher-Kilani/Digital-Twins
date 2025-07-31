@@ -205,34 +205,72 @@ function CreatePage() {
       elements.forEach(element => {
         const idShort = element.idShort;
         
+        // Check if user has provided data for this field (including empty values)
         if (data && Object.prototype.hasOwnProperty.call(data, idShort)) {
           const value = data[idShort];
           
           // Handle different element types
           switch (element.modelType) {
             case 'Property':
-              if (typeof value === 'string') {
-                element.value = value;
-              }
+              // Always update the value, even if it's empty string
+              element.value = typeof value === 'string' ? value : '';
               break;
               
             case 'MultiLanguageProperty':
-              if (Array.isArray(value)) {
+              if (Array.isArray(value) && value.length > 0) {
                 element.value = value.map(item => ({
                   language: item.language === 'English' ? 'en' : 
                            item.language === 'German' ? 'de' : 
                            item.language.toLowerCase().substring(0, 2),
-                  text: `"${item.value}"`
+                  text: `"${item.value || ''}"`
                 }));
+              } else {
+                // Clear the value if user provided empty array or no data
+                element.value = [];
               }
               break;
               
             case 'SubmodelElementCollection':
-              if (Array.isArray(value) && value.length > 0) {
-                // Handle collections like AddressInformation
+              // Handle special case for AddressInformation
+              if (element.idShort === 'AddressInformation' && Array.isArray(value) && value.length > 0) {
+                const addressData = value[0]; // Take the first entry
+                // Create address submodel elements with only the 4 fields from the form
+                element.value = [
+                  {
+                    "modelType": "Property", 
+                    "idShort": "Street",
+                    "value": addressData.street || "",
+                    "valueType": "xs:string"
+                  },
+                  {
+                    "modelType": "Property",
+                    "idShort": "HouseNumber", 
+                    "value": addressData.streetNumber || "",
+                    "valueType": "xs:string"
+                  },
+                  {
+                    "modelType": "Property",
+                    "idShort": "CityTown",
+                    "value": addressData.city || "",
+                    "valueType": "xs:string"
+                  },
+                  {
+                    "modelType": "Property",
+                    "idShort": "NationalCode",
+                    "value": addressData.country || "",
+                    "valueType": "xs:string"
+                  }
+                ];
+              } else if (Array.isArray(value) && value.length > 0) {
+                // Handle other collections
                 const firstItem = value[0];
                 if (element.value && Array.isArray(element.value)) {
                   updateSubmodelElements(element.value, firstItem);
+                }
+              } else {
+                // If no data provided, recursively clear nested elements
+                if (element.value && Array.isArray(element.value)) {
+                  updateSubmodelElements(element.value, {});
                 }
               }
               break;
@@ -249,13 +287,15 @@ function CreatePage() {
                   }
                   return element.value[0]; // fallback to template
                 });
+              } else {
+                // Clear the list if no items provided
+                element.value = [];
               }
               break;
               
             case 'File':
-              if (typeof value === 'string') {
-                element.value = value;
-              }
+              // Always update the value, even if it's empty string
+              element.value = typeof value === 'string' ? value : '';
               break;
           }
         }
