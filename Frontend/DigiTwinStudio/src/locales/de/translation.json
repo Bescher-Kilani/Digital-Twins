@@ -43,5 +43,26 @@
         "more": "...und vieles mehr"
       }
     }
+  },
+  "create": {
+    "buttons": {
+      "add": "Hinzufügen",
+      "remove": "Entfernen",
+      "back": "Zurück",
+      "save": "Speichern",
+      "addSubmodel": "Teilmodell hinzufügen"
+    },
+    "tooltips": {
+      "name": "Dieser Name wird als Titel für Ihr Modell im Dashboard und im Marktplatz verwendet",
+      "description": "Optionales Feld für eine kurze Beschreibung Ihres Modells",
+      "id": "Eindeutiger Bezeichner für die Asset Administration Shell",
+      "assetKind": "Gibt an, ob die Ressource vom Typ \"Type\", \"Instance\", \"Role\" ist oder keiner dieser Typen zutrifft",
+      "globalAssetId": "Kennung der Ressource, die von der Asset Administration Shell repräsentiert wird",
+      "specificAssetId": "Zusätzlicher, domänenspezifischer (in der Regel proprietärer) Bezeichner wie Seriennummer, Herstellerteilenummer, Kundenteilenummer usw."
+    },
+    "progress": {
+      "details": "Details ausfüllen",
+      "allDone": "Alles erledigt"
+    }
   }
 }

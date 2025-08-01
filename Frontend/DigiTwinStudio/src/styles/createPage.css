@@ -1,135 +1,48 @@
 /* createPage.css */
 
-.create-page-wrapper {
-  padding: 2rem 10%;
-  color: white;
-  background: linear-gradient(90deg, #001f3f, #004080);
-  min-height: 100vh;
-  position: relative;
+.create-page-container {
+  background: #012F63;
+  background: linear-gradient(180deg, rgba(1, 47, 99, 1) 0%, rgba(10, 75, 127, 1) 100%);
+  flex: 1;
 }
 
-.step-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 2rem;
-  padding: 0 12%;
-  position: relative;
-}
-
-.step-header span {
-  text-align: center;
-  width: 80px;
-  font-size: 1rem;
-  font-weight: 500;
-}
-
-.step-progress {
-  position: absolute;
-  top: 1.5rem;
-  left: 20%;
-  right: 20%;
-  height: 5px;
-  background-color: white;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  z-index: 0;
-}
-
-.step-progress .dot {
-  width: 15px;
-  height: 15px;
-  border-radius: 50%;
-  background-color: gray;
-  z-index: 1;
-}
-
-.step-progress .dot.active {
-  background-color: yellow;
-}
-
-.section {
-  margin-bottom: 2rem;
-}
-
-.section.boxed {
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 12px;
-  padding: 1.5rem;
-  background-color: rgba(255,255,255,0.05);
-}
-
-.field-block {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.field-group {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  position: relative;
-}
-
-.field-group.half {
-  flex: 0 1 48%;
-  max-width: 48%;
-}
-
-.field-group.auto {
+.step-progress-item {
   flex: 1 1 0;
-  min-width: 0;
 }
 
-.field-group label {
-  color: #ffffff;
-  font-weight: bold;
-  margin-bottom: 0.25rem;
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
+.step-progress-left {
+  text-align: left;
 }
 
-input,
-select {
-  padding: 0.5rem;
-  border-radius: 6px;
-  border: none;
-  font-size: 1rem;
-  width: 100%;
+.step-progress-right {
+  text-align: right;
 }
 
-.add-btn,
-.add-submodel,
-.back-btn,
-.save-btn {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
+.form-card {
+  background: #00376A;
+  background: linear-gradient(180deg, rgba(0, 55, 106, 1) 0%, rgba(1, 54, 106, 1) 50%, rgba(1, 54, 106, 1) 100%);
+  border: 3px solid #0E4175 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.help-icon {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  margin-left: 0.3rem;
-  position: relative;
-  z-index: 2;
+.form-card .form-control,
+.form-card .form-select {
+  background-color: #003368 !important;
+  border: 2px solid #1A4D82 !important;
+  color: white !important;
 }
 
-.form-footer {
-  display: flex;
-  justify-content: flex-start;
-  width: 20%;
-  gap: 1rem;
-  margin-top: 2rem;
+.form-card .form-control:focus,
+.form-card .form-select:focus {
+  background-color: #003368 !important;
+  border-color: #1A4D82 !important;
+  box-shadow: 0 0 0 0.2rem rgba(26, 77, 130, 0.25) !important;
+  color: white !important;
+}
+
+.form-card .form-control::placeholder {
+  color: rgba(255, 255, 255, 0.7) !important;
 }
 
 .ai-button {

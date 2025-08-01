@@ -59,5 +59,26 @@
     "lastEdit": "Last edit",
     "open": "Open",
     "download": "Download"
+  },
+  "create": {
+    "buttons": {
+      "add": "Add",
+      "remove": "Remove",
+      "back": "Back",
+      "save": "Save",
+      "addSubmodel": "Add Submodel"
+    },
+    "tooltips": {
+      "name": "This name will be used as the title for your model in the Dashboard and Marketplace",
+      "description": "Optional field for a short description of your model",
+      "id": "Unique identifier for the Asset Administration Shell",
+      "assetKind": "Denotes whether the asset is of kind \"Type\", \"Instance\", \"Role\" or none of these types is applicable",
+      "globalAssetId": "Identifier of the asset, the Asset Administration Shell is representing",
+      "specificAssetId": "Additional domain-specific, typically proprietary identifier for the asset like serial number, manufacturer part ID, customer part IDs, etc."
+    },
+    "progress": {
+      "details": "Fill the Details",
+      "allDone": "All done"
+    }
   }
 }
