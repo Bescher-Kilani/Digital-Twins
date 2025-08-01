@@ -1,9 +1,7 @@
 package org.DigiTwinStudio.DigiTwin_Backend.adapter;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import io.adminshell.aas.v3.dataformat.aasx.AASXSerializer;
-import io.adminshell.aas.v3.dataformat.aasx.InMemoryFile;
-import io.adminshell.aas.v3.model.AssetAdministrationShellEnvironment;
+
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ExportException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.DeserializationException;
@@ -14,6 +12,9 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultAssetAdministrationShell;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultEnvironment;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
+import org.eclipse.digitaltwin.aas4j.v3.model.Environment;
+import org.eclipse.digitaltwin.aas4j.v3.dataformat.aasx.AASXSerializer;
+import org.eclipse.digitaltwin.aas4j.v3.dataformat.aasx.InMemoryFile;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
@@ -79,10 +80,10 @@ public class AAS4jAdapter {
         return this.jsonSerializer.write(aasObject);
     }
 
-    public void serializeToAASX(AssetAdministrationShellEnvironment environment, Collection<InMemoryFile> files, OutputStream outputStream) throws SerializationException {
+    public void serializeToAASX(Environment environment, Collection<InMemoryFile> files, OutputStream outputStream) throws SerializationException {
         try {
             this.aasxSerializer.write(environment, files, outputStream);
-        } catch (IOException | io.adminshell.aas.v3.dataformat.SerializationException e) {
+        } catch (IOException e) {
             throw new SerializationException("Failed to serialize environment to AASX", e);
         }
     }

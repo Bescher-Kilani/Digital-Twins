@@ -1,7 +1,7 @@
 package org.DigiTwinStudio.DigiTwin_Backend.services;
 
-import io.adminshell.aas.v3.dataformat.aasx.InMemoryFile;
-import io.adminshell.aas.v3.model.AssetAdministrationShellEnvironment;
+
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.DigiTwinStudio.DigiTwin_Backend.adapter.AAS4jAdapter;
@@ -16,6 +16,8 @@ import org.DigiTwinStudio.DigiTwin_Backend.repositories.AASModelRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.MarketPlaceEntryRepository;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultEnvironment;
+import org.eclipse.digitaltwin.aas4j.v3.model.Environment;
+import org.eclipse.digitaltwin.aas4j.v3.dataformat.aasx.InMemoryFile;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -66,7 +68,7 @@ public class ExportService {
         // call aasx serializer
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
-            this.aas4jAdapter.serializeToAASX((AssetAdministrationShellEnvironment) environment, inMemoryFiles, baos);
+            this.aas4jAdapter.serializeToAASX((Environment) environment, inMemoryFiles, baos);
         } catch (SerializationException e) {
             log.error("Failed to serialize AAS object to AASX", e);
             throw new ExportException("Failed to serialize AAS object to AASX");
