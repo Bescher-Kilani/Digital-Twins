@@ -78,7 +78,7 @@ public class TemplateService {
             } else {
                 log.info("Template with name \"{}\" already exists. Checking for updated Version.", template.getName());
 
-                // check for an updated version. keep only newest
+                // check for an updated version. only set newest one active=True, all others active=False
                 Template localTemplate = this.templateRepository.findByNameAndActiveTrue(template.getName()).get();
                 int localTemplateVersion = Integer.parseInt(localTemplate.getVersion());
                 int templateVersion = Integer.parseInt(template.getVersion());
