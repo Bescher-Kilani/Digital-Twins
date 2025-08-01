@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Button, Image, Container } from "react-bootstrap";
-import Logo from "../assets/logo_with_different_text.png";
+import Logo from "../assets/Logo_with_different_text.png";
 import "../styles/signin.css";
 import { useContext } from "react";
 import { KeycloakContext } from "../KeycloakContext";

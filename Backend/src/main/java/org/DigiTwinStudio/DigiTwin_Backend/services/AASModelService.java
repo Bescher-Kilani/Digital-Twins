@@ -82,6 +82,8 @@ public class AASModelService {
                 .published(false)
                 .aas(shell)
                 .build();
+        validateReferencedFiles(model);
+        aasModelValidator.validate(model);
 
         return aasModelMapper.toDto(aasModelRepository.save(model));
     }
@@ -278,6 +280,16 @@ public class AASModelService {
                     if (element instanceof File fileElement) {
                         String fileId = fileElement.getValue();
 
+                        // Sicherstellen, dass fileId gesetzt ist:
+                        if (fileId == null || fileId.isBlank()) {
+                            // Optional: Logging zur Fehlersuche
+                            System.out.printf("WARN: File-Element ohne value (idShort=%s, semanticId=%s)%n",
+                                    fileElement.getIdShort(),
+                                    fileElement.getSemanticId());
+
+                            // Statt Crash: einfach überspringen
+                            continue;
+                        }
                         UploadedFile file = uploadedFileRepository.findById(fileId)
                                 .orElseThrow(() -> new NotFoundException("Referenced file not found: " + fileId));
 
