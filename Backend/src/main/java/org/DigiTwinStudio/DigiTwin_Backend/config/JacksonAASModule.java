@@ -17,6 +17,8 @@ public class JacksonAASModule extends SimpleModule {
         addAbstractTypeMapping(EmbeddedDataSpecification.class, DefaultEmbeddedDataSpecification.class);
         addAbstractTypeMapping(Key.class, DefaultKey.class);
         addAbstractTypeMapping(File.class, DefaultFile.class);
+        addAbstractTypeMapping(AssetInformation.class, DefaultAssetInformation.class);
+        addAbstractTypeMapping(Resource.class, DefaultResource.class);
 
 
 
@@ -32,6 +34,7 @@ public class JacksonAASModule extends SimpleModule {
         addDeserializer(QualifierKind.class, new GenericEnumDeserializer<>(QualifierKind.class));
         addDeserializer(DataTypeDefXsd.class, new GenericEnumDeserializer<>(DataTypeDefXsd.class));
         addDeserializer(AasSubmodelElements.class, new GenericEnumDeserializer<>(AasSubmodelElements.class));
+        addDeserializer(AssetKind.class, new GenericEnumDeserializer<>(AssetKind.class));
 
 
 
