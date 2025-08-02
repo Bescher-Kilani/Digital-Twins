@@ -2,13 +2,16 @@ package org.DigiTwinStudio.DigiTwin_Backend.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.ExportFormat;
+import org.DigiTwinStudio.DigiTwin_Backend.domain.ExportedFile;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.SubmodelDto;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.TemplateDto;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.UploadResponseDto;
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ExportException;
 import org.DigiTwinStudio.DigiTwin_Backend.services.*;
 
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -175,18 +178,22 @@ public class GuestController {
     /**
      * Exports a stored model in the specified format for a guest user.
      *
-     * @param modelId the ID of the model to export
      * @param format  the export format (e.g., JSON, XML, AASX)
      * @return the exported model as byte stream
      */
-    @GetMapping("/models/{modelId}/export/{format}")
-    public ResponseEntity<byte[]> exportStoredModelAsGuest(
-            @PathVariable String modelId,
-            @PathVariable String format) {
+    @GetMapping("/models/{id}/{name}/export/{format}")
+    public ResponseEntity<byte[]> exportModel(
+            @PathVariable String id,
+            @PathVariable String name,
+            @PathVariable ExportFormat format) {
 
-        return ResponseEntity.ok(
-                exportService.exportStoredModel(modelId, ExportFormat.valueOf(format))
-        );
+        ExportedFile exported = exportService.export(id, name, format);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment;" +
+                        " filename=\"" + exported.filename() + "\"")
+                .header(HttpHeaders.CONTENT_TYPE, exported.contentType())
+                .body(exported.bytes());
     }
 
 }

@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.DigiTwinStudio.DigiTwin_Backend.adapter.AAS4jAdapter;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
+import org.DigiTwinStudio.DigiTwin_Backend.domain.ExportedFile;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.ExportFormat;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.MarketplaceEntry;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
@@ -61,19 +62,21 @@ public class ExportService {
         // create aas environment
         DefaultEnvironment environment = aas4jAdapter.aasModelToDefaultEnvironment(model);
         // get file contents and convert to InMemoryFile-objects where the path is empty
-        List<InMemoryFile> inMemoryFiles = this.fileStorageService.getFileContentsByModelId(model.getId()).stream()
-                .map(content -> new InMemoryFile(content, ""))
-                .toList();
+        List<InMemoryFile> inMemoryFiles = List.of();
 
         // call aasx serializer
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        byte[] result;
         try {
             this.aas4jAdapter.serializeToAASX((Environment) environment, inMemoryFiles, baos);
+            result = baos.toByteArray();
+            log.info("AASX-Export erfolgreich – Dateigröße: {} Bytes", result.length);
         } catch (SerializationException e) {
-            log.error("Failed to serialize AAS object to AASX", e);
+            log.error("Fehler beim Export nach AASX", e);
             throw new ExportException("Failed to serialize AAS object to AASX");
         }
-        return baos.toByteArray();
+        return result;
+
     }
 
     /**
@@ -123,4 +126,25 @@ public class ExportService {
         };
 
     }
+
+    public ExportedFile export(String id, String name, ExportFormat format) {
+        byte[] content = exportStoredModel(id, format);
+
+        String fileExtension = switch (format) {
+            case JSON -> "json";
+            case AASX -> "aasx";
+            default -> throw new ExportException("Unsupported format");
+        };
+
+        String contentType = switch (format) {
+            case JSON -> "application/json";
+            case AASX -> "application/asset-administration-shell-package";
+        };
+
+        String filename = name + "." + fileExtension;
+        return new ExportedFile(content, filename, contentType);
+    }
+
+
+
 }
