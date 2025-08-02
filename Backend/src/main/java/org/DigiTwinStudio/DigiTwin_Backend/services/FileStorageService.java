@@ -4,6 +4,7 @@ import com.mongodb.client.gridfs.model.GridFSFile;
 import lombok.RequiredArgsConstructor;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.UploadedFile;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.UploadedFileRepository;
+import org.eclipse.digitaltwin.aas4j.v3.dataformat.aasx.InMemoryFile;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.gridfs.GridFsResource;
@@ -192,4 +193,34 @@ public class FileStorageService {
             throw new FileStorageException("Unexpected error while checking file existence", e);
         }
     }
+
+
+    public List<InMemoryFile> getInMemoryFilesByModelId(String modelId) {
+        List<UploadedFile> uploadedFiles = uploadedFileRepository.findAllByModelId(modelId);
+        List<InMemoryFile> inMemoryFiles = new ArrayList<>();
+
+        for (UploadedFile file : uploadedFiles) {
+            try {
+                ObjectId gridFsId = new ObjectId(file.getStoragePath());
+                GridFSFile gridFSFile = gridFsTemplate.findOne(Query.query(Criteria.where("_id").is(gridFsId)));
+
+                if (gridFSFile != null) {
+                    GridFsResource resource = gridFsTemplate.getResource(gridFSFile);
+                    byte[] content = resource.getInputStream().readAllBytes();
+
+                    // Verwende einen standardisierten Pfad z. B. "aasx/mydoc.pdf"
+                    String aasxPath = "aasx/" + file.getFilename();
+
+                    inMemoryFiles.add(new InMemoryFile(content, aasxPath));
+                } else {
+                    System.err.println("GridFS file not found for ID: " + file.getStoragePath());
+                }
+            } catch (IOException | IllegalArgumentException e) {
+                throw new RuntimeException("Error reading file content from GridFS for ID: " + file.getStoragePath(), e);
+            }
+        }
+
+        return inMemoryFiles;
+    }
+
 }

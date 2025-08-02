@@ -59,15 +59,11 @@ public class ExportService {
      * @throws ExportException if serialization failed
      */
     public byte[] exportAsAasx(AASModel model) throws ExportException {
-        // create aas environment
         DefaultEnvironment environment = aas4jAdapter.aasModelToDefaultEnvironment(model);
-        // get file contents and convert to InMemoryFile-objects where the path is empty
-        List<InMemoryFile> inMemoryFiles = this.fileStorageService.getFileContentsByModelId(model.getId()).stream()
-                .map(content -> new InMemoryFile(content, ""))
-                .toList();
 
+        // NEU: Korrekte Pfade mit InMemoryFile-Objekten
+        List<InMemoryFile> inMemoryFiles = fileStorageService.getInMemoryFilesByModelId(model.getId());
 
-        // call aasx serializer
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         byte[] result;
         try {
@@ -78,9 +74,10 @@ public class ExportService {
             log.error("Fehler beim Export nach AASX", e);
             throw new ExportException("Failed to serialize AAS object to AASX");
         }
-        return result;
 
+        return result;
     }
+
 
     /**
      * Export a stored model. Retrieves model from repository.
