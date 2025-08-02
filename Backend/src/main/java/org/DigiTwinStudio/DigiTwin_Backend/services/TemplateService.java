@@ -11,6 +11,7 @@ import org.DigiTwinStudio.DigiTwin_Backend.dtos.TemplateDto;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.TemplateRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.NotFoundException;
 import org.DigiTwinStudio.DigiTwin_Backend.integration.SMTRepoClient;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
@@ -53,6 +54,7 @@ public class TemplateService {
     }
 
     /**
+     * Scheduled to work once a week.
      * Fetches the latest templates from the external SMT-Repository
      * and upserts them into the local database.
      * Each fetched ExternalTemplateDto is mapped to a domain Template,
@@ -60,6 +62,7 @@ public class TemplateService {
      *
      * @throws RuntimeException if fetching or mapping fails
      */
+    @Scheduled(fixedRate = 1000 * 60 * 60 * 24 * 7) // Every week (value is in milliseconds)
     public void syncTemplatesFromRepo() {
         log.info("syncTemplatesFromRepo");
         List<Template> fetchedTemplates = smtRepoClient.fetchTemplates();
@@ -107,7 +110,6 @@ public class TemplateService {
         log.info("Updated {} templates in database.", updatedCount);
         log.info("Kept {} old templates in database.", oldCount);
         log.info("Database holds {} templates", this.templateRepository.count());
-        // ToDo: Scheduling.
    }
 
     /**

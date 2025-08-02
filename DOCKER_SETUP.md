@@ -77,3 +77,7 @@ MONGODB_PORT=27017
 - Backend health checks are configured for proper startup sequencing
 - Keycloak import happens automatically on first startup
 - MongoDB uses persistent volumes for data retention
+
+Update:
+docker-compose down
+docker-compose build <part> e.g frontend, backend
