@@ -254,4 +254,23 @@ public class MarketPlaceService {
         return tagRepository.findAll();
     }
 
+    /**
+     * Increments the download count for the marketplace entry with the given ID and persists the change.
+     *
+     * <p>If no entry exists for the provided {@code entryId}, a {@link BadRequestException} is thrown.</p>
+     *
+     * <p><b>Note:</b> This implementation performs a read-modify-write cycle; under high concurrency it may suffer
+     * from lost updates unless the underlying persistence layer provides appropriate locking or versioning
+     * (e.g., optimistic locking or an atomic increment at the database level).</p>
+     *
+     * @param entryId the identifier of the marketplace entry whose download count should be incremented
+     * @throws BadRequestException if no entry exists for the provided {@code entryId}
+     */
+    public void incrementDownloadCount(String entryId) throws BadRequestException {
+        MarketplaceEntry marketplaceEntry = this.marketPlaceEntryRepository.findById(entryId).orElseThrow(() -> new BadRequestException("No entry found for id: " + entryId));
+        marketplaceEntry.setDownloadCount(marketplaceEntry.getDownloadCount() + 1);
+        this.marketPlaceEntryRepository.save(marketplaceEntry);
+    }
+
+
 }

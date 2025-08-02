@@ -22,6 +22,7 @@ import org.DigiTwinStudio.DigiTwin_Backend.mapper.AASModelMapper;
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.SubmodelMapper;
 
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.AASModelRepository;
+import org.DigiTwinStudio.DigiTwin_Backend.repositories.MarketPlaceEntryRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.TagRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.UploadedFileRepository;
 
@@ -245,6 +246,7 @@ public class AASModelService {
     public void addEntryModelToUser(String entryId, String userId)  throws BadRequestException {
         String newModelId = this.createEmpty(userId).getId();
         this.saveModel(newModelId, userId, this.marketPlaceService.getPublishedModel(entryId));
+        this.marketPlaceService.incrementDownloadCount(entryId);
     }
 
     /**

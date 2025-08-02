@@ -49,10 +49,10 @@ public class StartUp implements ApplicationListener<ApplicationReadyEvent> {
         log.info("Application is ready – initiate StartUp.");
 
         // TEMPORARY SOLUTION TO RESET TEMPLATE AND TAG DATABASE
-        this.templateRepository.deleteAll();
-        log.info("Deleted all templates.");
-        this.tagRepository.deleteAll();
-        log.info("Deleted all tags.");
+        //this.templateRepository.deleteAll();
+        //log.info("Deleted all templates.");
+        //this.tagRepository.deleteAll();
+        //log.info("Deleted all tags.");
 
         // INITIALIZATION
         log.info("Initialize templates.");
