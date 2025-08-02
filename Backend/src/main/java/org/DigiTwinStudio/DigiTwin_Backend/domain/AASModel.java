@@ -35,4 +35,5 @@ public class AASModel {
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
 }
