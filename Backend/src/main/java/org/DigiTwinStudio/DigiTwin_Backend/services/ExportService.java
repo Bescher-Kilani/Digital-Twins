@@ -62,13 +62,16 @@ public class ExportService {
         // create aas environment
         DefaultEnvironment environment = aas4jAdapter.aasModelToDefaultEnvironment(model);
         // get file contents and convert to InMemoryFile-objects where the path is empty
-        List<InMemoryFile> inMemoryFiles = List.of();
+        List<InMemoryFile> inMemoryFiles = this.fileStorageService.getFileContentsByModelId(model.getId()).stream()
+                .map(content -> new InMemoryFile(content, ""))
+                .toList();
+
 
         // call aasx serializer
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         byte[] result;
         try {
-            this.aas4jAdapter.serializeToAASX((Environment) environment, inMemoryFiles, baos);
+            this.aas4jAdapter.serializeToAASX(environment, inMemoryFiles, baos);
             result = baos.toByteArray();
             log.info("AASX-Export erfolgreich – Dateigröße: {} Bytes", result.length);
         } catch (SerializationException e) {
