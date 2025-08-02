@@ -3,6 +3,7 @@ package org.DigiTwinStudio.DigiTwin_Backend.controller;
 import lombok.RequiredArgsConstructor;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.ExportFormat;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.ExportedFile;
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ExportException;
 import org.DigiTwinStudio.DigiTwin_Backend.services.ExportService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -20,12 +21,22 @@ public class ExportController {
     private final ExportService exportService;
 
     /**
-     * Exports a stored AAS model in the specified format.
+     * Exports a stored AAS model by its ID in the specified format (e.g. JSON or AASX),
+     * and returns it as a downloadable file in the HTTP response.
+     * <p>
+     * This endpoint is typically used to trigger a download in the user's browser.
+     * The response contains appropriate HTTP headers to:
+     * <ul>
+     *   <li>Set the correct <strong>Content-Type</strong> (e.g., {@code application/json}, {@code application/asset-administration-shell-package})</li>
+     *   <li>Set the <strong>Content-Disposition</strong> header to {@code attachment}, so the browser opens the download dialog</li>
+     *   <li>Provide a meaningful <strong>filename</strong> like {@code model-xyz.json} or {@code model-abc.aasx}</li>
+     * </ul>
      *
-     * @param modelId the ID of the model to export
-     * @param format the desired export format (e.g., {@code AASX}, {@code JSON}
-     * @param jwt the JWT token of the authenticated user
-     * @return a ResponseEntity containing the exported file as a byte array
+     * @param id      the ID of the stored AAS model
+     * @param name    the desired filename (without extension) for the exported file
+     * @param format  the export format (e.g., JSON or AASX)
+     * @return a {@link ResponseEntity} containing the model as a byte stream, download headers, and content type
+     * @throws ExportException if the model cannot be exported
      */
     @GetMapping("/models/{id}/{name}/export/{format}")
     public ResponseEntity<byte[]> exportModel(

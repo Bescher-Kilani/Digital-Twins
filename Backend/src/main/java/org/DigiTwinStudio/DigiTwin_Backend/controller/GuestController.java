@@ -175,12 +175,24 @@ public class GuestController {
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Exports a stored model in the specified format for a guest user.
-     *
-     * @param format  the export format (e.g., JSON, XML, AASX)
-     * @return the exported model as byte stream
-     */
+/**
+ * Exports a stored AAS model by its ID in the specified format (e.g. JSON or AASX),
+ * and returns it as a downloadable file in the HTTP response.
+ * <p>
+ * This endpoint is typically used to trigger a download in the user's browser.
+ * The response contains appropriate HTTP headers to:
+ * <ul>
+ *   <li>Set the correct <strong>Content-Type</strong> (e.g., {@code application/json}, {@code application/asset-administration-shell-package})</li>
+ *   <li>Set the <strong>Content-Disposition</strong> header to {@code attachment}, so the browser opens the download dialog</li>
+ *   <li>Provide a meaningful <strong>filename</strong> like {@code model-xyz.json} or {@code model-abc.aasx}</li>
+ * </ul>
+ *
+ * @param id      the ID of the stored AAS model
+ * @param name    the desired filename (without extension) for the exported file
+ * @param format  the export format (e.g., JSON or AASX)
+ * @return a {@link ResponseEntity} containing the model as a byte stream, download headers, and content type
+ * @throws ExportException if the model cannot be exported
+ */
     @GetMapping("/models/{id}/{name}/export/{format}")
     public ResponseEntity<byte[]> exportModel(
             @PathVariable String id,
