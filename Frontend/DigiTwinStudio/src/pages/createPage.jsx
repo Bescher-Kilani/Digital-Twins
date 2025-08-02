@@ -378,14 +378,24 @@ function CreatePage() {
       });
       
       if (response.ok) {
+        // Get the response data
+        const responseData = await response.json();
+        console.log('Model created successfully:', responseData);
+        
+        // Extract id and idShort from response
+        const modelId = responseData.id;
+        const modelIdShort = responseData.aas?.idShort;
+        
         // Clear the templates after successful save
         sessionStorage.removeItem('submodelTemplates');
         setSubmodelTemplates([]);
         
-        // Navigate to createComplete page with model name immediately
+        // Navigate to createComplete page with model data
         navigate('/create/complete', { 
           state: { 
-            modelName: formData.name || 'Untitled Model' 
+            modelName: formData.name || 'Untitled Model',
+            modelId: modelId,
+            modelIdShort: modelIdShort
           } 
         });
       } else {
