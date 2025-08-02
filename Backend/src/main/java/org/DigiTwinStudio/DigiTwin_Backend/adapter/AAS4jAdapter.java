@@ -9,6 +9,7 @@ import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonDeserializer;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
+import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultAssetAdministrationShell;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultEnvironment;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
@@ -94,19 +95,32 @@ public class AAS4jAdapter {
      * @return DefaultEnvironment containing given AASModels DefaultAAS
      */
     public DefaultEnvironment aasModelToDefaultEnvironment(AASModel model) {
-        // create Environment
         DefaultEnvironment environment = new DefaultEnvironment();
-        // add AssetAdministrationShell
         environment.setAssetAdministrationShells(List.of(model.getAas()));
 
         if (model.getSubmodels() != null && !model.getSubmodels().isEmpty()) {
-            // convert DefaultSubmodels to Submodels and add to Environment
-            List<Submodel> submodels = model.getSubmodels().stream()
-                    .map(defaultSubmodel -> (Submodel) defaultSubmodel)
-                    .collect(Collectors.toList());
-            environment.setSubmodels(submodels);
+            List<Submodel> filteredSubmodels = model.getSubmodels().stream()
+                    .map(submodel -> {
+                        // Filtere SubmodelElements mit ungültigem File.value
+                        List<SubmodelElement> cleanedElements = submodel.getSubmodelElements().stream()
+                                .filter(elem -> {
+                                    if (elem instanceof org.eclipse.digitaltwin.aas4j.v3.model.File file) {
+                                        String value = file.getValue();
+                                        return value != null && !value.isBlank();
+                                    }
+                                    return true;
+                                })
+                                .toList();
+
+                        submodel.setSubmodelElements(cleanedElements);
+                        return (Submodel) submodel;
+                    })
+                    .toList();
+
+            environment.setSubmodels(filteredSubmodels);
         }
 
         return environment;
     }
+
 }
