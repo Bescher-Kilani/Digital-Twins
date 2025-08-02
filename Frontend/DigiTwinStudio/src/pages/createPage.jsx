@@ -165,16 +165,26 @@ function CreatePage() {
     const mergedTemplate = JSON.parse(JSON.stringify(template.selectedTemplate.templateData.json));
     
     // Function to recursively update values in submodel elements
-    const updateSubmodelElements = (elements, data) => {
+    const updateSubmodelElements = (elements, data, currentPath = "") => {
       if (!elements || !Array.isArray(elements)) return;
       
       elements.forEach(element => {
         const idShort = element.idShort;
+        const fullPath = currentPath ? `${currentPath}.${idShort}` : idShort;
         
-        // Check if user has provided data for this field (including empty values)
-        if (data && Object.prototype.hasOwnProperty.call(data, idShort)) {
-          const value = data[idShort];
-          
+        // Check if user has provided data for this field using nested path first, then simple idShort
+        let value = undefined;
+        let hasData = false;
+        
+        if (data && Object.prototype.hasOwnProperty.call(data, fullPath)) {
+          value = data[fullPath];
+          hasData = true;
+        } else if (data && Object.prototype.hasOwnProperty.call(data, idShort)) {
+          value = data[idShort];
+          hasData = true;
+        }
+        
+        if (hasData) {
           // Handle different element types
           switch (element.modelType) {
             case 'Property':
@@ -227,35 +237,64 @@ function CreatePage() {
                     "valueType": "xs:string"
                   }
                 ];
-              } else if (Array.isArray(value) && value.length > 0) {
-                // Handle other collections
-                const firstItem = value[0];
-                if (element.value && Array.isArray(element.value)) {
-                  updateSubmodelElements(element.value, firstItem);
-                }
               } else {
-                // If no data provided, recursively clear nested elements
+                // For other collections, recursively update their value elements
                 if (element.value && Array.isArray(element.value)) {
-                  updateSubmodelElements(element.value, {});
+                  updateSubmodelElements(element.value, data, fullPath);
                 }
               }
               break;
               
             case 'SubmodelElementList':
               if (Array.isArray(value) && value.length > 0) {
-                // Handle lists like Markings
+                // Handle complex lists like ProductCarbonFootprints
                 element.value = value.map(item => {
-                  if (item.data && item.data[""]) {
-                    // Create a copy of the template element structure
-                    const listElement = JSON.parse(JSON.stringify(element.value[0]));
-                    updateSubmodelElements(listElement.value, item.data[""]);
-                    return listElement;
+                  // Create a copy of the template element structure
+                  const listElement = JSON.parse(JSON.stringify(element.value[0]));
+                  
+                  // Handle the nested data structure
+                  if (item.data) {
+                    // For each key in the item data (could be "undefined" or other keys)
+                    Object.keys(item.data).forEach(key => {
+                      const itemData = item.data[key];
+                      if (itemData && typeof itemData === 'object') {
+                        // Recursively update the list element with the item data
+                        if (listElement.value && Array.isArray(listElement.value)) {
+                          updateSubmodelElements(listElement.value, itemData, fullPath);
+                        }
+                      }
+                    });
                   }
-                  return element.value[0]; // fallback to template
+                  
+                  return listElement;
                 });
+              } else if (typeof value === 'string' && value.trim() !== '') {
+                // Handle simple string values for SubmodelElementLists
+                // Create a single list item with the provided value
+                if (element.value && element.value.length > 0 && element.value[0]) {
+                  const templateItem = element.value[0];
+                  const listItem = JSON.parse(JSON.stringify(templateItem));
+                  
+                  // Set the value on the list item
+                  if (listItem.modelType === 'Property') {
+                    listItem.value = value;
+                  }
+                  
+                  element.value = [listItem];
+                } else {
+                  // Fallback: create a basic property if no template exists
+                  element.value = [{
+                    "modelType": "Property",
+                    "idShort": element.idShort.replace(/s$/, ''), // Remove trailing 's' if present
+                    "value": value,
+                    "valueType": "xs:string"
+                  }];
+                }
               } else {
-                // Clear the list if no items provided
-                element.value = [];
+                // For complex lists, recurse into their nested elements
+                if (element.value && Array.isArray(element.value)) {
+                  updateSubmodelElements(element.value, data, fullPath);
+                }
               }
               break;
               
@@ -264,11 +303,11 @@ function CreatePage() {
               element.value = typeof value === 'string' ? value : '';
               break;
           }
-        }
-        
-        // Recursively handle nested elements
-        if (element.value && Array.isArray(element.value)) {
-          updateSubmodelElements(element.value, data);
+        } else {
+          // Recursively handle nested elements even if no direct data match
+          if (element.value && Array.isArray(element.value)) {
+            updateSubmodelElements(element.value, data, fullPath);
+          }
         }
       });
     };

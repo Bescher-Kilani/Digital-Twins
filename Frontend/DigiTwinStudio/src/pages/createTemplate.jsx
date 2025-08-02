@@ -17,14 +17,60 @@ import "../styles/createTemplate.css";
 // Function to extract cardinality from qualifiers
 const extractCardinality = (element) => {
   if (!element.qualifiers || !Array.isArray(element.qualifiers)) {
-    return "Unknown";
+    // Default based on element type and context
+    if (element.modelType === "SubmodelElementCollection" ||
+        element.modelType === "Entity") {
+      return "ZeroToMany";
+    }
+    
+    // For SubmodelElementList, check if it's a top-level list or nested
+    if (element.modelType === "SubmodelElementList") {
+      // Simple property lists should be treated as optional
+      if (element.value && element.value.length > 0 && 
+          element.value[0].modelType === "Property" && 
+          element.typeValueListElement === "Property") {
+        return "ZeroToMany";
+      }
+      // Complex lists (like ProductCarbonFootprints) might be required
+      return "One";
+    }
+    
+    // Properties and other simple elements are typically required
+    return "One";
   }
   
   const cardinalityQualifier = element.qualifiers.find(
-    qualifier => qualifier.type === "SMT/Cardinality"
+    qualifier => qualifier.type === "SMT/Cardinality" || qualifier.type === "Cardinality"
   );
   
-  return cardinalityQualifier?.value || "Unknown";
+  if (cardinalityQualifier?.value) {
+    return cardinalityQualifier.value;
+  }
+  
+  // Default based on element type if no qualifier found
+  if (element.modelType === "SubmodelElementCollection" ||
+      element.modelType === "Entity") {
+    return "ZeroToMany";
+  }
+  
+  if (element.modelType === "SubmodelElementList") {
+    // Simple property lists should be treated as optional
+    if (element.value && element.value.length > 0 && 
+        element.value[0].modelType === "Property" && 
+        element.typeValueListElement === "Property") {
+      return "ZeroToMany";
+    }
+    // Complex lists might be required
+    return "One";
+  }
+  
+  return "One";
+};
+
+// Enhanced function to determine field classification
+const getFieldClassification = (element) => {
+  const cardinality = extractCardinality(element);
+  return cardinality;
 };
 
 // Function to parse AAS submodel elements and convert them to form configuration
@@ -35,141 +81,179 @@ const parseSubmodelElements = (submodelElements) => {
     return fields;
   }
   
-  submodelElements.forEach(element => {
-    const cardinality = extractCardinality(element);
+  // Recursive function to traverse nested structures
+  const traverseElements = (elements, parentPath = "") => {
+    if (!elements || !Array.isArray(elements)) {
+      return;
+    }
     
-    switch (element.modelType) {
-      case "Property":
-        fields.push({
-          name: element.idShort,
-          type: "prop",
-          label: element.idShort,
-          placeholder: element.value || `Enter ${element.idShort}`,
-          tooltip: element.description ? 
-                   (Array.isArray(element.description) ? 
-                    element.description[0]?.text || "" : 
-                    element.description) : 
-                   `Property: ${element.idShort}`,
-          valueType: element.valueType || "xs:string",
-          cardinality: cardinality,
-          originalElement: element
-        });
-        break;
-        
-      case "MultiLanguageProperty":
-        fields.push({
-          name: element.idShort,
-          type: "multiLanguage",
-          label: element.idShort,
-          placeholder: element.value && element.value.length > 0 ? 
-                      element.value[0].text.replace(/"/g, '') : `Enter ${element.idShort}`,
-          tooltip: element.description ? 
-                   (Array.isArray(element.description) ? 
-                    element.description[0]?.text || "" : 
-                    element.description) : 
-                   `Multi-language property: ${element.idShort}`,
-          cardinality: cardinality,
-          originalElement: element
-        });
-        break;
-        
-      case "File":
-        fields.push({
-          name: element.idShort,
-          type: "file",
-          label: element.idShort,
-          placeholder: `Upload ${element.contentType || 'file'}`,
-          tooltip: element.description ? 
-                   (Array.isArray(element.description) ? 
-                    element.description[0]?.text || "" : 
-                    element.description) : 
-                   `File: ${element.idShort} (${element.contentType || 'unknown type'})`,
-          contentType: element.contentType,
-          cardinality: cardinality,
-          originalElement: element
-        });
-        break;
-        
-      case "SubmodelElementList":
-        fields.push({
-          name: element.idShort,
-          type: "list",
-          label: element.idShort,
-          tooltip: element.description ? 
-                   (Array.isArray(element.description) ? 
-                    element.description[0]?.text || "" : 
-                    element.description) : 
-                   `List: ${element.idShort}`,
-          cardinality: cardinality,
-          elementTemplate: element,
-          originalElement: element
-        });
-        break;
-        
-      case "Entity":
-        fields.push({
-          name: element.idShort,
-          type: "entity",
-          label: element.idShort,
-          tooltip: element.description ? 
-                   (Array.isArray(element.description) ? 
-                    element.description[0]?.text || "" : 
-                    element.description) : 
-                   `Entity: ${element.idShort} (${element.entityType || 'Unknown type'})`,
-          entityType: element.entityType,
-          globalAssetId: element.globalAssetId,
-          cardinality: cardinality,
-          elementTemplate: element,
-          originalElement: element
-        });
-        break;
-        
-      case "SubmodelElementCollection":
-        // Handle simple collections (like AddressInformation) that don't have nested elements in template
-        if (element.idShort === "AddressInformation" && (!element.value || element.value.length === 0)) {
+    elements.forEach(element => {
+      // Skip elements without proper idShort
+      if (!element.idShort) {
+        return;
+      }
+      
+      const cardinality = getFieldClassification(element);
+      const fullPath = parentPath ? `${parentPath}.${element.idShort}` : element.idShort;
+      
+      switch (element.modelType) {
+        case "Property":
           fields.push({
-            name: element.idShort,
-            type: "address",
-            label: "Address Information",
+            name: fullPath,
+            type: "prop",
+            label: element.idShort,
+            placeholder: element.value || `Enter ${element.idShort}`,
             tooltip: element.description ? 
                      (Array.isArray(element.description) ? 
                       element.description[0]?.text || "" : 
                       element.description) : 
-                     "Address information details",
+                     `Property: ${element.idShort}`,
+            valueType: element.valueType || "xs:string",
             cardinality: cardinality,
             originalElement: element
           });
-        } else {
-          // Handle complex collections with multiple elements
+          break;
+          
+        case "MultiLanguageProperty":
           fields.push({
-            name: element.idShort,
-            type: "collection",
+            name: fullPath,
+            type: "multiLanguage",
+            label: element.idShort,
+            placeholder: element.value && element.value.length > 0 ? 
+                        element.value[0].text.replace(/"/g, '') : `Enter ${element.idShort}`,
+            tooltip: element.description ? 
+                     (Array.isArray(element.description) ? 
+                      element.description[0]?.text || "" : 
+                      element.description) : 
+                     `Multi-language property: ${element.idShort}`,
+            cardinality: cardinality,
+            originalElement: element
+          });
+          break;
+          
+        case "File":
+          fields.push({
+            name: fullPath,
+            type: "file",
+            label: element.idShort,
+            placeholder: `Upload ${element.contentType || 'file'}`,
+            tooltip: element.description ? 
+                     (Array.isArray(element.description) ? 
+                      element.description[0]?.text || "" : 
+                      element.description) : 
+                     `File: ${element.idShort} (${element.contentType || 'unknown type'})`,
+            contentType: element.contentType,
+            cardinality: cardinality,
+            originalElement: element
+          });
+          break;
+          
+        case "SubmodelElementList":
+          // Check if this is a simple list with a single Property template
+          if (element.value && element.value.length > 0 && 
+              element.value[0].modelType === "Property" && 
+              element.typeValueListElement === "Property") {
+            // Treat simple property lists as regular text inputs
+            fields.push({
+              name: fullPath,
+              type: "prop",
+              label: element.idShort,
+              placeholder: `Enter ${element.idShort}`,
+              tooltip: element.description ? 
+                       (Array.isArray(element.description) ? 
+                        element.description[0]?.text || "" : 
+                        element.description) : 
+                       `List: ${element.idShort}`,
+              valueType: element.value[0].valueType || "xs:string",
+              cardinality: cardinality,
+              originalElement: element
+            });
+          } else {
+            // Treat as a list component
+            fields.push({
+              name: fullPath,
+              type: "list",
+              label: element.idShort,
+              tooltip: element.description ? 
+                       (Array.isArray(element.description) ? 
+                        element.description[0]?.text || "" : 
+                        element.description) : 
+                       `List: ${element.idShort}`,
+              cardinality: cardinality,
+              elementTemplate: element,
+              originalElement: element
+            });
+          }
+          break;
+          
+        case "Entity":
+          fields.push({
+            name: fullPath,
+            type: "entity",
             label: element.idShort,
             tooltip: element.description ? 
                      (Array.isArray(element.description) ? 
                       element.description[0]?.text || "" : 
                       element.description) : 
-                     `Collection: ${element.idShort}`,
+                     `Entity: ${element.idShort} (${element.entityType || 'Unknown type'})`,
+            entityType: element.entityType,
+            globalAssetId: element.globalAssetId,
             cardinality: cardinality,
             elementTemplate: element,
             originalElement: element
           });
-        }
-        break;
-        
-      default:
-        // Handle unknown types as properties
-        fields.push({
-          name: element.idShort,
-          type: "prop",
-          label: element.idShort,
-          placeholder: "",
-          tooltip: `${element.modelType}: ${element.idShort}`,
-          cardinality: cardinality,
-          originalElement: element
-        });
-    }
-  });
+          break;
+          
+        case "SubmodelElementCollection":
+          // Handle special case for AddressInformation
+          if (element.idShort === "AddressInformation" && (!element.value || element.value.length === 0)) {
+            fields.push({
+              name: fullPath,
+              type: "address",
+              label: "Address Information",
+              tooltip: element.description ? 
+                       (Array.isArray(element.description) ? 
+                        element.description[0]?.text || "" : 
+                        element.description) : 
+                       "Address information details",
+              cardinality: cardinality,
+              originalElement: element
+            });
+          } else {
+            // Treat as a collection component
+            fields.push({
+              name: fullPath,
+              type: "collection",
+              label: element.idShort,
+              tooltip: element.description ? 
+                       (Array.isArray(element.description) ? 
+                        element.description[0]?.text || "" : 
+                        element.description) : 
+                       `Collection: ${element.idShort}`,
+              cardinality: cardinality,
+              elementTemplate: element,
+              originalElement: element
+            });
+          }
+          break;
+          
+        default:
+          // Handle unknown types as properties
+          fields.push({
+            name: fullPath,
+            type: "prop",
+            label: element.idShort,
+            placeholder: "",
+            tooltip: `${element.modelType}: ${element.idShort}`,
+            cardinality: cardinality,
+            originalElement: element
+          });
+      }
+    });
+  };
+  
+  // Start the traversal from the root elements
+  traverseElements(submodelElements);
   
   return fields;
 };
@@ -188,6 +272,14 @@ const getTemplateConfig = (selectedTemplate) => {
   
   const templateData = selectedTemplate.templateData;
   const submodelElements = templateData.json?.submodelElements || [];
+  
+  // Try to get the template name from different possible sources
+  const templateName = templateData.name || 
+                      (templateData.json?.displayName && Array.isArray(templateData.json.displayName) 
+                        ? templateData.json.displayName.find(d => d.language === 'en')?.text || templateData.json.displayName[0]?.text
+                        : templateData.json?.displayName) || 
+                      templateData.json?.idShort || '';
+  
   const allFields = parseSubmodelElements(submodelElements);
   
   // Separate fields by cardinality - "One" and "OneToMany" are required fields
@@ -199,7 +291,7 @@ const getTemplateConfig = (selectedTemplate) => {
   );
   
   return {
-    title: templateData.name || selectedTemplate.title || "Template Configuration",
+    title: templateName || selectedTemplate.title || "Template Configuration",
     description: selectedTemplate.description || "",
     requiredFields: requiredFields,
     advancedFields: advancedFields,
@@ -260,19 +352,22 @@ export default function CreateTemplate() {
       const allFields = [...formConfig.requiredFields, ...formConfig.advancedFields];
       
       allFields.forEach(field => {
+        // Handle both nested field names (with dots) and regular field names
+        const fieldName = field.name;
+        
         switch (field.type) {
           case "prop": {
             // If editing, use existing data; otherwise initialize with empty value
-            initialData[field.name] = editingTemplate?.data?.data?.[field.name] || "";
+            initialData[fieldName] = editingTemplate?.data?.data?.[fieldName] || "";
             break;
           }
           case "multiLanguage": {
             // If editing, use existing data; otherwise initialize with empty values
-            initialData[field.name] = editingTemplate?.data?.data?.[field.name] || [{ id: 1, language: "English", value: "" }];
+            initialData[fieldName] = editingTemplate?.data?.data?.[fieldName] || [{ id: 1, language: "English", value: "" }];
             break;
           }
           case "address": {
-            initialData[field.name] = editingTemplate?.data?.data?.[field.name] || [{ 
+            initialData[fieldName] = editingTemplate?.data?.data?.[fieldName] || [{ 
               id: 1, 
               language: "English",
               street: "",
@@ -283,24 +378,24 @@ export default function CreateTemplate() {
             break;
           }
           case "file": {
-            initialData[field.name] = editingTemplate?.data?.data?.[field.name] || "";
+            initialData[fieldName] = editingTemplate?.data?.data?.[fieldName] || "";
             break;
           }
           case "list": {
             // Initialize lists with existing data or empty array
-            initialData[field.name] = editingTemplate?.data?.data?.[field.name] || [];
+            initialData[fieldName] = editingTemplate?.data?.data?.[fieldName] || [];
             break;
           }
           case "entity": {
             // Initialize entities with existing data or empty array
-            initialData[field.name] = editingTemplate?.data?.data?.[field.name] || [];
+            initialData[fieldName] = editingTemplate?.data?.data?.[fieldName] || [];
             break;
           }
           case "collection": {
             // Initialize collections with existing data or appropriate defaults
             if (field.type === "address" || field.name === "AddressInformation") {
               // Keep the existing address handling
-              initialData[field.name] = editingTemplate?.data?.data?.[field.name] || [{ 
+              initialData[fieldName] = editingTemplate?.data?.data?.[fieldName] || [{ 
                 id: 1, 
                 language: "English",
                 street: "",
@@ -310,12 +405,12 @@ export default function CreateTemplate() {
               }];
             } else {
               // For other collections, initialize with existing data or empty array
-              initialData[field.name] = editingTemplate?.data?.data?.[field.name] || [];
+              initialData[fieldName] = editingTemplate?.data?.data?.[fieldName] || [];
             }
             break;
           }
           default: {
-            initialData[field.name] = editingTemplate?.data?.data?.[field.name] || "";
+            initialData[fieldName] = editingTemplate?.data?.data?.[fieldName] || "";
           }
         }
       });
