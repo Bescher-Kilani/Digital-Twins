@@ -45,11 +45,13 @@ public class GuestCleanupService {
                         for (SubmodelElement element : submodel.getSubmodelElements()) {
                             if (element instanceof org.eclipse.digitaltwin.aas4j.v3.model.File fileElem) {
                                 String fileId = fileElem.getValue();
-                                try {
-                                    uploadedFileRepository.deleteById(fileId);
-                                    log.info("Deleted uploaded file: {}", fileId);
-                                } catch (Exception e) {
-                                    log.warn("Failed to delete uploaded file: {}", fileId, e);
+                                if(fileId != null) {
+                                    try {
+                                        uploadedFileRepository.deleteById(fileId);
+                                        log.info("Deleted uploaded file: {}", fileId);
+                                    } catch (Exception e) {
+                                        log.warn("Failed to delete uploaded file: {}", fileId, e);
+                                    }
                                 }
                             }
                         }
