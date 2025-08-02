@@ -346,7 +346,9 @@ function CreatePage() {
         assetType: formData.assetInformation.assetType,
         defaultThumbnail: formData.assetInformation.defaultThumbnail,
         globalAssetId: formData.assetInformation.globalAssetId,
-        specificAssetIds: formData.assetInformation.specificAssetIds
+        specificAssetIds: formData.assetInformation.specificAssetIds.filter(
+          item => item.name.trim() !== "" || item.value.trim() !== ""
+        )
       },
       derivedFrom: formData.derivedFrom,
       submodels: [],
