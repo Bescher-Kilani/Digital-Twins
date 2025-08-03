@@ -1,4 +1,4 @@
-import { Container, Row, Col, Button, Form, Card, Pagination, Dropdown, Toast, ToastContainer } from "react-bootstrap";
+import { Container, Row, Col, Button, Form, Card, Pagination, Dropdown, Toast, ToastContainer, Modal } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +8,7 @@ import OpenIcon from "../assets/icons/arrow-up-right-square-fill.svg?react";
 import DownloadIcon from "../assets/icons/arrow-bar-down.svg?react";
 import ImportIcon from "../assets/icons/arrow-bar-up.svg?react";
 import PlusIcon from "../assets/icons/plus-lg.svg?react";
+import TrashIcon from "../assets/icons/trash.svg?react";
 import { KeycloakContext } from "../KeycloakContext";
 import { authenticatedFetch } from "../utils/tokenManager";
 
@@ -19,6 +20,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [toasts, setToasts] = useState([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [modelToDelete, setModelToDelete] = useState(null);
   const navigate = useNavigate();
   const modelsPerPage = 4;
   
@@ -116,30 +119,23 @@ export default function Dashboard() {
     }
 
     try {
-      // Prepare headers
-      const headers = {};
-      
-      // Add Authorization header if user is logged in
-      let token = null;
-      
-      // Try multiple sources for the token
-      token = sessionStorage.getItem('access_token') || 
-              localStorage.getItem('authToken') || 
-              (keycloak && keycloak.token) ||
-              null;
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
       // Use the model ID for both modelId and modelIdShort since we don't have separate values
       const url = `http://localhost:9090/guest/models/${model.id}/${model.title}/export/${format}`;
       console.log('Downloading file from:', url);
       
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: headers
-      });
+      let response;
+      
+      if (authenticated) {
+        // User is authenticated - use authenticatedFetch with token refresh
+        response = await authenticatedFetch(url, {
+          method: 'GET'
+        }, keycloak);
+      } else {
+        // User is not authenticated - direct fetch without auth
+        response = await fetch(url, {
+          method: 'GET'
+        });
+      }
 
       if (response.ok) {
         // Get the file blob
@@ -189,6 +185,88 @@ export default function Dashboard() {
         showToast('Network error: Unable to download file. Please check your connection and try again.', 'danger');
       }
     }
+  };
+
+  // Function to handle model deletion
+  const handleDelete = (model) => {
+    if (!model.id) {
+      showToast('Model information is missing. Cannot delete model.', 'danger');
+      return;
+    }
+
+    // Show confirmation modal
+    setModelToDelete(model);
+    setShowDeleteModal(true);
+  };
+
+  // Function to confirm deletion
+  const confirmDelete = async () => {
+    const model = modelToDelete;
+    setShowDeleteModal(false);
+    setModelToDelete(null);
+
+    if (!model) return;
+
+    try {
+      const url = `http://localhost:9090/models/${model.id}/delete`;
+      console.log('Deleting model from:', url);
+      
+      let response;
+      
+      if (authenticated) {
+        // User is authenticated - use authenticatedFetch with token refresh
+        response = await authenticatedFetch(url, {
+          method: 'DELETE'
+        }, keycloak);
+      } else {
+        // User is not authenticated - this shouldn't happen for delete operations
+        showToast('Authentication required to delete models.', 'warning');
+        return;
+      }
+
+      if (response.ok) {
+        // Remove the model from the local state
+        setModels(prevModels => prevModels.filter(m => m.id !== model.id));
+        showToast(`Model "${model.title}" deleted successfully!`, 'success');
+        
+        // If we're on a page that no longer has models, go to page 1
+        const remainingModels = models.filter(m => m.id !== model.id);
+        const newTotalPages = Math.ceil(remainingModels.length / modelsPerPage);
+        if (currentPage > newTotalPages && newTotalPages > 0) {
+          setCurrentPage(1);
+        }
+      } else {
+        // Handle error response
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || `Error: ${response.status} ${response.statusText}`;
+        console.error('Error deleting model:', errorMessage);
+        
+        if (response.status === 401) {
+          showToast('Authentication required. Please sign in and try again.', 'warning');
+        } else if (response.status === 403) {
+          showToast('Access denied. You do not have permission to delete this model.', 'danger');
+        } else if (response.status === 404) {
+          showToast('Model not found. It may have already been deleted.', 'danger');
+        } else {
+          showToast(`Failed to delete model: ${errorMessage}`, 'danger');
+        }
+      }
+    } catch (error) {
+      console.error('Network error deleting model:', error);
+      
+      // Check if it's a CORS or network error
+      if (error.message.includes('Load failed') || error.message.includes('CORS') || error.message.includes('Network request failed')) {
+        showToast('Connection error: Unable to reach the server.', 'danger');
+      } else {
+        showToast('Network error: Unable to delete model. Please check your connection and try again.', 'danger');
+      }
+    }
+  };
+
+  // Function to cancel deletion
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setModelToDelete(null);
   };
   
   // Calculate pagination
@@ -291,6 +369,14 @@ export default function Dashboard() {
                     </Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown>
+                <Button 
+                  size="sm" 
+                  variant="danger" 
+                  onClick={() => handleDelete(model)}
+                  title="Delete model"
+                >
+                  <TrashIcon></TrashIcon> Delete
+                </Button>
               </div>
             </Card.Body>
           </Card>
@@ -337,6 +423,51 @@ export default function Dashboard() {
         </Row>
       )}
     </Container>
+
+    {/* Delete Confirmation Modal */}
+    <Modal show={showDeleteModal} onHide={cancelDelete} centered data-bs-theme="dark">
+      <Modal.Header 
+        closeButton 
+        style={{ 
+          background: 'linear-gradient(180deg, rgba(1, 47, 99, 1) 0%, rgba(10, 75, 127, 1) 100%)',
+          borderColor: '#0E4175' 
+        }}
+      >
+        <Modal.Title className="text-white">
+          <TrashIcon style={{ width: "20px", height: "20px", marginRight: "8px" }} />
+          Confirm Delete
+        </Modal.Title>
+      </Modal.Header>
+      <Modal.Body 
+        style={{ 
+          background: 'linear-gradient(180deg, rgba(0, 55, 106, 1) 0%, rgba(1, 54, 106, 1) 100%)',
+          color: 'white' 
+        }}
+      >
+        {modelToDelete && (
+          <p>
+            Are you sure you want to delete the model <strong>"{modelToDelete.title}"</strong>?
+          </p>
+        )}
+        <p className="text-warning mb-0">
+          <small>This action cannot be undone.</small>
+        </p>
+      </Modal.Body>
+      <Modal.Footer 
+        style={{ 
+          background: 'linear-gradient(180deg, rgba(0, 55, 106, 1) 0%, rgba(1, 54, 106, 1) 100%)',
+          borderColor: '#0E4175' 
+        }}
+      >
+        <Button variant="secondary" onClick={cancelDelete}>
+          Cancel
+        </Button>
+        <Button variant="danger" onClick={confirmDelete}>
+          <TrashIcon style={{ width: "16px", height: "16px", marginRight: "4px" }} />
+          Delete Model
+        </Button>
+      </Modal.Footer>
+    </Modal>
 
     {/* Toast notifications positioned at top right */}
     <ToastContainer 
