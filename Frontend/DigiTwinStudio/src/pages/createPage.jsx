@@ -467,6 +467,10 @@ function CreatePage() {
     }
   };
 
+  const handleBack = () => {
+     navigate(authenticated ? "/dashboard" : "/");
+  }
+
   // Handle form field changes
   const updateField = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -921,6 +925,7 @@ function CreatePage() {
                 alignItems: "center",
                 gap: "6px"
               }}
+              onClick={handleBack}
             >
               <ChevronLeftIcon style={{ fill: "white", width: "16px", height: "16px" }} />
               {t("create.buttons.back")}
