@@ -26,9 +26,8 @@ function Signin() {
     }
   };
 
-  // TODO: Logic to be made later
   const handleContinueAsGuest = () => {
-    navigate("/");
+    navigate("/create");
   };
 
   return (

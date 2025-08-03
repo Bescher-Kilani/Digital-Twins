@@ -6,8 +6,29 @@ import org.eclipse.digitaltwin.aas4j.v3.model.*;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.*;
 
 import java.io.IOException;
+
+/**
+ * Custom Jackson deserializer for the {@link SubmodelElement} interface.
+ * <p>
+ * This deserializer handles polymorphic deserialization of AAS4j submodel elements.
+ * It inspects the {@code modelType} field in the JSON object and delegates
+ * the deserialization to the corresponding concrete implementation class
+ * (e.g., {@link DefaultProperty}, {@link DefaultMultiLanguageProperty}, etc.).
+ * <br>
+ * If the {@code modelType} is unknown, an {@link IOException} is thrown.
+ * </p>
+ */
 public class SubmodelElementDeserializer extends JsonDeserializer<SubmodelElement> {
 
+    /**
+     * Deserializes a JSON object into the appropriate {@link SubmodelElement} implementation,
+     * based on the {@code modelType} property in the JSON.
+     *
+     * @param p     the JSON parser
+     * @param ctxt  the deserialization context
+     * @return the deserialized {@link SubmodelElement} instance
+     * @throws IOException if the {@code modelType} is missing or unrecognized
+     */
     @Override
     public SubmodelElement deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
         JsonNode node = p.getCodec().readTree(p);
@@ -24,9 +45,4 @@ public class SubmodelElementDeserializer extends JsonDeserializer<SubmodelElemen
             default -> throw new IOException("Unknown modelType: " + modelType);
         };
     }
-
-
-
 }
-
-

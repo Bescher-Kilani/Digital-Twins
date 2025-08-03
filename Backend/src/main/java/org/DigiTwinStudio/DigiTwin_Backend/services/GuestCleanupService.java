@@ -29,7 +29,7 @@ public class GuestCleanupService {
         LocalDateTime twoHoursAgo = LocalDateTime.now().minusHours(2);
 
         List<AASModel> expiredGuestModels = aasModelRepository
-                .findByOwnerIdAndDeletedFalseAndCreatedAtBefore("GUEST", twoHoursAgo);
+                .findByOwnerIdAndCreatedAtBefore("GUEST", twoHoursAgo);
 
         if (expiredGuestModels.isEmpty()) {
             log.info("No expired guest models found.");

@@ -77,7 +77,6 @@ public class AASModelUploadService {
                     .aas(aas)
                     .submodels(submodels)
                     .ownerId(ownerId)
-                    .deleted(false)
                     .published(false)
                     .publishMetadata(new PublishMetadata())
                     .build();

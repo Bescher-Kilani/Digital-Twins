@@ -28,8 +28,6 @@ public class AASModel {
 
     private PublishMetadata publishMetadata;
 
-    private boolean deleted;
-
     private boolean published;
 
     private LocalDateTime createdAt;
