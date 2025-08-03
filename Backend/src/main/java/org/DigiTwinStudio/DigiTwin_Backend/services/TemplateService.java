@@ -27,14 +27,13 @@ public class TemplateService {
     private final TemplateMapper templateMapper;
 
     /**
-     * Returns all active templates as DTOs.
+     * Returns all templates as DTOs.
      *
      * @return list of TemplateDto for frontend selection
      * @throws RuntimeException if mapping fails
      */
     public List<TemplateDto> getAvailableTemplates() {
         return templateRepository.findAll().stream()
-                .filter(Template::isActive)
                 .map(templateMapper::toDto)
                 .collect(Collectors.toList());
     }
@@ -54,15 +53,15 @@ public class TemplateService {
     }
 
     /**
-     * Scheduled to work once a week.
+     * Scheduled to work once a day.
      * Fetches the latest templates from the external SMT-Repository
      * and upserts them into the local database.
      * Each fetched ExternalTemplateDto is mapped to a domain Template,
-     * its pulledAt timestamp is set to now, and it is marked active.
+     * its pulledAt timestamp is set to now.
      *
      * @throws RuntimeException if fetching or mapping fails
      */
-    @Scheduled(fixedRate = 1000 * 60 * 60 * 24) // Every day (value is in milliseconds)
+    @Scheduled(cron = "0 0 0 * * *", zone = "Europe/Berlin") // Every day at 00:00
     public void syncTemplatesFromRepo() {
         log.info("syncTemplatesFromRepo");
         List<Template> fetchedTemplates = smtRepoClient.fetchTemplates();
@@ -73,7 +72,7 @@ public class TemplateService {
         int updatedCount = 0;
         for (Template template : fetchedTemplates) {
             log.info("Fetched Template: {}", template.getName());
-            if (this.templateRepository.findByNameAndActiveTrue(template.getName()).isEmpty()) {
+            if (this.templateRepository.findByName(template.getName()).isEmpty()) {
                 // no template with this name exists locally
                 newCount++;
                 this.templateRepository.save(template);
@@ -82,21 +81,22 @@ public class TemplateService {
                 log.info("Template with name \"{}\" already exists. Checking for updated Version.", template.getName());
 
                 // check for an updated version. only set newest one active=True, all others active=False
-                Template localTemplate = this.templateRepository.findByNameAndActiveTrue(template.getName()).get();
+                Template localTemplate = this.templateRepository.findByName(template.getName()).get();
                 int localTemplateVersion = Integer.parseInt(localTemplate.getVersion());
                 int templateVersion = Integer.parseInt(template.getVersion());
                 int localTemplateRevision = Integer.parseInt(localTemplate.getRevision());
                 int templateRevision = Integer.parseInt(template.getRevision());
 
                 if (templateVersion > localTemplateVersion || (localTemplateVersion == templateVersion && templateRevision > localTemplateRevision)) {
-                    updatedCount++;
-                    log.info("Saved updated Version \"{}.{}\" (old: \"{}.{}\") in database.", templateVersion, templateRevision, localTemplateVersion, localTemplateRevision);
-                    this.templateRepository.save(template);
+                    // delete old template
+                    this.templateRepository.delete(localTemplate);
+                    log.info("Deleted older Version of \"{}\" in database.", localTemplate.getName());
 
-                    // deactivate old template
-                    localTemplate.setActive(false);
-                    this.templateRepository.save(localTemplate);
-                    log.info("Deactivated older Version of \"{}\" in database.", localTemplate.getName());
+
+                    this.templateRepository.save(template);
+                    log.info("Saved updated Version \"{}.{}\" (old: \"{}.{}\") in database.", templateVersion, templateRevision, localTemplateVersion, localTemplateRevision);
+                    updatedCount++;
+
                 } else {
                     // no changes
                     oldCount++;

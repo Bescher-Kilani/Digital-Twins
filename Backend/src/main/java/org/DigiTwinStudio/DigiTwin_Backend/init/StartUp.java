@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.Tag;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.TagRepository;
-import org.DigiTwinStudio.DigiTwin_Backend.repositories.TemplateRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.services.TemplateService;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
@@ -23,7 +22,6 @@ public class StartUp implements ApplicationListener<ApplicationReadyEvent> {
 
     private final TemplateService templateService;
     private final TagRepository tagRepository;
-    private final TemplateRepository templateRepository;
 
     /**
      * Handles the {@link ApplicationReadyEvent}, which is triggered when the Spring Boot application has fully started.

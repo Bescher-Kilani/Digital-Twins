@@ -29,6 +29,4 @@ public class Template {
     private JsonNode json;
 
     private LocalDateTime pulledAt;
-
-    private boolean active; // Indicates if the template is currently visible or not. (if not, there is a newer version available)
 }
