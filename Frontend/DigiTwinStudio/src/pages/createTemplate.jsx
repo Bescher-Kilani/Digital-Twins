@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Container, Row, Col, Button, Form, Card, OverlayTrigger, Tooltip } from "react-bootstrap";
+import { Container, Row, Col, Button, Form, Card, OverlayTrigger, Tooltip, Alert } from "react-bootstrap";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import AddressInformation from "../components/form_inputs/AddressInformation";
 import Prop from "../components/form_inputs/Prop";
@@ -71,6 +71,144 @@ const extractCardinality = (element) => {
 const getFieldClassification = (element) => {
   const cardinality = extractCardinality(element);
   return cardinality;
+};
+
+// Validation functions for different valueTypes
+const validateField = (value, valueType, fieldName) => {
+  const errors = [];
+  
+  if (valueType === "xs:anyURI") {
+    return errors;
+  }
+  
+  // Check if field is empty
+  const isEmpty = !value || (typeof value === 'string' && value.trim() === '');
+  
+  switch (valueType) {
+    case "xs:string":
+      // String validation - check for basic string requirements
+      if (!isEmpty) {
+        if (typeof value !== 'string') {
+          errors.push(`${fieldName} must be a text value`);
+        }
+      }
+      break;
+      
+    case "xs:date":
+      // Date validation - must be in YYYY-MM-DD format
+      if (!isEmpty) {
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(value)) {
+          errors.push(`${fieldName} must be in YYYY-MM-DD format`);
+        } else {
+          // Check if it's a valid date
+          const date = new Date(value);
+          const [year, month, day] = value.split('-').map(num => parseInt(num, 10));
+          if (date.getFullYear() !== year || 
+              date.getMonth() !== month - 1 || 
+              date.getDate() !== day) {
+            errors.push(`${fieldName} must be a valid date`);
+          }
+        }
+      }
+      break;
+      
+    default:
+      // For unknown types, perform basic validation
+      if (!isEmpty && typeof value === 'string' && value.length > 1000) {
+        errors.push(`${fieldName} must be less than 1000 characters`);
+      }
+      break;
+  }
+  
+  return errors;
+};
+
+// Validate multi-language fields
+const validateMultiLanguageField = (entries, fieldName) => {
+  const errors = [];
+  
+  if (!entries || !Array.isArray(entries)) {
+    return errors;
+  }
+  
+  entries.forEach((entry, index) => {
+    if (entry.value && typeof entry.value === 'string') {
+      if (entry.value.length > 1000) {
+        errors.push(`${fieldName} (${entry.language || `Entry ${index + 1}`}) must be less than 1000 characters`);
+      }
+    }
+  });
+  
+  return errors;
+};
+
+// Validate address fields
+const validateAddressField = (entries, fieldName) => {
+  const errors = [];
+  
+  if (!entries || !Array.isArray(entries)) {
+    return errors;
+  }
+  
+  entries.forEach((entry, index) => {
+    const entryLabel = `${fieldName} (${entry.language || `Entry ${index + 1}`})`;
+    
+    ['street', 'streetNumber', 'city', 'country'].forEach(field => {
+      if (entry[field] && typeof entry[field] === 'string' && entry[field].length > 200) {
+        errors.push(`${entryLabel} ${field} must be less than 200 characters`);
+      }
+    });
+  });
+  
+  return errors;
+};
+
+// Validate required fields based on cardinality
+const validateRequiredField = (value, cardinality, fieldName, fieldType) => {
+  const errors = [];
+  
+  // Check if field is required (One or OneToMany cardinality)
+  const isRequired = cardinality === "One" || cardinality === "OneToMany";
+  
+  if (isRequired) {
+    let isEmpty = false;
+    
+    switch (fieldType) {
+      case "prop":
+        isEmpty = !value || (typeof value === 'string' && value.trim() === '');
+        break;
+      case "multiLanguage":
+        isEmpty = !value || !Array.isArray(value) || value.length === 0 || 
+                 !value.some(entry => entry.value && entry.value.trim() !== '');
+        break;
+      case "address":
+        isEmpty = !value || !Array.isArray(value) || value.length === 0 ||
+                 !value.some(entry => 
+                   (entry.street && entry.street.trim() !== '') ||
+                   (entry.streetNumber && entry.streetNumber.trim() !== '') ||
+                   (entry.city && entry.city.trim() !== '') ||
+                   (entry.country && entry.country.trim() !== '')
+                 );
+        break;
+      case "file":
+        isEmpty = !value || (typeof value === 'string' && value.trim() === '');
+        break;
+      case "list":
+      case "entity":
+      case "collection":
+        isEmpty = !value || !Array.isArray(value) || value.length === 0;
+        break;
+      default:
+        isEmpty = !value;
+    }
+    
+    if (isEmpty) {
+      errors.push(`${fieldName} is required`);
+    }
+  }
+  
+  return errors;
 };
 
 // Function to parse AAS submodel elements and convert them to form configuration
@@ -318,6 +456,120 @@ export default function CreateTemplate() {
   // Advanced fields state
   const [showAdvancedFields, setShowAdvancedFields] = useState(false);
 
+  // Validation state
+  const [validationErrors, setValidationErrors] = useState({});
+  const [showValidationErrors, setShowValidationErrors] = useState(false);
+
+  // Comprehensive validation function
+  const validateAllFields = () => {
+    const errors = {};
+    const allFields = [...formConfig.requiredFields, ...formConfig.advancedFields];
+    
+    allFields.forEach(fieldConfig => {
+      const fieldName = fieldConfig.name;
+      const fieldValue = formData[fieldName];
+      const fieldErrors = [];
+      
+      // Validate required fields
+      const requiredErrors = validateRequiredField(
+        fieldValue, 
+        fieldConfig.cardinality, 
+        fieldConfig.label, 
+        fieldConfig.type
+      );
+      fieldErrors.push(...requiredErrors);
+      
+      // Validate field content based on type and valueType
+      switch (fieldConfig.type) {
+        case "prop":
+          if (fieldValue && fieldConfig.valueType) {
+            const contentErrors = validateField(fieldValue, fieldConfig.valueType, fieldConfig.label);
+            fieldErrors.push(...contentErrors);
+          }
+          break;
+          
+        case "multiLanguage":
+          if (fieldValue && Array.isArray(fieldValue)) {
+            const mlpErrors = validateMultiLanguageField(fieldValue, fieldConfig.label);
+            fieldErrors.push(...mlpErrors);
+          }
+          break;
+          
+        case "address":
+          if (fieldValue && Array.isArray(fieldValue)) {
+            const addressErrors = validateAddressField(fieldValue, fieldConfig.label);
+            fieldErrors.push(...addressErrors);
+          }
+          break;
+          
+        // For other field types (file, list, entity, collection), 
+        // only required validation is performed above
+        default:
+          break;
+      }
+      
+      if (fieldErrors.length > 0) {
+        errors[fieldName] = fieldErrors;
+      }
+    });
+    
+    return errors;
+  };
+
+  // Real-time validation for individual fields
+  const validateSingleField = (fieldName, value, fieldConfig) => {
+    const fieldErrors = [];
+    
+    // Validate required fields
+    const requiredErrors = validateRequiredField(
+      value, 
+      fieldConfig.cardinality, 
+      fieldConfig.label, 
+      fieldConfig.type
+    );
+    fieldErrors.push(...requiredErrors);
+    
+    // Validate field content
+    switch (fieldConfig.type) {
+      case "prop":
+        if (value && fieldConfig.valueType) {
+          const contentErrors = validateField(value, fieldConfig.valueType, fieldConfig.label);
+          fieldErrors.push(...contentErrors);
+        }
+        break;
+        
+      case "multiLanguage":
+        if (value && Array.isArray(value)) {
+          const mlpErrors = validateMultiLanguageField(value, fieldConfig.label);
+          fieldErrors.push(...mlpErrors);
+        }
+        break;
+        
+      case "address":
+        if (value && Array.isArray(value)) {
+          const addressErrors = validateAddressField(value, fieldConfig.label);
+          fieldErrors.push(...addressErrors);
+        }
+        break;
+        
+      default:
+        break;
+    }
+    
+    // Update validation errors state
+    setValidationErrors(prev => {
+      const newErrors = { ...prev };
+      if (fieldErrors.length > 0) {
+        newErrors[fieldName] = fieldErrors;
+      } else {
+        delete newErrors[fieldName];
+      }
+      return newErrors;
+    });
+    
+    return fieldErrors;
+  };
+
   // TODO: Replace with actual API call to get template fields
   useEffect(() => {
     if (selectedTemplate) {
@@ -423,19 +675,37 @@ export default function CreateTemplate() {
     }
   }, [formConfig, editingTemplate]);
 
-  // Generic field update function
+  // Generic field update function with validation
   const updateField = (fieldName, value) => {
     setFormData(prev => ({ ...prev, [fieldName]: value }));
+    
+    // Find field configuration for validation
+    const fieldConfig = [...formConfig.requiredFields, ...formConfig.advancedFields]
+      .find(field => field.name === fieldName);
+    
+    if (fieldConfig) {
+      validateSingleField(fieldName, value, fieldConfig);
+    }
   };
 
-  // Generic multi-language field update function
+  // Generic multi-language field update function with validation
   const updateMultiLanguageField = (fieldName, id, updates) => {
+    const newValue = formData[fieldName].map(entry => 
+      entry.id === id ? { ...entry, ...updates } : entry
+    );
+    
     setFormData(prev => ({
       ...prev,
-      [fieldName]: prev[fieldName].map(entry => 
-        entry.id === id ? { ...entry, ...updates } : entry
-      )
+      [fieldName]: newValue
     }));
+    
+    // Find field configuration for validation
+    const fieldConfig = [...formConfig.requiredFields, ...formConfig.advancedFields]
+      .find(field => field.name === fieldName);
+    
+    if (fieldConfig) {
+      validateSingleField(fieldName, newValue, fieldConfig);
+    }
   };
 
   // Generic add entry function
@@ -473,8 +743,27 @@ export default function CreateTemplate() {
     }));
   };
 
-  // Handle save and redirect back to /create
+  // Handle save with validation
   const handleSave = () => {
+    // Validate all fields before saving
+    const errors = validateAllFields();
+    
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      setShowValidationErrors(true);
+      // Scroll to the first error
+      const firstErrorField = Object.keys(errors)[0];
+      const errorElement = document.querySelector(`[data-field-name="${firstErrorField}"]`);
+      if (errorElement) {
+        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+    
+    // Clear validation errors and proceed with save
+    setValidationErrors({});
+    setShowValidationErrors(false);
+    
     const templateData = {
       title: formConfig.title,
       selectedTemplate: selectedTemplate,
@@ -531,145 +820,228 @@ export default function CreateTemplate() {
   // Dynamic field rendering based on API configuration
   const renderField = (fieldConfig) => {
     const fieldData = formData[fieldConfig.name];
+    const fieldErrors = validationErrors[fieldConfig.name] || [];
+    const hasErrors = showValidationErrors && fieldErrors.length > 0;
     
     if (fieldData === undefined) return null; // Wait for form data to initialize
+
+    const commonProps = {
+      "data-field-name": fieldConfig.name,
+      className: hasErrors ? "mb-4 is-invalid" : "mb-4"
+    };
 
     switch (fieldConfig.type) {
       case "prop":
         return (
-          <Prop
-            key={fieldConfig.name}
-            label={fieldConfig.label}
-            placeholder={fieldConfig.valueType === "xs:date" ? "YYYY-MM-DD" : fieldConfig.placeholder}
-            helpText={fieldConfig.tooltip}
-            type={fieldConfig.valueType === "xs:date" ? "date" : "text"}
-            value={fieldData}
-            onChange={(e) => updateField(fieldConfig.name, e.target.value)}
-            className="mb-4"
-          />
+          <div key={fieldConfig.name} {...commonProps}>
+            <Prop
+              label={fieldConfig.label}
+              placeholder={fieldConfig.valueType === "xs:date" ? "YYYY-MM-DD" : fieldConfig.placeholder}
+              helpText={fieldConfig.tooltip}
+              type={fieldConfig.valueType === "xs:date" ? "date" : "text"}
+              value={fieldData}
+              onChange={(e) => updateField(fieldConfig.name, e.target.value)}
+              isInvalid={hasErrors}
+            />
+            {hasErrors && (
+              <div className="invalid-feedback d-block">
+                {fieldErrors.map((error, index) => (
+                  <div key={index} className="text-danger small">{error}</div>
+                ))}
+              </div>
+            )}
+          </div>
         );
 
       case "multiLanguage":
-        return fieldData.map((entry, index) => (
-          <MLP
-            key={entry.id}
-            label={fieldConfig.label}
-            placeholder={fieldConfig.placeholder}
-            helpText={fieldConfig.tooltip}
-            language={entry.language}
-            value={entry.value}
-            onChange={(e) => updateMultiLanguageField(fieldConfig.name, entry.id, { value: e.target.value })}
-            onLanguageChange={(newLanguage) => updateMultiLanguageField(fieldConfig.name, entry.id, { language: newLanguage })}
-            onAdd={() => addMultiLanguageEntry(fieldConfig.name)}
-            onRemove={() => removeMultiLanguageEntry(fieldConfig.name, entry.id)}
-            showLabel={index === 0}
-            showAddButton={index === fieldData.length - 1}
-            showRemoveButton={fieldData.length > 1}
-          />
-        ));
+        return (
+          <div key={fieldConfig.name} {...commonProps}>
+            {fieldData.map((entry, index) => (
+              <MLP
+                key={entry.id}
+                label={fieldConfig.label}
+                placeholder={fieldConfig.placeholder}
+                helpText={fieldConfig.tooltip}
+                language={entry.language}
+                value={entry.value}
+                onChange={(e) => updateMultiLanguageField(fieldConfig.name, entry.id, { value: e.target.value })}
+                onLanguageChange={(newLanguage) => updateMultiLanguageField(fieldConfig.name, entry.id, { language: newLanguage })}
+                onAdd={() => addMultiLanguageEntry(fieldConfig.name)}
+                onRemove={() => removeMultiLanguageEntry(fieldConfig.name, entry.id)}
+                showLabel={index === 0}
+                showAddButton={index === fieldData.length - 1}
+                showRemoveButton={fieldData.length > 1}
+                isInvalid={hasErrors}
+              />
+            ))}
+            {hasErrors && (
+              <div className="invalid-feedback d-block">
+                {fieldErrors.map((error, index) => (
+                  <div key={index} className="text-danger small">{error}</div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
 
       case "address":
-        return fieldData.map((entry, index) => (
-          <AddressInformation
-            key={entry.id}
-            label={fieldConfig.label}
-            helpText={fieldConfig.tooltip}
-            language={entry.language}
-            street={entry.street || ""}
-            streetNumber={entry.streetNumber || ""}
-            city={entry.city || ""}
-            country={entry.country || ""}
-            onLanguageChange={(newLanguage) => updateMultiLanguageField(fieldConfig.name, entry.id, { language: newLanguage })}
-            onStreetChange={(value) => updateMultiLanguageField(fieldConfig.name, entry.id, { street: value })}
-            onStreetNumberChange={(value) => updateMultiLanguageField(fieldConfig.name, entry.id, { streetNumber: value })}
-            onCityChange={(value) => updateMultiLanguageField(fieldConfig.name, entry.id, { city: value })}
-            onCountryChange={(value) => updateMultiLanguageField(fieldConfig.name, entry.id, { country: value })}
-            onRemove={() => removeMultiLanguageEntry(fieldConfig.name, entry.id)}
-            onAdd={() => addMultiLanguageEntry(fieldConfig.name)}
-            showLabel={index === 0}
-            showRemoveButton={fieldData.length > 1}
-            showAddButton={index === fieldData.length - 1}
-          />
-        ));
+        return (
+          <div key={fieldConfig.name} {...commonProps}>
+            {fieldData.map((entry, index) => (
+              <AddressInformation
+                key={entry.id}
+                label={fieldConfig.label}
+                helpText={fieldConfig.tooltip}
+                language={entry.language}
+                street={entry.street || ""}
+                streetNumber={entry.streetNumber || ""}
+                city={entry.city || ""}
+                country={entry.country || ""}
+                onLanguageChange={(newLanguage) => updateMultiLanguageField(fieldConfig.name, entry.id, { language: newLanguage })}
+                onStreetChange={(value) => updateMultiLanguageField(fieldConfig.name, entry.id, { street: value })}
+                onStreetNumberChange={(value) => updateMultiLanguageField(fieldConfig.name, entry.id, { streetNumber: value })}
+                onCityChange={(value) => updateMultiLanguageField(fieldConfig.name, entry.id, { city: value })}
+                onCountryChange={(value) => updateMultiLanguageField(fieldConfig.name, entry.id, { country: value })}
+                onRemove={() => removeMultiLanguageEntry(fieldConfig.name, entry.id)}
+                onAdd={() => addMultiLanguageEntry(fieldConfig.name)}
+                showLabel={index === 0}
+                showRemoveButton={fieldData.length > 1}
+                showAddButton={index === fieldData.length - 1}
+                isInvalid={hasErrors}
+              />
+            ))}
+            {hasErrors && (
+              <div className="invalid-feedback d-block">
+                {fieldErrors.map((error, index) => (
+                  <div key={index} className="text-danger small">{error}</div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
 
       case "file":
         return (
-          <FileInput
-            key={fieldConfig.name}
-            label={fieldConfig.label}
-            helpText={fieldConfig.tooltip}
-            contentType={fieldConfig.contentType}
-            onChange={(fileName) => updateField(fieldConfig.name, fileName)}
-            className="mb-4"
-          />
+          <div key={fieldConfig.name} {...commonProps}>
+            <FileInput
+              label={fieldConfig.label}
+              helpText={fieldConfig.tooltip}
+              contentType={fieldConfig.contentType}
+              onChange={(fileName) => updateField(fieldConfig.name, fileName)}
+              isInvalid={hasErrors}
+            />
+            {hasErrors && (
+              <div className="invalid-feedback d-block">
+                {fieldErrors.map((error, index) => (
+                  <div key={index} className="text-danger small">{error}</div>
+                ))}
+              </div>
+            )}
+          </div>
         );
 
       case "list":
         return (
-          <CollectionInput
-            key={fieldConfig.name}
-            label={fieldConfig.label}
-            helpText={fieldConfig.tooltip}
-            value={fieldData}
-            onChange={(newValue) => updateField(fieldConfig.name, newValue)}
-            collectionType="SubmodelElementList"
-            elementTemplate={fieldConfig.elementTemplate}
-            className="mb-4"
-          />
+          <div key={fieldConfig.name} {...commonProps}>
+            <CollectionInput
+              label={fieldConfig.label}
+              helpText={fieldConfig.tooltip}
+              value={fieldData}
+              onChange={(newValue) => updateField(fieldConfig.name, newValue)}
+              collectionType="SubmodelElementList"
+              elementTemplate={fieldConfig.elementTemplate}
+              isInvalid={hasErrors}
+            />
+            {hasErrors && (
+              <div className="invalid-feedback d-block">
+                {fieldErrors.map((error, index) => (
+                  <div key={index} className="text-danger small">{error}</div>
+                ))}
+              </div>
+            )}
+          </div>
         );
 
       case "entity":
         return (
-          <Entity
-            key={fieldConfig.name}
-            label={fieldConfig.label}
-            helpText={fieldConfig.tooltip}
-            value={fieldData}
-            onChange={(newValue) => updateField(fieldConfig.name, newValue)}
-            entityTemplate={fieldConfig.elementTemplate}
-            className="mb-4"
-          />
+          <div key={fieldConfig.name} {...commonProps}>
+            <Entity
+              label={fieldConfig.label}
+              helpText={fieldConfig.tooltip}
+              value={fieldData}
+              onChange={(newValue) => updateField(fieldConfig.name, newValue)}
+              entityTemplate={fieldConfig.elementTemplate}
+              isInvalid={hasErrors}
+            />
+            {hasErrors && (
+              <div className="invalid-feedback d-block">
+                {fieldErrors.map((error, index) => (
+                  <div key={index} className="text-danger small">{error}</div>
+                ))}
+              </div>
+            )}
+          </div>
         );
 
       case "collection":
         // Handle complex collections (not AddressInformation)
         if (fieldConfig.name === "AddressInformation" || fieldConfig.type === "address") {
           // Keep existing address handling
-          return fieldData.map((entry, index) => (
-            <AddressInformation
-              key={entry.id}
-              label={fieldConfig.label}
-              helpText={fieldConfig.tooltip}
-              language={entry.language}
-              street={entry.street || ""}
-              streetNumber={entry.streetNumber || ""}
-              city={entry.city || ""}
-              country={entry.country || ""}
-              onLanguageChange={(newLanguage) => updateMultiLanguageField(fieldConfig.name, entry.id, { language: newLanguage })}
-              onStreetChange={(value) => updateMultiLanguageField(fieldConfig.name, entry.id, { street: value })}
-              onStreetNumberChange={(value) => updateMultiLanguageField(fieldConfig.name, entry.id, { streetNumber: value })}
-              onCityChange={(value) => updateMultiLanguageField(fieldConfig.name, entry.id, { city: value })}
-              onCountryChange={(value) => updateMultiLanguageField(fieldConfig.name, entry.id, { country: value })}
-              onRemove={() => removeMultiLanguageEntry(fieldConfig.name, entry.id)}
-              onAdd={() => addMultiLanguageEntry(fieldConfig.name)}
-              showLabel={index === 0}
-              showRemoveButton={fieldData.length > 1}
-              showAddButton={index === fieldData.length - 1}
-            />
-          ));
+          return (
+            <div key={fieldConfig.name} {...commonProps}>
+              {fieldData.map((entry, index) => (
+                <AddressInformation
+                  key={entry.id}
+                  label={fieldConfig.label}
+                  helpText={fieldConfig.tooltip}
+                  language={entry.language}
+                  street={entry.street || ""}
+                  streetNumber={entry.streetNumber || ""}
+                  city={entry.city || ""}
+                  country={entry.country || ""}
+                  onLanguageChange={(newLanguage) => updateMultiLanguageField(fieldConfig.name, entry.id, { language: newLanguage })}
+                  onStreetChange={(value) => updateMultiLanguageField(fieldConfig.name, entry.id, { street: value })}
+                  onStreetNumberChange={(value) => updateMultiLanguageField(fieldConfig.name, entry.id, { streetNumber: value })}
+                  onCityChange={(value) => updateMultiLanguageField(fieldConfig.name, entry.id, { city: value })}
+                  onCountryChange={(value) => updateMultiLanguageField(fieldConfig.name, entry.id, { country: value })}
+                  onRemove={() => removeMultiLanguageEntry(fieldConfig.name, entry.id)}
+                  onAdd={() => addMultiLanguageEntry(fieldConfig.name)}
+                  showLabel={index === 0}
+                  showRemoveButton={fieldData.length > 1}
+                  showAddButton={index === fieldData.length - 1}
+                  isInvalid={hasErrors}
+                />
+              ))}
+              {hasErrors && (
+                <div className="invalid-feedback d-block">
+                  {fieldErrors.map((error, index) => (
+                    <div key={index} className="text-danger small">{error}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
         } else {
           // Handle complex collections with CollectionInput
           return (
-            <CollectionInput
-              key={fieldConfig.name}
-              label={fieldConfig.label}
-              helpText={fieldConfig.tooltip}
-              value={fieldData}
-              onChange={(newValue) => updateField(fieldConfig.name, newValue)}
-              collectionType="SubmodelElementCollection"
-              elementTemplate={fieldConfig.elementTemplate}
-              className="mb-4"
-            />
+            <div key={fieldConfig.name} {...commonProps}>
+              <CollectionInput
+                label={fieldConfig.label}
+                helpText={fieldConfig.tooltip}
+                value={fieldData}
+                onChange={(newValue) => updateField(fieldConfig.name, newValue)}
+                collectionType="SubmodelElementCollection"
+                elementTemplate={fieldConfig.elementTemplate}
+                isInvalid={hasErrors}
+              />
+              {hasErrors && (
+                <div className="invalid-feedback d-block">
+                  {fieldErrors.map((error, index) => (
+                    <div key={index} className="text-danger small">{error}</div>
+                  ))}
+                </div>
+              )}
+            </div>
           );
         }
 
@@ -775,6 +1147,26 @@ export default function CreateTemplate() {
           <Card.Title className="mb-4">
             {formConfig.title}
           </Card.Title>
+          
+          {/* Validation Error Summary */}
+          {showValidationErrors && Object.keys(validationErrors).length > 0 && (
+            <Alert variant="danger" className="mb-4">
+              <Alert.Heading className="h6">Please fix the following errors:</Alert.Heading>
+              <ul className="mb-0 small">
+                {Object.entries(validationErrors).map(([fieldName, errors]) => {
+                  const fieldConfig = [...formConfig.requiredFields, ...formConfig.advancedFields]
+                    .find(field => field.name === fieldName);
+                  const fieldLabel = fieldConfig?.label || fieldName;
+                  
+                  return errors.map((error, index) => (
+                    <li key={`${fieldName}-${index}`}>
+                      <strong>{fieldLabel}:</strong> {error}
+                    </li>
+                  ));
+                })}
+              </ul>
+            </Alert>
+          )}
           
           {/* Dynamically rendered required fields */}
           {formConfig.requiredFields.map(fieldConfig => renderField(fieldConfig))}

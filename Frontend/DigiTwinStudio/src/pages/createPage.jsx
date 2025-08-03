@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Card, Button, Toast, ToastContainer, Container, Row, Col } from "react-bootstrap";
+import { Card, Button, Toast, ToastContainer, Container, Row, Col, OverlayTrigger, Tooltip } from "react-bootstrap";
 import { useNavigate, useLocation } from "react-router-dom";
 import Prop from "../components/form_inputs/Prop";
 import AssetKind from "../components/form_inputs/AssetKind";
@@ -8,6 +8,7 @@ import aiAssistantIcon from "../assets/ai-chatbot-assistant.png";
 import tagIcon from "../assets/icons/tags.svg";
 import ChevronLeftIcon from "../assets/icons/chevron-left.svg?react";
 import FloppyFillIcon from "../assets/icons/floppy-fill.svg?react";
+import QuestionCircleIcon from "../assets/icons/question-circle.svg?react";
 import { useTranslation } from "react-i18next";
 import { KeycloakContext } from "../KeycloakContext";
 import "../styles/createPage.css";
@@ -25,12 +26,23 @@ function CreatePage() {
   
   // State for form data
   const [formData, setFormData] = useState({
-    name: "",
-    description: "",
+    assetInformation: {
+      assetKind: "Instance",
+      assetType: "testType",
+      defaultThumbnail: null,
+      globalAssetId: "",
+      specificAssetIds: [{ name: "", value: "" }]
+    },
+    derivedFrom: null,
+    submodels: [],
+    embeddedDataSpecifications: [],
+    extensions: [],
+    administration: null,
     id: "",
-    assetKind: "Instance",
-    globalAssetId: "",
-    specificAssetId: [{ name: "", value: "" }]
+    category: null,
+    description: [{ language: "en", text: "" }],
+    displayName: [],
+    idShort: ""
   });
   
   // State for submodel templates - initialize from sessionStorage
@@ -329,14 +341,25 @@ function CreatePage() {
     
     // Transform AAS data to match the new format
     const transformedAAS = {
-      idShort: formData.name,
-      description: formData.description 
-        ? [{ "language": "en", "text": formData.description }]
-        : [],
+      assetInformation: {
+        assetKind: formData.assetInformation.assetKind,
+        assetType: formData.assetInformation.assetType,
+        defaultThumbnail: formData.assetInformation.defaultThumbnail,
+        globalAssetId: formData.assetInformation.globalAssetId,
+        specificAssetIds: formData.assetInformation.specificAssetIds.filter(
+          item => item.name.trim() !== "" || item.value.trim() !== ""
+        )
+      },
+      derivedFrom: formData.derivedFrom,
+      submodels: [],
+      embeddedDataSpecifications: formData.embeddedDataSpecifications,
+      extensions: formData.extensions,
+      administration: formData.administration,
       id: formData.id,
-      assetKind: formData.assetKind,
-      globalAssetId: formData.globalAssetId,
-      specificAssetId: formData.specificAssetId
+      category: formData.category,
+      description: formData.description.filter(desc => desc.text.trim() !== ""),
+      displayName: formData.displayName,
+      idShort: formData.idShort
     };
     
     const finalData = {
@@ -393,7 +416,7 @@ function CreatePage() {
         // Navigate to createComplete page with model data
         navigate('/create/complete', { 
           state: { 
-            modelName: formData.name || 'Untitled Model',
+            modelName: formData.idShort || 'Untitled Model',
             modelId: modelId,
             modelIdShort: modelIdShort
           } 
@@ -434,26 +457,63 @@ function CreatePage() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const updateDescriptionField = (index, field, value) => {
+    setFormData(prev => {
+      const updated = [...prev.description];
+      updated[index][field] = value;
+      return { ...prev, description: updated };
+    });
+  };
+
+  const addDescriptionLanguage = () => {
+    setFormData(prev => ({
+      ...prev,
+      description: [...prev.description, { language: "de", text: "" }]
+    }));
+  };
+
+  const removeDescriptionLanguage = (index) => {
+    setFormData(prev => {
+      const updated = prev.description.filter((_, i) => i !== index);
+      return { ...prev, description: updated };
+    });
+  };
+
   const updateSpecificAssetIdField = (index, field, value) => {
     setFormData(prev => {
-      const updated = [...prev.specificAssetId];
+      const updated = [...prev.assetInformation.specificAssetIds];
       updated[index][field] = value;
-      return { ...prev, specificAssetId: updated };
+      return { 
+        ...prev, 
+        assetInformation: {
+          ...prev.assetInformation,
+          specificAssetIds: updated
+        }
+      };
     });
   };
 
   const addSpecificAssetId = () => {
     setFormData(prev => ({
       ...prev,
-      specificAssetId: [...prev.specificAssetId, { name: "", value: "" }]
+      assetInformation: {
+        ...prev.assetInformation,
+        specificAssetIds: [...prev.assetInformation.specificAssetIds, { name: "", value: "" }]
+      }
     }));
     console.log('FormData: ', formData);
   };
 
   const removeSpecificAssetId = (index) => {
     setFormData(prev => {
-      const updated = prev.specificAssetId.filter((_, i) => i !== index);
-      return { ...prev, specificAssetId: updated };
+      const updated = prev.assetInformation.specificAssetIds.filter((_, i) => i !== index);
+      return { 
+        ...prev, 
+        assetInformation: {
+          ...prev.assetInformation,
+          specificAssetIds: updated
+        }
+      };
     });
     console.log('FormData: ', formData);
   };
@@ -496,28 +556,137 @@ function CreatePage() {
 
           <Row>
             <Col sm={6}>
-              <Prop
-                key="general-name"
-                label="name"
-                placeholder="ex. Office Building"
-                helpText={t("create.tooltips.name")}
-                type="text"
-                value={formData.name}
-                onChange={(e) => updateField("name", e.target.value)}
-                className="mb-4"
-              />
+              <div className="mb-3">
+                <label className="form-label text-white" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  name
+                  {t("create.tooltips.name") && (
+                    <OverlayTrigger
+                      placement="top"
+                      overlay={<Tooltip id="tooltip-name">{t("create.tooltips.name")}</Tooltip>}
+                    >
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          cursor: "pointer",
+                          transform: "scale(1.2)"
+                        }}
+                      >
+                        <QuestionCircleIcon style={{ fill: "white" }} />
+                      </span>
+                    </OverlayTrigger>
+                  )}
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="ex. Office Building"
+                  value={formData.idShort}
+                  onChange={(e) => updateField("idShort", e.target.value)}
+                  style={{
+                    backgroundColor: "#1a1a1a",
+                    border: "1px solid #444",
+                    color: "white",
+                    height: "38px"
+                  }}
+                />
+              </div>
             </Col>
             <Col sm={6}>
-              <Prop
-                key="general-description"
-                label="description"
-                placeholder="ex. Optional Description"
-                helpText={t("create.tooltips.description")}
-                type="text"
-                value={formData.description}
-                onChange={(e) => updateField("description", e.target.value)}
-                className="mb-4"
-              />
+              {formData.description.map((desc, index) => (
+                <div key={`description-${index}`} className="mb-3">
+                  {index === 0 && (
+                    <label className="form-label text-white" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      description
+                      {t("create.tooltips.description") && (
+                        <OverlayTrigger
+                          placement="top"
+                          overlay={<Tooltip id="tooltip-description">{t("create.tooltips.description")}</Tooltip>}
+                        >
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              cursor: "pointer",
+                              transform: "scale(1.2)"
+                            }}
+                          >
+                            <QuestionCircleIcon style={{ fill: "white" }} />
+                          </span>
+                        </OverlayTrigger>
+                      )}
+                    </label>
+                  )}
+                  <div className="d-flex align-items-center gap-2">
+                    <div style={{ width: "25%" }}>
+                      <select
+                        className="form-control white-caret"
+                        value={desc.language}
+                        onChange={(e) => updateDescriptionField(index, "language", e.target.value)}
+                        style={{
+                          backgroundColor: "#1a1a1a",
+                          border: "1px solid #444",
+                          color: "white",
+                          height: "38px",
+                          backgroundImage: "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e\")",
+                          backgroundRepeat: "no-repeat",
+                          backgroundPosition: "right 0.75rem center",
+                          backgroundSize: "16px 12px",
+                          paddingRight: "2.5rem"
+                        }}
+                      >
+                        <option value="en">English</option>
+                        <option value="de">German</option>
+                        <option value="fr">French</option>
+                        <option value="es">Spanish</option>
+                      </select>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="ex. Optional Description"
+                        value={desc.text}
+                        onChange={(e) => updateDescriptionField(index, "text", e.target.value)}
+                        style={{
+                          backgroundColor: "#1a1a1a",
+                          border: "1px solid #444",
+                          color: "white",
+                          height: "38px"
+                        }}
+                      />
+                    </div>
+                    <div style={{ width: "auto", display: "flex", gap: "5px" }}>
+                      {index === 0 && (
+                        <Button
+                          onClick={addDescriptionLanguage}
+                          style={{
+                            backgroundColor: "#003368",
+                            border: "2px solid #1A4D82",
+                            color: "white",
+                            height: "38px",
+                            padding: "0 12px",
+                            fontSize: "14px"
+                          }}
+                        >
+                          + Add
+                        </Button>
+                      )}
+                      {index > 0 && (
+                        <Button 
+                          variant="outline-secondary" 
+                          onClick={() => removeDescriptionLanguage(index)}
+                          style={{
+                            height: "38px",
+                            padding: "0 12px",
+                            fontSize: "14px"
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </Col>
           </Row>
             
@@ -549,8 +718,11 @@ function CreatePage() {
                   label="assetKind"
                   helpText={t("create.tooltips.assetKind")}
                   showLabel={true}
-                  value={formData.assetKind}
-                  onChange={(e) => updateField("assetKind", e)}
+                  value={formData.assetInformation.assetKind}
+                  onChange={(e) => updateField("assetInformation", { 
+                    ...formData.assetInformation, 
+                    assetKind: e 
+                  })}
                 />
               </Col>
             </Row>
@@ -572,13 +744,16 @@ function CreatePage() {
                   placeholder="ex. urn:aas:example:aas:123456"
                   helpText={t("create.tooltips.globalAssetId")}
                   type="text"
-                  value={formData.globalAssetId}
-                  onChange={(e) => updateField("globalAssetId", e.target.value)}
+                  value={formData.assetInformation.globalAssetId}
+                  onChange={(e) => updateField("assetInformation", {
+                    ...formData.assetInformation,
+                    globalAssetId: e.target.value
+                  })}
                   className="mb-4"
                 />
               </Col>
               <Col sm={6}>
-                {formData.specificAssetId.map((item, index) => (
+                {formData.assetInformation.specificAssetIds.map((item, index) => (
                   <SpecificAssetId
                     key={`specificAssetId-${index}`}
                     label={index === 0 ? "specificAssetId" : ""}
