@@ -87,6 +87,8 @@
     "newModel": "or create a new model!",
     "publishedAt": "published at: ",
     "save": "Save",
-    "download":"Download"
+    "download":"Download",
+    "publishedBy": "published by: ",
+    "title": "Title: "
   }
 }

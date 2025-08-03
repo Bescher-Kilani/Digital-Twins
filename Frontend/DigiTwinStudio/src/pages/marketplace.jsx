@@ -1,14 +1,13 @@
-import { Container, Row, Col, Button, Form, Card, Pagination, InputGroup } from "react-bootstrap";
+import { Container, Row, Col, Button, Form, Card, Pagination, InputGroup, Dropdown, Toast, ToastContainer } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useContext } from "react";
 import modelImage from "../assets/homepage_model.png";
-import OpenIcon from "../assets/icons/arrow-up-right-square-fill.svg?react";
 import DownloadIcon from "../assets/icons/arrow-bar-down.svg?react";
 import PlusIcon from "../assets/icons/plus-lg.svg?react";
-import ImportIcon from "../assets/icons/arrow-bar-up.svg?react";
 import searchIcon from "../assets/icons/search.svg";
 import { KeycloakContext } from "../KeycloakContext";
+import { authenticatedFetch } from "../utils/tokenManager";
 import "../styles/marketplace.css";
 
 export default function Marketplace() {
@@ -16,6 +15,7 @@ export default function Marketplace() {
     const { keycloak, authenticated } = useContext(KeycloakContext);
     const [currentPage, setCurrentPage] = useState(1);
     const [models, setModels] = useState([]);
+    const [toasts, setToasts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState({
@@ -65,10 +65,10 @@ export default function Marketplace() {
                 // Transform the API data to match the expected format for the UI
                 const transformedModels = data.map(model => ({
                     id: model.id,
-                    author: model.author,
+                    author: model.author?.[0]?.text || 'Unknown',
+                    title: model.title?.[0]?.text || 'Untitled Model',
                     //title: model.title,
                     description: model.shortDescription?.[0]?.text || 'No description available',
-                    tags: tagIds,
                     publishedAt: model.publishedAt ? new Date(model.updatedAt).toLocaleDateString('en-US', {
                         day: 'numeric',
                         month: 'long',
@@ -105,8 +105,171 @@ export default function Marketplace() {
     };
 
     const handleDashboard = () => {
-     navigate(authenticated ? "/dashboard" : "/signin");
-  }
+        navigate(authenticated ? "/dashboard" : "/signin");
+    }
+
+    const handleSave = async (entry) => {
+        if (!entry.id) {
+            showToast('Model information is missing. Cannot save file.', 'danger');
+            return;
+        }
+
+        const url = `http://localhost:9090/marketplace/${entry.id}/add-to-user`;
+
+        try {
+            let response;
+
+            if (authenticated) {
+                response = await authenticatedFetch(url, {
+                    method: 'POST'
+                }, keycloak);
+            } else {
+                showToast("You must be logged in to save a model.", "warning");
+                return;
+            }
+
+            if (response.ok) {
+                showToast("Model saved to your dashboard!", "success");
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.message || `Error: ${response.status} ${response.statusText}`;
+
+                if (response.status === 401) {
+                    showToast("Authentication required. Please sign in.", "warning");
+                } else if (response.status === 403) {
+                    showToast("Access denied. You don't have permission.", "danger");
+                } else {
+                    showToast(`Failed to save model: ${errorMessage}`, "danger");
+                }
+            }
+        } catch (error) {
+            console.error("Save model error:", error);
+            showToast("Network error: Could not save model.", "danger");
+        }
+    }
+
+    // Function to show toast notifications
+    const showToast = (message, variant = 'danger') => {
+        const id = Date.now();
+        const newToast = {
+            id,
+            message,
+            variant,
+            show: true
+        };
+        setToasts(prev => [...prev, newToast]);
+
+        // Auto-hide toast after 5 seconds
+        setTimeout(() => {
+            setToasts(prev => prev.filter(toast => toast.id !== id));
+        }, 5000);
+    };
+
+    // Function to manually close a toast
+    const closeToast = (id) => {
+        setToasts(prev => prev.filter(toast => toast.id !== id));
+    };
+
+    // Function to handle file downloads
+    const handleDownload = async (entry, format) => {
+        if (!entry.id) {
+            showToast('Model information is missing. Cannot download file.', 'danger');
+            return;
+        }
+
+        console.log(entry);
+
+        try {
+            const urlGetModel = `http://localhost:9090/marketplace/${entry.id}`;
+            let modelResponse;
+            console.log("URL : ", urlGetModel);
+
+            if (authenticated) {
+                // User is authenticated - use authenticatedFetch with token refresh
+                modelResponse = await authenticatedFetch(urlGetModel, {
+                    method: 'GET'
+                }, keycloak);
+            } else {
+                // User is not authenticated - direct fetch without auth
+                modelResponse = await fetch(urlGetModel, {
+                    method: 'GET'
+                });
+            }
+
+            if (!modelResponse.ok) {
+                throw new Error(`Failed to fetch model: ${modelResponse.status}`);
+            }
+
+            const model = await modelResponse.json();
+            console.log("Model: ", model);
+
+            // Use the model ID for both modelId and modelIdShort since we don't have separate values
+            const url = `http://localhost:9090/guest/models/${model.id}/${model.title}/export/${format}`;
+            console.log('Downloading file from:', url);
+
+            let response;
+
+            if (authenticated) {
+                // User is authenticated - use authenticatedFetch with token refresh
+                response = await authenticatedFetch(url, {
+                    method: 'GET'
+                }, keycloak);
+            } else {
+                // User is not authenticated - direct fetch without auth
+                response = await fetch(url, {
+                    method: 'GET'
+                });
+            }
+
+            if (response.ok) {
+                // Get the file blob
+                const blob = await response.blob();
+
+                // Create download link
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+
+                // Set filename based on format
+                const fileExtension = format.toLowerCase();
+                link.download = `${model.title || model.id}.${fileExtension}`;
+
+                // Trigger download
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // Clean up the URL object
+                window.URL.revokeObjectURL(downloadUrl);
+
+                showToast(`${format} file downloaded successfully!`, 'success');
+            } else {
+                // Handle error response
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.message || `Error: ${response.status} ${response.statusText}`;
+                console.error('Error downloading file:', errorMessage);
+
+                if (response.status === 401) {
+                    showToast('Authentication required. Please sign in and try again.', 'warning');
+                } else if (response.status === 403) {
+                    showToast('Access denied. You do not have permission to download this file.', 'danger');
+                } else if (response.status === 404) {
+                    showToast('File not found. The model may have been deleted.', 'danger');
+                } else {
+                    showToast(`Failed to download ${format} file: ${errorMessage}`, 'danger');
+                }
+            }
+        } catch (error) {
+            console.error('Network error downloading file:', error);
+
+            // Check if it's a CORS or network error
+            if (error.message.includes('Load failed') || error.message.includes('CORS') || error.message.includes('Network request failed')) {
+                showToast('Connection error: Unable to reach the server.', 'danger');
+            } else {
+                showToast('Network error: Unable to download file. Please check your connection and try again.', 'danger');
+            }
+        }
+    };
 
     return (
         <div className="marketplace-container">
@@ -187,18 +350,33 @@ export default function Marketplace() {
                                     style={{ height: 100, marginRight: "1rem" }}
                                 />
                                 <div className="flex-grow-1">
-                                    <h5 className="mb-1">{model.id}</h5>
-                                    <h4 className="mb-1">{model.author}</h4>
+                                    <h5 className="mb-1">{t("marketplace.title")}{model.title}</h5>
                                     <p className="mb-1">{model.description}</p>
-                                    <small>{t("marketplace.publishedAt")}: {model.publishedAt}</small>
+                                    <small>{t("marketplace.publishedBy")} {model.author}</small>
+                                    <br />
+                                    <small>{t("marketplace.publishedAt")} {model.publishedAt}</small>
                                 </div>
                                 <div className="d-flex flex-column gap-2">
-                                    <Button size="sm" variant="primary">
+                                    <Button
+                                        size="sm"
+                                        variant="primary"
+                                        onClick={() => handleSave(model)}
+                                    >
                                         <PlusIcon></PlusIcon> {t("marketplace.save")}
                                     </Button>
-                                    <Button size="sm" variant="primary">
-                                        <DownloadIcon></DownloadIcon> {t("marketplace.download")}
-                                    </Button>
+                                    <Dropdown>
+                                        <Dropdown.Toggle size="sm" variant="primary" id="dropdown-basic">
+                                            <DownloadIcon></DownloadIcon> {t("dashboard.download")}
+                                        </Dropdown.Toggle>
+                                        <Dropdown.Menu>
+                                            <Dropdown.Item onClick={() => handleDownload(model, 'JSON')}>
+                                                JSON
+                                            </Dropdown.Item>
+                                            <Dropdown.Item onClick={() => handleDownload(model, 'AASX')}>
+                                                AASX
+                                            </Dropdown.Item>
+                                        </Dropdown.Menu>
+                                    </Dropdown>
                                 </div>
                             </Card.Body>
                         </Card>
@@ -245,6 +423,41 @@ export default function Marketplace() {
                     </Row>
                 )}
             </Container>
+
+            {/* Toast notifications positioned at top right */}
+            <ToastContainer
+                position="top-end"
+                className="p-3"
+                style={{
+                    position: 'fixed',
+                    top: '20px',
+                    right: '20px',
+                    zIndex: 9999
+                }}
+            >
+                {toasts.map((toast) => (
+                    <Toast
+                        key={toast.id}
+                        show={toast.show}
+                        onClose={() => closeToast(toast.id)}
+                        bg={toast.variant}
+                        text={toast.variant === 'warning' ? 'dark' : 'white'}
+                        autohide
+                        delay={5000}
+                    >
+                        <Toast.Header>
+                            <strong className="me-auto">
+                                {toast.variant === 'danger' ? 'Error' :
+                                    toast.variant === 'warning' ? 'Warning' :
+                                        toast.variant === 'success' ? 'Success' : 'Notification'}
+                            </strong>
+                        </Toast.Header>
+                        <Toast.Body>
+                            {toast.message}
+                        </Toast.Body>
+                    </Toast>
+                ))}
+            </ToastContainer>
         </div>
     );
 }
