@@ -9,6 +9,7 @@ import DownloadIcon from "../assets/icons/arrow-bar-down.svg?react";
 import ImportIcon from "../assets/icons/arrow-bar-up.svg?react";
 import PlusIcon from "../assets/icons/plus-lg.svg?react";
 import TrashIcon from "../assets/icons/trash.svg?react";
+import PublishIcon from "../assets/icons/arrow-up-right-square-fill.svg?react";
 import { KeycloakContext } from "../KeycloakContext";
 import { authenticatedFetch } from "../utils/tokenManager";
 
@@ -23,6 +24,8 @@ export default function Dashboard() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [modelToDelete, setModelToDelete] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [modelToPublish, setModelToPublish] = useState(null);
   const navigate = useNavigate();
   const modelsPerPage = 4;
   
@@ -403,6 +406,14 @@ export default function Dashboard() {
                   title={t("dashboard.delete")}
                 >
                   <TrashIcon></TrashIcon> {t("dashboard.delete")}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="success"
+                  onClick={() => openPublishModal(model)}
+                  title={t("dashboard.publish")}>
+                  <PublishIcon style={{ marginRight: "4px" }} />
+                  {t("dashboard.publish")}
                 </Button>
               </div>
             </Card.Body>
