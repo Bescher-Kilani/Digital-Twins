@@ -339,6 +339,17 @@ function CreatePage() {
       return mergeDataIntoTemplate(template, template.data);
     });
     
+    // Extract submodel references for AAS
+    const submodelReferences = submodelTemplates.map(template => ({
+      keys: [
+        {
+          type: "Submodel",
+          value: template.selectedTemplate.templateData.json.id
+        }
+      ],
+      type: "ModelReference"
+    }));
+    
     // Transform AAS data to match the new format
     const transformedAAS = {
       assetInformation: {
@@ -351,7 +362,7 @@ function CreatePage() {
         )
       },
       derivedFrom: formData.derivedFrom,
-      submodels: [],
+      submodels: submodelReferences,
       embeddedDataSpecifications: formData.embeddedDataSpecifications,
       extensions: formData.extensions,
       administration: formData.administration,
