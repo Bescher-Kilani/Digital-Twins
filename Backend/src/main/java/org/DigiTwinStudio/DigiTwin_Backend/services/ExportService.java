@@ -4,20 +4,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.DigiTwinStudio.DigiTwin_Backend.adapter.AAS4jAdapter;
-
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.ExportedFile;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.ExportFormat;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.MarketplaceEntry;
-
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
-
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ExportException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ForbiddenException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.NotFoundException;
-
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.AASModelMapper;
-
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.AASModelRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.MarketPlaceEntryRepository;
 
@@ -31,6 +26,9 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+/**
+ * Handles exporting AAS models to JSON or AASX formats.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j

@@ -3,26 +3,20 @@ package org.DigiTwinStudio.DigiTwin_Backend.services;
 import lombok.RequiredArgsConstructor;
 
 import org.DigiTwinStudio.DigiTwin_Backend.adapter.MultipartFileAdapter;
-
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.UploadedFile;
-
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.PublishRequestDto;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.SubmodelDto;
-
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.BadRequestException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ConflictException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ForbiddenException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.NotFoundException;
-
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.AASModelMapper;
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.SubmodelMapper;
-
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.AASModelRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.MarketPlaceEntryRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.UploadedFileRepository;
-
 import org.DigiTwinStudio.DigiTwin_Backend.validation.AASModelValidator;
 import org.DigiTwinStudio.DigiTwin_Backend.validation.FileUploadValidator;
 
@@ -40,6 +34,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Handles AAS model CRUD, file management, and publishing.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional

@@ -3,17 +3,17 @@ package org.DigiTwinStudio.DigiTwin_Backend.services;
 import lombok.RequiredArgsConstructor;
 
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.UploadResponseDto;
-
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.FileStorageException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException;
-
 import org.DigiTwinStudio.DigiTwin_Backend.domain.UploadedFile;
-
 import org.DigiTwinStudio.DigiTwin_Backend.validation.FileUploadValidator;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+/**
+ * Handles validation and upload of property files for models.
+ */
 @Service
 @RequiredArgsConstructor
 public class PropertyFileUploadService {

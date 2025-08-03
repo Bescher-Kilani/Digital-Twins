@@ -1,15 +1,16 @@
 package org.DigiTwinStudio.DigiTwin_Backend.validation;
 
 import lombok.RequiredArgsConstructor;
+
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.BadRequestException;
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException;
+import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
+import org.DigiTwinStudio.DigiTwin_Backend.domain.PublishMetadata;
+
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultAssetAdministrationShell;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
 
 import de.fraunhofer.iosb.ilt.faaast.service.model.validation.ModelValidator;
-import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException;
-
-import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
-import org.DigiTwinStudio.DigiTwin_Backend.domain.PublishMetadata;
 
 import org.springframework.stereotype.Component;
 
@@ -28,13 +29,10 @@ public class AASModelValidator {
     private final SubmodelValidator submodelValidator;
 
     /**
-     * Validate a full AASModel.
-     * <p>
-     * 1. Validate AAS (AssetAdministrationShell) globally via FAAST.
-     * 2. Validate all attached Submodels with SubmodelValidator.
-     * 3. If model is marked as published, ensure PublishMetadata is complete.
+     * Validates the given AAS model, all submodels, and (if published) its publish metadata.
      *
-     * @param model the AASModel to validate
+     * @param model the AASModel to check
+     * @throws BadRequestException if validation fails
      */
     public void validate(AASModel model) {
 

@@ -5,9 +5,7 @@ import com.mongodb.client.gridfs.model.GridFSFile;
 import lombok.RequiredArgsConstructor;
 
 import org.DigiTwinStudio.DigiTwin_Backend.domain.UploadedFile;
-
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.UploadedFileRepository;
-
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.FileStorageException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.NotFoundException;
 
@@ -31,6 +29,9 @@ import java.util.ArrayList;
 import java.util.UUID;
 import java.util.List;
 
+/**
+ * Handles storing, loading, and deleting uploaded files in MongoDB GridFS.
+ */
 @Service
 @RequiredArgsConstructor
 public class FileStorageService {

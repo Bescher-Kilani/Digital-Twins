@@ -3,10 +3,10 @@ package org.DigiTwinStudio.DigiTwin_Backend.validation;
 import java.util.Map;
 
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.BadRequestException;
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException;
+
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
-
-import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException;
 
 /**
  * Component responsible for validating uploaded files
@@ -15,13 +15,8 @@ import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException;
 @Component
 public class FileUploadValidator {
 
-    /** Maximum allowed file size in bytes (10 MB) */
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
 
-    /**
-     * Mapping from file extension to its single allowed MIME type.
-     * E.g. "pdf" → "application/pdf"
-     */
     private static final Map<String, String> EXT_TO_MIME = Map.of(
             "pdf",  "application/pdf",
             "png",  "image/png",
@@ -30,15 +25,10 @@ public class FileUploadValidator {
     );
 
     /**
-     * Validate the given MultipartFile according to:
-     * 1. File must not be null or empty.
-     * 2. File size must not exceed MAX_FILE_SIZE.
-     * 3. File must have an original filename with an extension.
-     * 4. Extension must be supported.
-     * 5. Detected contentType must exactly match the expected MIME type for that extension.
+     * Checks the uploaded file for presence, size, extension, and MIME type.
      *
-     * @param file the uploaded file to validate
-     * @throws ValidationException if any validation rule is violated
+     * @param file the uploaded file
+     * @throws ValidationException if validation fails
      */
     public void validate(MultipartFile file) throws ValidationException {
         // 1. Check presence

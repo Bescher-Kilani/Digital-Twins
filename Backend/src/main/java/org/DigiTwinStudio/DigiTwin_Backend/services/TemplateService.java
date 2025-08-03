@@ -3,15 +3,10 @@ package org.DigiTwinStudio.DigiTwin_Backend.services;
 import lombok.extern.slf4j.Slf4j;
 
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.TemplateMapper;
-
 import org.DigiTwinStudio.DigiTwin_Backend.domain.Template;
-
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.TemplateDto;
-
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.TemplateRepository;
-
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.NotFoundException;
-
 import org.DigiTwinStudio.DigiTwin_Backend.integration.SMTRepoClient;
 
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,6 +17,9 @@ import lombok.RequiredArgsConstructor;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Handles loading, syncing, and resolving templates.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
