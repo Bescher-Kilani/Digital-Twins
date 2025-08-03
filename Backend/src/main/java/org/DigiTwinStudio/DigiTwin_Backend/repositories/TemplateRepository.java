@@ -17,6 +17,5 @@ public interface TemplateRepository extends MongoRepository<Template, String> {
     // tries to find a template by its id, if it is active, else returns empty
     Optional<Template> findByIdAndActiveTrue(String id);
 
-
     Optional<Template> findByNameAndActiveTrue(String name);
 }
