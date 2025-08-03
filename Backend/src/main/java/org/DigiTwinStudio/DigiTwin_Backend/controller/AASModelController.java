@@ -82,7 +82,7 @@ public class AASModelController {
      */
     @DeleteMapping("/{id}/delete")
     public ResponseEntity<Void> deleteAASModel(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
-        aasModelService.deleteModel(id, jwt.getSubject());
+        aasModelService.hardDeleteModel(id, jwt.getSubject());
         return ResponseEntity.noContent().build();
     }
 

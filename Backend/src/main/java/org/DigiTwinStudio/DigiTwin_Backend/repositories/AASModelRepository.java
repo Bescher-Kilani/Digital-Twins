@@ -11,30 +11,30 @@ import java.util.Optional;
 @Repository
 public interface AASModelRepository extends MongoRepository<AASModel, String> {
 
+    /**
+     * Retrieves a model by its unique ID.
+     *
+     * @param id the unique identifier of the model
+     * @return an Optional containing the found AASModel, or empty if not found
+     */
     Optional<AASModel> findById(String id);
 
-    // None deleted models for a specific owner
-    List<AASModel> findByOwnerIdAndDeletedFalse(String ownerId);
-
-    // specific model by ID
-    Optional<AASModel> findByIdAndDeletedFalse(String id);
-
-    // published models that are not deleted
-    List<AASModel> findByPublishedTrueAndDeletedFalse();
-
-    // ownership check for a specific model
-    boolean existsByIdAndOwnerId(String id, String ownerId);
+    /**
+     * Returns all models that belong to a specific owner.
+     *
+     * @param ownerId the owner's user ID
+     * @return a list of all models owned by the specified user
+     */
+    List<AASModel> findByOwnerId(String ownerId);
 
     /**
-     * Retrieves all AAS models that belong to the specified owner, are not marked as deleted,
-     * and were created before the given timestamp.
+     * Finds all models for an owner that were created before a given timestamp.
+     * Can be used for time-based cleanups (e.g., old guest models).
      *
-     * <p>This is typically used to find outdated guest models for automatic cleanup.</p>
-     *
-     * @param ownerId the ID of the model owner (e.g. "GUEST")
-     * @param threshold the cutoff timestamp; only models created before this will be returned
-     * @return a list of matching {@link AASModel} entities
+     * @param ownerId   the owner's user ID
+     * @param threshold the timestamp cutoff (only models created before this will be returned)
+     * @return a list of matching models
      */
-    List<AASModel> findByOwnerIdAndDeletedFalseAndCreatedAtBefore(String ownerId, LocalDateTime threshold);
+    List<AASModel> findByOwnerIdAndCreatedAtBefore(String ownerId, LocalDateTime threshold);
 
 }
