@@ -7,6 +7,7 @@ import org.DigiTwinStudio.DigiTwin_Backend.domain.PublishMetadata;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.Tag;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.MarketplaceEntryDto;
+import org.DigiTwinStudio.DigiTwin_Backend.dtos.MarketplaceSearchRequest;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.PublishRequestDto;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.BadRequestException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ForbiddenException;
@@ -15,6 +16,12 @@ import org.DigiTwinStudio.DigiTwin_Backend.mapper.MarketplaceMapper;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.AASModelRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.MarketPlaceEntryRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.TagRepository;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.TextCriteria;
+import org.springframework.data.mongodb.core.query.TextQuery;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -29,6 +36,7 @@ public class MarketPlaceService {
     private final TagRepository tagRepository;
     private final MarketplaceMapper marketplaceMapper;
     private final AASModelMapper aasModelMapper;
+    private final MongoTemplate mongoTemplate;
 
     /**
      * Publishes the given {@link AASModel} by setting its publication metadata, updating its state,
@@ -147,31 +155,6 @@ public class MarketPlaceService {
     }
 
     /**
-     * Searches for marketplace entries that contain all the specified tag IDs.
-     *
-     * <p>This method performs the following actions:
-     * <ul>
-     *     <li>Validates that the provided tag IDs are non-null, non-empty, and exist in the system.</li>
-     *     <li>Fetches all marketplace entries from the repository.</li>
-     *     <li>Filters entries whose own tag list includes all the provided tag IDs.</li>
-     *     <li>Maps the filtered entries to {@link MarketplaceEntryDto} objects and returns the result.</li>
-     * </ul>
-     *
-     * @param tagIds the list of tag IDs to filter marketplace entries by
-     * @return a list of {@link MarketplaceEntryDto} that contain all specified tag IDs
-     * @throws BadRequestException if the tag list is null, empty, or contains invalid tag IDs
-     */
-    public List<MarketplaceEntryDto> searchByTags(List<String> tagIds) throws BadRequestException {
-        validateTagIds(tagIds);
-
-        // Find all marketplaceEntries that contain all provided tag IDs
-        List<MarketplaceEntry> matchingEntries = this.marketPlaceEntryRepository.findAll().stream()
-                .filter(entry -> new HashSet<>(entry.getTagIds()).containsAll(tagIds))
-                .toList();
-        return matchingEntries.stream().map(this.marketplaceMapper::toDto).toList();
-    }
-
-    /**
      * Validates the list of tag IDs to ensure they exist in the system.
      *
      * <p>This method performs the following checks:
@@ -204,48 +187,6 @@ public class MarketPlaceService {
     }
 
     /**
-     * Searches for marketplace entries that have at least one tag belonging to the specified category.
-     *
-     * <p>This method performs the following steps:
-     * <ul>
-     *     <li>Validates that the provided category is not null or empty.</li>
-     *     <li>Retrieves all tags associated with the given category (case-insensitive).</li>
-     *     <li>If no tags are found for the category, returns an empty list.</li>
-     *     <li>Finds all marketplace entries that contain at least one tag from the retrieved tags.</li>
-     *     <li>Maps the filtered marketplace entries to {@link MarketplaceEntryDto} objects and returns the result.</li>
-     * </ul>
-     *
-     * @param category the category name to filter marketplace entries by (case-insensitive)
-     * @return a list of {@link MarketplaceEntryDto} objects whose tags belong to the specified category
-     * @throws BadRequestException if the category is null or empty
-     */
-    public List<MarketplaceEntryDto> searchByCategory(String category) throws BadRequestException {
-        if (category == null || category.isBlank()) {
-            throw new BadRequestException("Category must not be null or empty");
-        }
-
-        // Find all tags for the given category (case-insensitive)
-        List<Tag> tagsInCategory = tagRepository.findByCategoryIgnoreCase(category);
-
-        if (tagsInCategory.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        Set<String> tagIdsInCategory = tagsInCategory.stream()
-                .map(Tag::getId)
-                .collect(Collectors.toSet());
-
-        // Filter entries that contain at least one tag from this category
-        List<MarketplaceEntry> matchingEntries = marketPlaceEntryRepository.findAll().stream()
-                .filter(entry -> entry.getTagIds().stream().anyMatch(tagIdsInCategory::contains))
-                .toList();
-
-        return matchingEntries.stream()
-                .map(marketplaceMapper::toDto)
-                .toList();
-    }
-
-    /**
      * Retrieves all tags from the database.
      *
      * @return a list of all {@link Tag} entities currently stored
@@ -271,6 +212,58 @@ public class MarketPlaceService {
         marketplaceEntry.setDownloadCount(marketplaceEntry.getDownloadCount() + 1);
         this.marketPlaceEntryRepository.save(marketplaceEntry);
     }
+
+    /**
+     * Searches marketplace entries with optional full-text, date, and tag filters.
+     * <p>
+     * If {@code searchText} is set, performs a MongoDB $text search (requires a text index)
+     * and sorts by relevance score. Without text, filters by {@code publishedAfter} and/or {@code tagIds}
+     * and sorts by {@code publishedAt} (newest first).
+     * </p>
+     *
+     * Examples:
+     * <ul>
+     *   <li>Text only: searchText = "spring"</li>
+     *   <li>Date only: publishedAfter = 2024-01-01T00:00:00</li>
+     *   <li>Tags only: tagIds = ["java", "backend"]</li>
+     *   <li>Combined: searchText = "spring", publishedAfter = ..., tagIds = [...]</li>
+     * </ul>
+     *
+     * @param req search parameters
+     * @return matching marketplace entry DTOs
+     */
+    public List<MarketplaceEntryDto> search(MarketplaceSearchRequest req) {
+        boolean hasText = req.getSearchText() != null && !req.getSearchText().isBlank();
+        boolean hasTags = req.getTagIds() != null && !req.getTagIds().isEmpty();
+        boolean hasDate = req.getPublishedAfter() != null;
+
+        if (hasText) { // textQuery
+            TextCriteria textCriteria = TextCriteria.forDefaultLanguage().matching(req.getSearchText());
+            TextQuery textQuery = TextQuery.queryText(textCriteria).sortByScore(); // sort by relevance
+
+            if (hasDate) {
+                textQuery.addCriteria(Criteria.where("publishedAt").gt(req.getPublishedAfter())); // add a time query
+            }
+            if (hasTags) {
+                textQuery.addCriteria(Criteria.where("tagIds").in(req.getTagIds())); // add a tag query
+            }
+
+            return mongoTemplate.find(textQuery, MarketplaceEntry.class).stream().map(marketplaceMapper::toDto).toList();
+        } else {    // no text, but time and tag queries
+            Query query = new Query();
+
+            if (hasTags) {
+                query.addCriteria(Criteria.where("publishedAt").gt(req.getPublishedAfter()));
+            }
+            if (hasTags) {
+                query.addCriteria(Criteria.where("tagIds").in(req.getTagIds()));
+            }
+
+            query.with(Sort.by(Sort.Order.desc("publishedAt"))); // sort by date, newest first
+            return mongoTemplate.find(query, MarketplaceEntry.class).stream().map(marketplaceMapper::toDto).toList();
+        }
+    }
+
 
 
 }

@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.Tag;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.MarketplaceEntryDto;
+import org.DigiTwinStudio.DigiTwin_Backend.dtos.MarketplaceSearchRequest;
 import org.DigiTwinStudio.DigiTwin_Backend.services.AASModelService;
 import org.DigiTwinStudio.DigiTwin_Backend.services.MarketPlaceService;
 import org.springframework.http.ResponseEntity;
@@ -33,22 +34,6 @@ public class MarketplaceController {
     @GetMapping()
     public ResponseEntity<List<MarketplaceEntryDto>> listAllEntries() {
         return ResponseEntity.ok(marketPlaceService.listAllEntries());
-    }
-
-    /**
-     * Filters marketplace entries by one or more tags.
-     *
-     * <p>Example request:
-     * <pre>
-     * GET /marketplace?tag=java&tag=spring&tag=backend
-     * </pre>
-     *
-     * @param tags a list of tags to filter the entries by
-     * @return a list of matching {@link MarketplaceEntryDto} objects
-     */
-    @GetMapping(params = "tag")
-    public ResponseEntity<List<MarketplaceEntryDto>> filterByTag(@RequestParam List<String> tags) {
-        return ResponseEntity.ok(marketPlaceService.searchByTags(tags));
     }
 
     /**
@@ -93,22 +78,6 @@ public class MarketplaceController {
     }
 
     /**
-     * Filters marketplace entries by a tag category.
-     *
-     * <p>Example request:
-     * <pre>
-     * GET /marketplace?category=Technology
-     * </pre>
-     *
-     * @param category the category to filter entries by
-     * @return a list of matching {@link MarketplaceEntryDto} objects
-     */
-    @GetMapping(params = "category")
-    public ResponseEntity<List<MarketplaceEntryDto>> filterByCategory(@RequestParam String category) {
-        return ResponseEntity.ok(marketPlaceService.searchByCategory(category));
-    }
-
-    /**
      * Returns all tags available in the system.
      *
      * <p>Example request:
@@ -122,5 +91,27 @@ public class MarketplaceController {
     public ResponseEntity<List<Tag>> getAllTags() {
         List<Tag> tags = marketPlaceService.getAllTags();
         return ResponseEntity.ok(tags);
+    }
+
+    /**
+     * Endpoint to search marketplace entries.
+     * <p>
+     * Accepts optional full-text, date, and tag filters via the request body and returns matching entries.
+     * </p>
+     *
+     * Examples:
+     * <ul>
+     *   <li>Text only: {"searchText":"spring"}</li>
+     *   <li>Date only: {"publishedAfter":"2024-01-01T00:00:00"}</li>
+     *   <li>Tags only: {"tagIds":["java","backend"]}</li>
+     *   <li>Combined: {"searchText":"spring","publishedAfter":"2024-01-01T00:00:00","tagIds":["java"]}</li>
+     * </ul>
+     *
+     * @param request search parameters
+     * @return 200 OK with a list of matching entries as DTOs
+     */
+    @PostMapping("/search")
+    public ResponseEntity<List<MarketplaceEntryDto>> search(@RequestBody MarketplaceSearchRequest request) {
+        return ResponseEntity.ok(marketPlaceService.search(request));
     }
 }
