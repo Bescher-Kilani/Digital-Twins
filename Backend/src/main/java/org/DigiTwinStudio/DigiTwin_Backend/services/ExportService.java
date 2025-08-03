@@ -1,25 +1,30 @@
 package org.DigiTwinStudio.DigiTwin_Backend.services;
 
-
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.DigiTwinStudio.DigiTwin_Backend.adapter.AAS4jAdapter;
+
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.ExportedFile;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.ExportFormat;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.MarketplaceEntry;
+
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
+
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ExportException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ForbiddenException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.NotFoundException;
+
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.AASModelMapper;
+
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.AASModelRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.MarketPlaceEntryRepository;
+
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultEnvironment;
-import org.eclipse.digitaltwin.aas4j.v3.model.Environment;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.aasx.InMemoryFile;
+
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -96,7 +101,6 @@ public class ExportService {
         return switch (format) {
             case JSON -> exportAsJson(model);
             case AASX -> exportAsAasx(model);
-            default -> throw new ExportException("Unsupported format");
         };
     }
 
@@ -112,7 +116,6 @@ public class ExportService {
         return switch (format) {
             case JSON -> exportAsJson(model);
             case AASX -> exportAsAasx(model);
-            default -> throw new ExportException("Unsupported format");
         };
     }
 
@@ -128,18 +131,26 @@ public class ExportService {
         return switch (format) {
             case JSON -> exportAsJson(model);
             case AASX -> exportAsAasx(model);
-            default -> throw new ExportException("Unsupported format");
         };
 
     }
 
+    /**
+     * Exports a stored model in the specified format for a given user.
+     *
+     * @param id the model ID
+     * @param name the desired export file name (without extension)
+     * @param format the export format (JSON or AASX)
+     * @param userId the user ID requesting the export
+     * @return the exported file as an {@link ExportedFile}
+     * @throws ExportException if the format is not supported
+     */
     public ExportedFile export(String id, String name, ExportFormat format, String userId) {
         byte[] content = exportStoredModel(id, format, userId);
 
         String fileExtension = switch (format) {
             case JSON -> "json";
             case AASX -> "aasx";
-            default -> throw new ExportException("Unsupported format");
         };
 
         String contentType = switch (format) {
@@ -150,7 +161,4 @@ public class ExportService {
         String filename = name + "." + fileExtension;
         return new ExportedFile(content, filename, contentType);
     }
-
-
-
 }

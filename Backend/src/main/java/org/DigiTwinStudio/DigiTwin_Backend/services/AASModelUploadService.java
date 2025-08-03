@@ -1,14 +1,18 @@
 package org.DigiTwinStudio.DigiTwin_Backend.services;
 
 import lombok.RequiredArgsConstructor;
+
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.PublishMetadata;
+
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
+
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.BadRequestException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.UploadException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException;
+
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.AASModelMapper;
-import org.DigiTwinStudio.DigiTwin_Backend.repositories.AASModelRepository;
+
 import org.DigiTwinStudio.DigiTwin_Backend.validation.AASModelValidator;
 import org.DigiTwinStudio.DigiTwin_Backend.validation.FileUploadValidator;
 
@@ -29,7 +33,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AASModelUploadService {
 
-    private final AASModelRepository aasModelRepository;
     private final AASModelValidator aasModelValidator;
     private final AASModelMapper aasModelMapper;
     private final FileUploadValidator fileUploadValidator;
@@ -96,9 +99,7 @@ public class AASModelUploadService {
         }
     }
 
-    /**
-     * Parses the MultipartFile into an AAS Environment (JSON format).
-     */
+    //Parses the MultipartFile into an AAS Environment (JSON format).
     private Environment parseEnvironment(MultipartFile file) throws IOException, DeserializationException {
         JsonDeserializer deserializer = new JsonDeserializer();
         return deserializer.read(file.getInputStream(), Environment.class);

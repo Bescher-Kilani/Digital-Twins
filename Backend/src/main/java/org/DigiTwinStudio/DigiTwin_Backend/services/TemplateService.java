@@ -1,21 +1,26 @@
 package org.DigiTwinStudio.DigiTwin_Backend.services;
 
-
-import java.util.List;
-import java.util.stream.Collectors;
-
 import lombok.extern.slf4j.Slf4j;
+
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.TemplateMapper;
+
 import org.DigiTwinStudio.DigiTwin_Backend.domain.Template;
+
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.TemplateDto;
+
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.TemplateRepository;
+
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.NotFoundException;
+
 import org.DigiTwinStudio.DigiTwin_Backend.integration.SMTRepoClient;
+
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,8 +44,7 @@ public class TemplateService {
     }
 
     /**
-     * Loads a single template by its ID and returns it as a DTO,
-     * including the embedded JSON definition.
+     * Loads a single template by its ID and returns it as a DTO, including the embedded JSON definition.
      *
      * @param id the template ID
      * @return the TemplateDto
@@ -54,10 +58,8 @@ public class TemplateService {
 
     /**
      * Scheduled to work once a day.
-     * Fetches the latest templates from the external SMT-Repository
-     * and upserts them into the local database.
-     * Each fetched ExternalTemplateDto is mapped to a domain Template,
-     * its pulledAt timestamp is set to now.
+     * Fetches the latest templates from the external SMT-Repository and upserts them into the local database.
+     * Each fetched ExternalTemplateDto is mapped to a domain Template, its pulledAt timestamp is set to now.
      *
      * @throws RuntimeException if fetching or mapping fails
      */
@@ -114,8 +116,7 @@ public class TemplateService {
 
     /**
      * Resolves a domain Template by ID for reuse in Submodel instantiation.
-     * Returns the Template entity (including its raw JSON) so that the
-     * AAS4J adapter can parse it into a Submodel.
+     * Returns the Template entity (including its raw JSON) so that the AAS4J adapter can parse it into a Submodel.
      *
      * @param templateId the ID of the template to resolve
      * @return the Template entity
@@ -125,5 +126,4 @@ public class TemplateService {
         return templateRepository.findById(templateId)
                 .orElseThrow(() -> new NotFoundException("Template not found: " + templateId));
     }
-
 }

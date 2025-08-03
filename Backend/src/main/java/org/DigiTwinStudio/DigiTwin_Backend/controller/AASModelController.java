@@ -29,7 +29,7 @@ public class AASModelController {
      */
     @GetMapping
     public ResponseEntity<List<AASModelDto>> listAASModels(@AuthenticationPrincipal Jwt jwt) {
-        List<AASModelDto> models = aasModelService.getAllForUser(jwt.getSubject());
+        List<AASModelDto> models = aasModelService.getAllModelsForUser(jwt.getSubject());
         return ResponseEntity.ok(models);
     }
 
@@ -42,7 +42,7 @@ public class AASModelController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<AASModelDto> getAASModel(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
-        AASModelDto model = aasModelService.getById(id, jwt.getSubject());
+        AASModelDto model = aasModelService.getModelById(id, jwt.getSubject());
         return ResponseEntity.ok(model);
     }
 

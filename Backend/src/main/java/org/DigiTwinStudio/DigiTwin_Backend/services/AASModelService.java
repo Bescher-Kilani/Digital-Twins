@@ -20,7 +20,7 @@ import org.DigiTwinStudio.DigiTwin_Backend.mapper.AASModelMapper;
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.SubmodelMapper;
 
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.AASModelRepository;
-import org.DigiTwinStudio.DigiTwin_Backend.repositories.TagRepository;
+import org.DigiTwinStudio.DigiTwin_Backend.repositories.MarketPlaceEntryRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.UploadedFileRepository;
 
 import org.DigiTwinStudio.DigiTwin_Backend.validation.AASModelValidator;
@@ -47,60 +47,48 @@ public class AASModelService {
 
     private final AASModelRepository aasModelRepository;
     private final AASModelValidator aasModelValidator;
-    private final TagRepository tagRepository;
     private final UploadedFileRepository uploadedFileRepository;
     private final FileUploadValidator fileUploadValidator;
     private final AASModelMapper aasModelMapper;
     private final SubmodelMapper submodelMapper;
     private final MarketPlaceService marketPlaceService;
+    private final MarketPlaceEntryRepository marketPlaceEntryRepository;
 
     /**
-     * Retrieves all AAS models belonging to a user that are not marked as deleted.
+     * Returns all AAS models for a user.
      *
-     * @param userId the unique ID of the user whose models are to be retrieved
-     * @return a list of {@link AASModelDto} for the user
+     * @param userId the user ID
+     * @return list of {@link AASModelDto} belonging to the user
      */
     @Transactional(readOnly = true)
-    public List<AASModelDto> getAllForUser(String userId) {
+    public List<AASModelDto> getAllModelsForUser(String userId) {
         List<AASModel> models = aasModelRepository.findByOwnerId(userId);
         return models.stream().map(aasModelMapper::toDto).toList();
     }
 
     /**
-     * Retrieves an AAS model by its ID for a specific user.
+     * Returns a specific AAS model for a user.
      *
-     * @param id the ID of the model
-     * @param userId the ID of the user requesting the model
-     * @return the {@link AASModelDto} corresponding to the given ID
-     * @throws NotFoundException if the model does not exist or does not belong to the user
+     * @param id model ID
+     * @param userId user ID
+     * @return the {@link AASModelDto}
+     * @throws NotFoundException if the model does not exist or is not owned by the user
      */
     @Transactional(readOnly = true)
-    public AASModelDto getById(String id, String userId) {
+    public AASModelDto getModelById(String id, String userId) {
         AASModel model = getModelOrThrow(id, userId);
         return aasModelMapper.toDto(model);
     }
 
     /**
-     * Creates a new, empty AAS model for the specified user.
-     * The created model contains no submodels and is initialized with default metadata.
+     * Creates a new empty AAS model for a user.
      *
-     * @param userId the ID of the user creating the model
-     * @return the newly created {@link AASModelDto}
+     * @param userId user ID
+     * @return the created {@link AASModelDto}
      */
-    public AASModelDto createEmpty(String userId) {
-        LocalDateTime now = LocalDateTime.now();
-
-        DefaultAssetAdministrationShell shell = new DefaultAssetAdministrationShell();
-        shell.setSubmodels(new ArrayList<>());
-
-        AASModel model = AASModel.builder()
-                .ownerId(userId)
-                .createdAt(now)
-                .updatedAt(now)
-                .published(false)
-                .aas(shell)
-                .build();
-        validateReferencedFiles(model);
+    public AASModelDto createEmptyModel(String userId) {
+        AASModel model = buildEmptyModel(userId);
+        validateModelWithFiles(model);
         aasModelValidator.validate(model);
 
         return aasModelMapper.toDto(aasModelRepository.save(model));
@@ -108,14 +96,13 @@ public class AASModelService {
 
     /**
      * Updates and saves an existing AAS model for a user.
-     * Overwrites the current model's data with the values from the provided DTO.
      *
-     * @param id the ID of the model to be updated
-     * @param userId the ID of the user performing the update
-     * @param aasModelDto the updated model data
-     * @return the updated {@link AASModelDto}
-     * @throws NotFoundException if the model does not exist or does not belong to the user
-     * @throws BadRequestException if the updated model is invalid
+     * @param id model ID
+     * @param userId user ID
+     * @param aasModelDto updated model data
+     * @return updated {@link AASModelDto}
+     * @throws NotFoundException if the model does not exist or is not owned by the user
+     * @throws BadRequestException if the model is invalid
      */
     public AASModelDto saveModel(String id, String userId, AASModelDto aasModelDto) {
         AASModel existingModel = getModelOrThrow(id, userId);
@@ -123,49 +110,48 @@ public class AASModelService {
         existingModel.setAas(aasModelDto.getAas());
         existingModel.setUpdatedAt(LocalDateTime.now());
 
-        validateReferencedFiles(existingModel);
+        validateModelWithFiles(existingModel);
         aasModelValidator.validate(existingModel);
 
         return aasModelMapper.toDto(aasModelRepository.save(existingModel));
     }
 
     /**
-     * Creates a new AAS model for a user using the provided model data.
+     * Creates a new AAS model for a user with given data.
      *
-     * @param userId the ID of the user creating the model
-     * @param aasModelDto the data for the new model
-     * @return the newly created {@link AASModelDto}
-     * @throws BadRequestException if the provided model data is invalid
+     * @param userId user ID
+     * @param aasModelDto model data
+     * @return created {@link AASModelDto}
+     * @throws BadRequestException if the data is invalid
      */
     public AASModelDto createModel(String userId, AASModelDto aasModelDto) {
-        LocalDateTime now = LocalDateTime.now();
+        AASModel model = buildModelFromDto(userId, aasModelDto);
 
-        AASModel model = AASModel.builder()
-                .ownerId(userId)
-                .createdAt(now)
-                .updatedAt(now)
-                .published(false)
-                .aas(aasModelDto.getAas())
-                .submodels(aasModelDto.getSubmodels())
-                .build();
-
-        validateReferencedFiles(model);
+        validateModelWithFiles(model);
         aasModelValidator.validate(model);
 
         return aasModelMapper.toDto(aasModelRepository.save(model));
     }
 
     /**
-     * Permanently deletes an AAS model and all uploaded files referenced by its submodels.
-     * This is a hard delete: the model and its files are immediately removed from the database.
+     * Permanently deletes a model and all referenced files.
      *
-     * @param id     the ID of the model to delete
-     * @param userId the ID of the user performing the deletion
-     * @throws NotFoundException   if the model does not exist or does not belong to the user
-     * @throws BadRequestException if a referenced file or the model itself could not be deleted
+     * @param id model ID
+     * @param userId user ID
+     * @throws NotFoundException if the model does not exist or is not owned by the user
+     * @throws BadRequestException if a file or the model could not be deleted
      */
     public void hardDeleteModel(String id, String userId) {
         AASModel model = getModelOrThrow(id, userId);
+
+        // Delete marketplace entry as well if model is published
+        if (model.isPublished()) {
+            try {
+                marketPlaceEntryRepository.deleteById(model.getId());
+            } catch (Exception e) {
+                throw new BadRequestException("Failed to delete marketplace entry for model: " + model.getId(), e);
+            }
+        }
 
         if (model.getSubmodels() != null && !model.getSubmodels().isEmpty()) {
             for (DefaultSubmodel submodel : model.getSubmodels()) {
@@ -187,15 +173,14 @@ public class AASModelService {
     }
 
     /**
-     * Publishes an AAS model in the marketplace if it is valid and not already published.
-     * The method validates referenced files and overall model structure before publishing.
+     * Publishes a model in the marketplace if valid and not yet published.
      *
-     * @param id the ID of the model to publish
-     * @param userId the ID of the user publishing the model
-     * @param request additional metadata for publishing (tags, description, etc.)
+     * @param id model ID
+     * @param userId user ID
+     * @param request publish metadata
      * @throws ConflictException if the model is already published
-     * @throws NotFoundException if the model does not exist or does not belong to the user
-     * @throws BadRequestException if the model or its referenced files are invalid
+     * @throws NotFoundException if the model does not exist or is not owned by the user
+     * @throws BadRequestException if the model or referenced files are invalid
      */
     public void publishModel(String id, String userId, PublishRequestDto request) throws ConflictException{
         AASModel model = getModelOrThrow(id, userId);
@@ -204,35 +189,23 @@ public class AASModelService {
             throw new ConflictException("Model is already published.");
         }
 
-        validateReferencedFiles(model);
+        validateModelWithFiles(model);
         aasModelValidator.validate(model);
         this.marketPlaceService.publish(request, model);
     }
 
     /**
-     * Unpublishes the AAS model identified by the given ID if it exists,
-     * is currently published, and the requesting user is the owner.
+     * Unpublishes a published model if the user is the owner.
      *
-     * <p>This method performs the following validations:
-     * <ul>
-     *     <li>Retrieves the model using {@code getModelOrThrow} which may throw {@link BadRequestException}.</li>
-     *     <li>Checks if the requesting user is the owner of the model; throws {@link ForbiddenException} if not.</li>
-     *     <li>Verifies the model is currently published; throws {@link ConflictException} otherwise.</li>
-     * </ul>
-     *
-     * <p>If all validations pass, it delegates the unpublishing operation to {@code marketPlaceService.unpublish}.
-     *
-     * @param modelId the ID of the model to unpublish
-     * @param userId the ID of the user requesting to unpublish the model
-     * @throws BadRequestException if the model does not exist or cannot be retrieved
+     * @param modelId model ID
+     * @param userId user ID
+     * @throws BadRequestException if the model does not exist
      * @throws ConflictException if the model is not published
-     * @throws ForbiddenException if the user is not the owner of the model
+     * @throws ForbiddenException if the user is not the owner
      */
     public void unpublishModel(String modelId, String userId) throws BadRequestException, ConflictException, ForbiddenException {
         AASModel model = getModelOrThrow(modelId, userId);
-        if (!model.getOwnerId().equals(userId)) {
-            throw new ForbiddenException("User is not owner of this model.");
-        }
+        validateModelWithFiles(model);
         if (!model.isPublished()) {
             throw new ConflictException("Model is not published.");
         }
@@ -240,53 +213,38 @@ public class AASModelService {
     }
 
     /**
-     * Creates a new empty AAS model for the specified user and attaches the published model
-     * from the given marketplace entry to it.
+     * Creates a new empty model for a user and copies a published marketplace entry into it.
      *
-     * <p>This method performs the following actions:
-     * <ul>
-     *     <li>Creates a new empty AAS model for the given {@code userId}.</li>
-     *     <li>Retrieves the published model associated with the specified {@code entryId}.</li>
-     *     <li>Saves the published model into the newly created user model.</li>
-     * </ul>
-     *
-     * @param entryId the ID of the marketplace entry containing the published model to be copied
-     * @param userId the ID of the user to whom the model should be added
-     * @throws BadRequestException if the published model for the given entry ID does not exist
+     * @param entryId marketplace entry ID
+     * @param userId user ID
+     * @throws BadRequestException if the published model does not exist
      */
     public void addEntryModelToUser(String entryId, String userId)  throws BadRequestException {
-        String newModelId = this.createEmpty(userId).getId();
+        String newModelId = this.createEmptyModel(userId).getId();
         // get modelFromEntry and set published to false
         AASModelDto entryModel = this.marketPlaceService.getPublishedModel(entryId);
         entryModel.setPublished(false);
         AASModelDto modelDto = this.saveModel(newModelId, userId, entryModel);
         this.marketPlaceService.incrementDownloadCount(entryId);
-
     }
 
     /**
-     * Attaches a submodel to an existing AAS model if it does not already exist.
-     * Validates the updated model before saving.
+     * Adds a submodel to a model if not already present.
      *
-     * @param modelId the ID of the target model
-     * @param dto the submodel data to attach
-     * @param userId the ID of the user performing the operation
-     * @return the updated {@link AASModelDto}
-     * @throws ConflictException if a submodel with the same ID already exists in the model
-     * @throws NotFoundException if the model does not exist or does not belong to the user
-     * @throws BadRequestException if the updated model is invalid
+     * @param modelId model ID
+     * @param dto submodel data
+     * @param userId user ID
+     * @return updated {@link AASModelDto}
+     * @throws ConflictException if submodel with the same ID exists
+     * @throws NotFoundException if the model does not exist or is not owned by the user
+     * @throws BadRequestException if the model is invalid
      */
     public AASModelDto attachSubmodel(String modelId, SubmodelDto dto, String userId) {
         AASModel model = getModelOrThrow(modelId, userId);
         DefaultSubmodel submodel = submodelMapper.fromDto(dto);
 
         // to prevent adding the same submodel (by ID) multiple times to one AAS model (necessary?)
-        boolean exists = model.getSubmodels().stream()
-                .anyMatch(existing -> existing.getId().equals(submodel.getId()));
-
-        if (exists) {
-            throw new ConflictException("Submodel with ID " + submodel.getId() + " already exists.");
-        }
+        doesSubmodelExist(model, submodel);
 
         model.getSubmodels().add(submodel);
         model.setUpdatedAt(LocalDateTime.now());
@@ -297,34 +255,20 @@ public class AASModelService {
     }
 
     /**
-     * Updates an existing submodel within a model, if it exists.
-     * Validates the entire model after the update.
+     * Updates a submodel in a model.
      *
-     * @param modelId the ID of the model
-     * @param submodelId the ID of the submodel to update
-     * @param dto the updated submodel data
-     * @param userId the ID of the user performing the update
-     * @return the updated {@link AASModelDto}
-     * @throws NotFoundException if the model or submodel does not exist or does not belong to the user
-     * @throws BadRequestException if the updated model is invalid
+     * @param modelId model ID
+     * @param submodelId submodel ID
+     * @param dto updated submodel data
+     * @param userId user ID
+     * @return updated {@link AASModelDto}
+     * @throws NotFoundException if the model or submodel does not exist or is not owned by the user
+     * @throws BadRequestException if the model is invalid
      */
     public AASModelDto updateSubmodel(String modelId, String submodelId, SubmodelDto dto, String userId) {
         AASModel model = getModelOrThrow(modelId, userId);
-        List<DefaultSubmodel> submodels = model.getSubmodels();
-        DefaultSubmodel updated = submodelMapper.fromDto(dto);
 
-        boolean replaced = false;
-        for (int i = 0; i < submodels.size(); i++) {
-            if (Objects.equals(submodels.get(i).getId(), submodelId)) {
-                submodels.set(i, updated);
-                replaced = true;
-                break;
-            }
-        }
-
-        if (!replaced) {
-            throw new NotFoundException("Submodel with ID " + submodelId + " not found.");
-        }
+        replaceSubmodel(model, submodelId, dto);
 
         model.setUpdatedAt(LocalDateTime.now());
         aasModelValidator.validate(model);
@@ -333,12 +277,12 @@ public class AASModelService {
     }
 
     /**
-     * Removes a submodel from an AAS model by its ID.
+     * Removes a submodel from a model by its ID.
      *
-     * @param id the ID of the model
-     * @param submodelId the ID of the submodel to remove
-     * @param userId the ID of the user performing the removal
-     * @return the updated {@link AASModelDto}
+     * @param id model ID
+     * @param submodelId submodel ID
+     * @param userId user ID
+     * @return updated {@link AASModelDto}
      * @throws NotFoundException if the submodel does not exist in the model
      */
     public AASModelDto removeSubmodel(String id, String submodelId, String userId) {
@@ -374,27 +318,52 @@ public class AASModelService {
     }
 
     /**
-     * Validates that all files referenced by submodels in this model exist and are valid uploads.
-     * Throws a NotFoundException or ValidationException if a file is missing or invalid.
+     * Validates that all file references in the submodels of the given model exist and are valid.
      *
-     * @param model the AAS model whose referenced files are to be validated
+     * @param model the AAS model to validate
      * @throws NotFoundException if a referenced file does not exist
      * @throws BadRequestException if a referenced file is invalid
      */
-    public void validateReferencedFiles(AASModel model) {
-
-        List<DefaultSubmodel> submodels = model.getSubmodels();
-
-        if (submodels != null && !submodels.isEmpty()) {
-            for (DefaultSubmodel submodel : submodels) {
+    public void validateModelWithFiles(AASModel model) {
+        if (model.getSubmodels() != null && !model.getSubmodels().isEmpty()) {
+            for (DefaultSubmodel submodel : model.getSubmodels()) {
                 for (String fileId : findFileIdsInSubmodel(submodel)) {
-                    UploadedFile file = uploadedFileRepository.findById(fileId)
-                            .orElseThrow(() -> new NotFoundException("Referenced file not found: " + fileId));
-                    MultipartFile multipartFile = new MultipartFileAdapter(file);
-                    fileUploadValidator.validate(multipartFile);
+                    validateFileReference(fileId);
                 }
             }
         }
+    }
+
+    private void validateFileReference(String fileId) {
+        UploadedFile file = uploadedFileRepository.findById(fileId)
+                .orElseThrow(() -> new NotFoundException("Referenced file not found: " + fileId));
+        MultipartFile multipartFile = new MultipartFileAdapter(file);
+        fileUploadValidator.validate(multipartFile);
+    }
+
+    private AASModel buildEmptyModel(String userId) {
+        LocalDateTime now = LocalDateTime.now();
+        DefaultAssetAdministrationShell shell = new DefaultAssetAdministrationShell();
+        shell.setSubmodels(new ArrayList<>());
+        return AASModel.builder()
+                .ownerId(userId)
+                .createdAt(now)
+                .updatedAt(now)
+                .published(false)
+                .aas(shell)
+                .build();
+    }
+
+    private AASModel buildModelFromDto(String userId, AASModelDto dto) {
+        LocalDateTime now = LocalDateTime.now();
+        return AASModel.builder()
+                .ownerId(userId)
+                .createdAt(now)
+                .updatedAt(now)
+                .published(false)
+                .aas(dto.getAas())
+                .submodels(dto.getSubmodels())
+                .build();
     }
 
     private List<String> findFileIdsInSubmodel(DefaultSubmodel submodel) {
@@ -415,6 +384,33 @@ public class AASModelService {
     private void validateOwnership(AASModel model, String userId) {
         if (!model.getOwnerId().equals(userId)) {
             throw new ForbiddenException("Access denied: model does not belong to user.");
+        }
+    }
+
+    private void doesSubmodelExist(AASModel model, DefaultSubmodel submodel) {
+        boolean exists = model.getSubmodels().stream()
+                .anyMatch(existing -> existing.getId().equals(submodel.getId()));
+
+        if (exists) {
+            throw new ConflictException("Submodel with ID " + submodel.getId() + " already exists.");
+        }
+    }
+
+    private void replaceSubmodel(AASModel model, String submodelId, SubmodelDto dto) {
+        DefaultSubmodel updated = submodelMapper.fromDto(dto);
+        List<DefaultSubmodel> submodels = model.getSubmodels();
+
+        boolean replaced = false;
+        for (int i = 0; i < submodels.size(); i++) {
+            if (Objects.equals(submodels.get(i).getId(), submodelId)) {
+                submodels.set(i, updated);
+                replaced = true;
+                break;
+            }
+        }
+
+        if (!replaced) {
+            throw new NotFoundException("Submodel with ID " + submodelId + " not found.");
         }
     }
 

@@ -1,27 +1,33 @@
 package org.DigiTwinStudio.DigiTwin_Backend.services;
 
 import com.mongodb.client.gridfs.model.GridFSFile;
+
 import lombok.RequiredArgsConstructor;
+
 import org.DigiTwinStudio.DigiTwin_Backend.domain.UploadedFile;
+
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.UploadedFileRepository;
+
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.FileStorageException;
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.NotFoundException;
+
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.aasx.InMemoryFile;
+
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.gridfs.GridFsResource;
 import org.springframework.stereotype.Service;
-import org.bson.types.ObjectId;
-import org.DigiTwinStudio.DigiTwin_Backend.exceptions.FileStorageException;
-import org.DigiTwinStudio.DigiTwin_Backend.exceptions.NotFoundException;
 import org.springframework.data.mongodb.gridfs.GridFsTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
+import org.bson.types.ObjectId;
+
 import java.io.InputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.List;
 
@@ -194,7 +200,13 @@ public class FileStorageService {
         }
     }
 
-
+    /**
+     * Retrieves all uploaded files for the given model and loads them as {@link InMemoryFile} objects from GridFS.
+     *
+     * @param modelId the model ID whose files are to be loaded
+     * @return list of {@link InMemoryFile} for use in AASX export
+     * @throws RuntimeException if a file cannot be read from GridFS
+     */
     public List<InMemoryFile> getInMemoryFilesByModelId(String modelId) {
         List<UploadedFile> uploadedFiles = uploadedFileRepository.findAllByModelId(modelId);
         List<InMemoryFile> inMemoryFiles = new ArrayList<>();
@@ -222,5 +234,4 @@ public class FileStorageService {
 
         return inMemoryFiles;
     }
-
 }
