@@ -39,10 +39,9 @@ const AssetKind = ({
         onChange={(e) => onChange(e.target.value)}
         className="white-caret"
       >
-        <option value="Type">Type</option>
-        <option value="Instance">Instance</option>
-        <option value="Role">Role</option>
-        <option value="NotApplicable">NotApplicable</option>
+        <option value="TYPE">Type</option>
+        <option value="INSTANCE">Instance</option>
+        <option value="NOT_APPLICABLE">Not Applicable</option>
       </Form.Select>
     </div>
   );
