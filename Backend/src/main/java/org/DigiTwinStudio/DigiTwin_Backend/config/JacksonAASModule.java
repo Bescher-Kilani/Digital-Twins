@@ -18,8 +18,8 @@ public class JacksonAASModule extends SimpleModule {
         addAbstractTypeMapping(Key.class, DefaultKey.class);
         addAbstractTypeMapping(File.class, DefaultFile.class);
         addAbstractTypeMapping(AssetInformation.class, DefaultAssetInformation.class);
+        addAbstractTypeMapping(SpecificAssetId.class, DefaultSpecificAssetId.class);
         addAbstractTypeMapping(Resource.class, DefaultResource.class);
-
 
 
         addAbstractTypeMapping(AssetAdministrationShell.class, DefaultAssetAdministrationShell.class);
