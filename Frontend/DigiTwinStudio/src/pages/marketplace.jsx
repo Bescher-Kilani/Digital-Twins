@@ -327,7 +327,7 @@ export default function Marketplace() {
                     </Row>
                 )}
 
-                {/* Models list */}
+                {/* Entries list */}
                 <div className="d-flex flex-column gap-3">
                     {!loading && !error && models.length === 0 && (
                         <Card className="text-white model-container">
@@ -341,7 +341,7 @@ export default function Marketplace() {
                         </Card>
                     )}
 
-                    {!loading && currentModels.map((model, index) => (
+                    {!loading && currentModels.map((entry, index) => (
                         <Card key={index} className="text-white model-container">
                             <Card.Body className="d-flex align-items-center">
                                 <img
@@ -350,17 +350,17 @@ export default function Marketplace() {
                                     style={{ height: 100, marginRight: "1rem" }}
                                 />
                                 <div className="flex-grow-1">
-                                    <h5 className="mb-1">{t("marketplace.title")}{model.title}</h5>
-                                    <p className="mb-1">{model.description}</p>
-                                    <small>{t("marketplace.publishedBy")} {model.author}</small>
+                                    <h5 className="mb-1">{t("marketplace.title")}{entry.title}</h5>
+                                    <p className="mb-1">{entry.description}</p>
+                                    <small>{t("marketplace.publishedBy")} {entry.author}</small>
                                     <br />
-                                    <small>{t("marketplace.publishedAt")} {model.publishedAt}</small>
+                                    <small>{t("marketplace.publishedAt")} {entry.publishedAt}</small>
                                 </div>
                                 <div className="d-flex flex-column gap-2">
                                     <Button
                                         size="sm"
                                         variant="primary"
-                                        onClick={() => handleSave(model)}
+                                        onClick={() => handleSave(entry)}
                                     >
                                         <PlusIcon></PlusIcon> {t("marketplace.save")}
                                     </Button>
@@ -369,10 +369,10 @@ export default function Marketplace() {
                                             <DownloadIcon></DownloadIcon> {t("dashboard.download")}
                                         </Dropdown.Toggle>
                                         <Dropdown.Menu>
-                                            <Dropdown.Item onClick={() => handleDownload(model, 'JSON')}>
+                                            <Dropdown.Item onClick={() => handleDownload(entry, 'JSON')}>
                                                 JSON
                                             </Dropdown.Item>
-                                            <Dropdown.Item onClick={() => handleDownload(model, 'AASX')}>
+                                            <Dropdown.Item onClick={() => handleDownload(entry, 'AASX')}>
                                                 AASX
                                             </Dropdown.Item>
                                         </Dropdown.Menu>
