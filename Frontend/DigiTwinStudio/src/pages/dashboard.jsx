@@ -1,4 +1,4 @@
-import { Container, Row, Col, Button, Form, Card, Pagination } from "react-bootstrap";
+import { Container, Row, Col, Button, Form, Card, Pagination, Dropdown, Toast, ToastContainer } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
@@ -18,6 +18,7 @@ export default function Dashboard() {
   const [models, setModels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [toasts, setToasts] = useState([]);
   const navigate = useNavigate();
   const modelsPerPage = 4;
   
@@ -57,6 +58,7 @@ export default function Dashboard() {
         }
         
         const data = await response.json();
+        console.log('Fetched models:', data);
         
         // Transform the API data to match the expected format for the UI
         const transformedModels = data.map(model => ({
@@ -83,6 +85,111 @@ export default function Dashboard() {
 
     fetchModels();
   }, [keycloak, authenticated]);
+
+  // Function to show toast notifications
+  const showToast = (message, variant = 'danger') => {
+    const id = Date.now();
+    const newToast = {
+      id,
+      message,
+      variant,
+      show: true
+    };
+    setToasts(prev => [...prev, newToast]);
+    
+    // Auto-hide toast after 5 seconds
+    setTimeout(() => {
+      setToasts(prev => prev.filter(toast => toast.id !== id));
+    }, 5000);
+  };
+
+  // Function to manually close a toast
+  const closeToast = (id) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  };
+
+  // Function to handle file downloads
+  const handleDownload = async (model, format) => {
+    if (!model.id) {
+      showToast('Model information is missing. Cannot download file.', 'danger');
+      return;
+    }
+
+    try {
+      // Prepare headers
+      const headers = {};
+      
+      // Add Authorization header if user is logged in
+      let token = null;
+      
+      // Try multiple sources for the token
+      token = sessionStorage.getItem('access_token') || 
+              localStorage.getItem('authToken') || 
+              (keycloak && keycloak.token) ||
+              null;
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      // Use the model ID for both modelId and modelIdShort since we don't have separate values
+      const url = `http://localhost:9090/guest/models/${model.id}/${model.title}/export/${format}`;
+      console.log('Downloading file from:', url);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: headers
+      });
+
+      if (response.ok) {
+        // Get the file blob
+        const blob = await response.blob();
+        
+        // Create download link
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        
+        // Set filename based on format
+        const fileExtension = format.toLowerCase();
+        link.download = `${model.title || model.id}.${fileExtension}`;
+        
+        // Trigger download
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up the URL object
+        window.URL.revokeObjectURL(downloadUrl);
+        
+        showToast(`${format} file downloaded successfully!`, 'success');
+      } else {
+        // Handle error response
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || `Error: ${response.status} ${response.statusText}`;
+        console.error('Error downloading file:', errorMessage);
+        
+        if (response.status === 401) {
+          showToast('Authentication required. Please sign in and try again.', 'warning');
+        } else if (response.status === 403) {
+          showToast('Access denied. You do not have permission to download this file.', 'danger');
+        } else if (response.status === 404) {
+          showToast('File not found. The model may have been deleted.', 'danger');
+        } else {
+          showToast(`Failed to download ${format} file: ${errorMessage}`, 'danger');
+        }
+      }
+    } catch (error) {
+      console.error('Network error downloading file:', error);
+      
+      // Check if it's a CORS or network error
+      if (error.message.includes('Load failed') || error.message.includes('CORS') || error.message.includes('Network request failed')) {
+        showToast('Connection error: Unable to reach the server.', 'danger');
+      } else {
+        showToast('Network error: Unable to download file. Please check your connection and try again.', 'danger');
+      }
+    }
+  };
   
   // Calculate pagination
   const indexOfLastModel = currentPage * modelsPerPage;
@@ -171,9 +278,19 @@ export default function Dashboard() {
                 <Button size="sm" variant="primary">
                   <OpenIcon></OpenIcon> {t("dashboard.open")}
                 </Button>
-                <Button size="sm" variant="primary">
-                  <DownloadIcon></DownloadIcon> {t("dashboard.download")}
-                </Button>
+                <Dropdown>
+                  <Dropdown.Toggle size="sm" variant="primary" id="dropdown-basic">
+                    <DownloadIcon></DownloadIcon> {t("dashboard.download")}
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu>
+                    <Dropdown.Item onClick={() => handleDownload(model, 'JSON')}>
+                      JSON
+                    </Dropdown.Item>
+                    <Dropdown.Item onClick={() => handleDownload(model, 'AASX')}>
+                      AASX
+                    </Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown>
               </div>
             </Card.Body>
           </Card>
@@ -220,6 +337,41 @@ export default function Dashboard() {
         </Row>
       )}
     </Container>
+
+    {/* Toast notifications positioned at top right */}
+    <ToastContainer 
+      position="top-end" 
+      className="p-3" 
+      style={{ 
+        position: 'fixed', 
+        top: '20px', 
+        right: '20px', 
+        zIndex: 9999 
+      }}
+    >
+      {toasts.map((toast) => (
+        <Toast
+          key={toast.id}
+          show={toast.show}
+          onClose={() => closeToast(toast.id)}
+          bg={toast.variant}
+          text={toast.variant === 'warning' ? 'dark' : 'white'}
+          autohide
+          delay={5000}
+        >
+          <Toast.Header>
+            <strong className="me-auto">
+              {toast.variant === 'danger' ? 'Error' : 
+               toast.variant === 'warning' ? 'Warning' : 
+               toast.variant === 'success' ? 'Success' : 'Notification'}
+            </strong>
+          </Toast.Header>
+          <Toast.Body>
+            {toast.message}
+          </Toast.Body>
+        </Toast>
+      ))}
+    </ToastContainer>
     </div>
   );
 }
