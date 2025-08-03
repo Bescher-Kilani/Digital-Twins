@@ -256,8 +256,12 @@ public class AASModelService {
      */
     public void addEntryModelToUser(String entryId, String userId)  throws BadRequestException {
         String newModelId = this.createEmpty(userId).getId();
-        this.saveModel(newModelId, userId, this.marketPlaceService.getPublishedModel(entryId));
+        // get modelFromEntry and set published to false
+        AASModelDto entryModel = this.marketPlaceService.getPublishedModel(entryId);
+        entryModel.setPublished(false);
+        AASModelDto modelDto = this.saveModel(newModelId, userId, entryModel);
         this.marketPlaceService.incrementDownloadCount(entryId);
+
     }
 
     /**

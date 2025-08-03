@@ -120,7 +120,7 @@ export default function Dashboard() {
 
     try {
       // Use the model ID for both modelId and modelIdShort since we don't have separate values
-      const url = `http://localhost:9090/guest/models/${model.id}/${model.title}/export/${format}`;
+      const url = `http://localhost:9090/models/${model.id}/${model.title}/export/${format}`;
       console.log('Downloading file from:', url);
       
       let response;

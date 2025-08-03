@@ -199,7 +199,7 @@ public class GuestController {
             @PathVariable String name,
             @PathVariable ExportFormat format) {
 
-        ExportedFile exported = exportService.export(id, name, format);
+        ExportedFile exported = exportService.export(id, name, format, "GUEST");
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment;" +

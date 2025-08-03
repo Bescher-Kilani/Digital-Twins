@@ -11,6 +11,7 @@ import org.DigiTwinStudio.DigiTwin_Backend.domain.ExportFormat;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.MarketplaceEntry;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ExportException;
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ForbiddenException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.NotFoundException;
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.AASModelMapper;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.AASModelRepository;
@@ -85,8 +86,13 @@ public class ExportService {
      * @param format JSON or AASX
      * @return contents of an exported file as byte[]
      */
-    public byte[] exportStoredModel(String modelId, ExportFormat format) {
+    public byte[] exportStoredModel(String modelId, ExportFormat format, String userId) {
         AASModel model = this.aasModelRepository.findById(modelId).orElseThrow(() -> new NotFoundException("Could not find model with given Id"));
+
+        if (!model.getOwnerId().equals(userId)) {
+            throw new ForbiddenException("Access denied: model does not belong to user.");
+        }
+
         return switch (format) {
             case JSON -> exportAsJson(model);
             case AASX -> exportAsAasx(model);
@@ -127,8 +133,8 @@ public class ExportService {
 
     }
 
-    public ExportedFile export(String id, String name, ExportFormat format) {
-        byte[] content = exportStoredModel(id, format);
+    public ExportedFile export(String id, String name, ExportFormat format, String userId) {
+        byte[] content = exportStoredModel(id, format, userId);
 
         String fileExtension = switch (format) {
             case JSON -> "json";

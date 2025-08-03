@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping
 @RequiredArgsConstructor
 public class ExportController {
 
@@ -42,9 +42,12 @@ public class ExportController {
     public ResponseEntity<byte[]> exportModel(
             @PathVariable String id,
             @PathVariable String name,
-            @PathVariable ExportFormat format) {
+            @PathVariable ExportFormat format,
+            @AuthenticationPrincipal Jwt jwt) {
 
-        ExportedFile exported = exportService.export(id, name, format);
+        String userId = jwt.getSubject();
+
+        ExportedFile exported = exportService.export(id, name, format, userId);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment;" +
