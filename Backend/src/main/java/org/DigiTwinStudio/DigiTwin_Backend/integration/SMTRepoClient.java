@@ -91,7 +91,6 @@ public class SMTRepoClient {
                     .revision(revision)
                     .json(item)
                     .pulledAt(DateTimeUtil.nowUtc())
-                    .active(true)
                     .build();
             log.info("Created template for {}", name);
             templates.add(template);
