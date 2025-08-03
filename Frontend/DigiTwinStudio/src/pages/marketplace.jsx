@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useContext } from "react";
 import modelImage from "../assets/homepage_model.png";
-import DownloadIcon from "../assets/icons/arrow-bar-down.svg?react";
 import PlusIcon from "../assets/icons/plus-lg.svg?react";
 import searchIcon from "../assets/icons/search.svg";
 import { KeycloakContext } from "../KeycloakContext";
@@ -170,107 +169,6 @@ export default function Marketplace() {
         setToasts(prev => prev.filter(toast => toast.id !== id));
     };
 
-    // Function to handle file downloads
-    const handleDownload = async (entry, format) => {
-        if (!entry.id) {
-            showToast('Model information is missing. Cannot download file.', 'danger');
-            return;
-        }
-
-        console.log(entry);
-
-        try {
-            const urlGetModel = `http://localhost:9090/marketplace/${entry.id}`;
-            let modelResponse;
-            console.log("URL : ", urlGetModel);
-
-            if (authenticated) {
-                // User is authenticated - use authenticatedFetch with token refresh
-                modelResponse = await authenticatedFetch(urlGetModel, {
-                    method: 'GET'
-                }, keycloak);
-            } else {
-                // User is not authenticated - direct fetch without auth
-                modelResponse = await fetch(urlGetModel, {
-                    method: 'GET'
-                });
-            }
-
-            if (!modelResponse.ok) {
-                throw new Error(`Failed to fetch model: ${modelResponse.status}`);
-            }
-
-            const model = await modelResponse.json();
-            console.log("Model: ", model);
-
-            // Use the model ID for both modelId and modelIdShort since we don't have separate values
-            const url = `http://localhost:9090/guest/models/${model.id}/${model.title}/export/${format}`;
-            console.log('Downloading file from:', url);
-
-            let response;
-
-            if (authenticated) {
-                // User is authenticated - use authenticatedFetch with token refresh
-                response = await authenticatedFetch(url, {
-                    method: 'GET'
-                }, keycloak);
-            } else {
-                // User is not authenticated - direct fetch without auth
-                response = await fetch(url, {
-                    method: 'GET'
-                });
-            }
-
-            if (response.ok) {
-                // Get the file blob
-                const blob = await response.blob();
-
-                // Create download link
-                const downloadUrl = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = downloadUrl;
-
-                // Set filename based on format
-                const fileExtension = format.toLowerCase();
-                link.download = `${model.title || model.id}.${fileExtension}`;
-
-                // Trigger download
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-
-                // Clean up the URL object
-                window.URL.revokeObjectURL(downloadUrl);
-
-                showToast(`${format} file downloaded successfully!`, 'success');
-            } else {
-                // Handle error response
-                const errorData = await response.json().catch(() => ({}));
-                const errorMessage = errorData.message || `Error: ${response.status} ${response.statusText}`;
-                console.error('Error downloading file:', errorMessage);
-
-                if (response.status === 401) {
-                    showToast('Authentication required. Please sign in and try again.', 'warning');
-                } else if (response.status === 403) {
-                    showToast('Access denied. You do not have permission to download this file.', 'danger');
-                } else if (response.status === 404) {
-                    showToast('File not found. The model may have been deleted.', 'danger');
-                } else {
-                    showToast(`Failed to download ${format} file: ${errorMessage}`, 'danger');
-                }
-            }
-        } catch (error) {
-            console.error('Network error downloading file:', error);
-
-            // Check if it's a CORS or network error
-            if (error.message.includes('Load failed') || error.message.includes('CORS') || error.message.includes('Network request failed')) {
-                showToast('Connection error: Unable to reach the server.', 'danger');
-            } else {
-                showToast('Network error: Unable to download file. Please check your connection and try again.', 'danger');
-            }
-        }
-    };
-
     return (
         <div className="marketplace-container">
             <Container className="py-4">
@@ -364,19 +262,6 @@ export default function Marketplace() {
                                     >
                                         <PlusIcon></PlusIcon> {t("marketplace.save")}
                                     </Button>
-                                    <Dropdown>
-                                        <Dropdown.Toggle size="sm" variant="primary" id="dropdown-basic">
-                                            <DownloadIcon></DownloadIcon> {t("dashboard.download")}
-                                        </Dropdown.Toggle>
-                                        <Dropdown.Menu>
-                                            <Dropdown.Item onClick={() => handleDownload(entry, 'JSON')}>
-                                                JSON
-                                            </Dropdown.Item>
-                                            <Dropdown.Item onClick={() => handleDownload(entry, 'AASX')}>
-                                                AASX
-                                            </Dropdown.Item>
-                                        </Dropdown.Menu>
-                                    </Dropdown>
                                 </div>
                             </Card.Body>
                         </Card>
