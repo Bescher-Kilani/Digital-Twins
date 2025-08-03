@@ -80,5 +80,13 @@
       "details": "Fill the Details",
       "allDone": "All done"
     }
+  },
+  "marketplace": {
+    "ourModels": "Explore the published models",
+    "search": "Search",
+    "newModel": "or create a new model!",
+    "publishedAt": "published at: ",
+    "save": "Save",
+    "download":"Download"
   }
 }

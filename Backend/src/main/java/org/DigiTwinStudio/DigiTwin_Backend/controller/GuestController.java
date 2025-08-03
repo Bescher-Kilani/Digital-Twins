@@ -148,7 +148,7 @@ public class GuestController {
 
 
     /**
-     * Uploads a property file (e.g. PDF, image) for a guest user.
+     * Uploads a property file (e.g., PDF, image) for a guest user.
      *
      * @param modelId the ID of the model to which the file belongs
      * @param file    the uploaded property file
@@ -176,7 +176,7 @@ public class GuestController {
     }
 
 /**
- * Exports a stored AAS model by its ID in the specified format (e.g. JSON or AASX),
+ * Exports a stored AAS model by its ID in the specified format (e.g., JSON or AASX),
  * and returns it as a downloadable file in the HTTP response.
  * <p>
  * This endpoint is typically used to trigger a download in the user's browser.
