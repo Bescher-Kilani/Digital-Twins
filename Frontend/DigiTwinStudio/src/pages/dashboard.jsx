@@ -9,6 +9,7 @@ import DownloadIcon from "../assets/icons/arrow-bar-down.svg?react";
 import ImportIcon from "../assets/icons/arrow-bar-up.svg?react";
 import PlusIcon from "../assets/icons/plus-lg.svg?react";
 import { KeycloakContext } from "../KeycloakContext";
+import { authenticatedFetch } from "../utils/tokenManager";
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -27,28 +28,29 @@ export default function Dashboard() {
         setLoading(true);
         setError(null);
         
-        // Prepare headers
-        const headers = {
-          'Content-Type': 'application/json'
-        };
+        // Debug: Check what's in storage
+        console.log('Dashboard debug - authenticated:', authenticated);
+        console.log('Dashboard debug - keycloak:', keycloak);
+        console.log('Dashboard debug - sessionStorage access_token:', sessionStorage.getItem('access_token'));
+        console.log('Dashboard debug - sessionStorage refresh_token:', sessionStorage.getItem('refresh_token'));
+        console.log('Dashboard debug - all sessionStorage keys:', Object.keys(sessionStorage));
         
-        // Add Authorization header if user is logged in
-        let token = null;
+        let response;
         
-        // Try multiple sources for the token
-        token = sessionStorage.getItem('access_token') || 
-                localStorage.getItem('authToken') || 
-                (keycloak && keycloak.token) ||
-                null;
-        
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
+        if (authenticated) {
+          // User is authenticated - use authenticated endpoint ONLY
+          console.log('User is authenticated, using authenticated endpoint for models');
+          response = await authenticatedFetch('http://localhost:9090/models', {
+            method: 'GET'
+          }, keycloak);
+        } else {
+          // User is not authenticated - use guest endpoint ONLY
+          console.log('User is not authenticated, using guest endpoint for models');
+          // Note: There might not be a guest endpoint for listing models
+          // You might need to just show empty state or handle this differently
+          setModels([]);
+          return;
         }
-        
-        const response = await fetch('http://localhost:9090/models', {
-          method: 'GET',
-          headers: headers
-        });
         
         if (!response.ok) {
           throw new Error(`Failed to fetch models: ${response.status} ${response.statusText}`);

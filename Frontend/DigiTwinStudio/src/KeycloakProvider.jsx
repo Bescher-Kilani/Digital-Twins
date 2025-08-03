@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { KeycloakContext } from "./KeycloakContext";
+import { startTokenRefreshInterval, stopTokenRefreshInterval } from "./utils/tokenManager";
 
 // PKCE helper functions
 const generateCodeVerifier = () => {
@@ -64,6 +65,9 @@ const logoutUser = () => {
   sessionStorage.removeItem('access_token');
   sessionStorage.removeItem('refresh_token');
   sessionStorage.removeItem('id_token');
+  
+  // Stop token refresh interval
+  stopTokenRefreshInterval();
   
   // Build logout URL with id_token_hint if available
   let logoutUrl = "http://localhost:8080/realms/DigiTwinStudio/protocol/openid-connect/logout?post_logout_redirect_uri=" + encodeURIComponent(window.location.origin);
@@ -163,14 +167,10 @@ const exchangeCodeForTokens = (code) => {
       }
       
       // Update auth state
-      setAuthState({
-        keycloak: {
-          login: () => initiateLogin(),
-          logout: () => logoutUser(),
-          tokenParsed: payload
-        },
-        authenticated: true,
-        ready: true
+      setAuthenticated({
+        login: () => initiateLogin(),
+        logout: () => logoutUser(),
+        tokenParsed: payload
       });
       
       // Redirect authenticated users to dashboard if they're on home page or sign-in page
@@ -189,11 +189,24 @@ const exchangeCodeForTokens = (code) => {
 
 // Helper to set unauthenticated state
 const setNotAuthenticated = () => {
+  stopTokenRefreshInterval(); // Stop any existing refresh interval
   setAuthState({
     keycloak: { login: () => initiateLogin(), logout: () => {} },
     authenticated: false,
     ready: true
   });
+};
+
+// Helper to set authenticated state and start token refresh
+const setAuthenticated = (keycloakObj) => {
+  startTokenRefreshInterval(); // Start automatic token refresh
+  if (setAuthState) {
+    setAuthState({
+      keycloak: keycloakObj,
+      authenticated: true,
+      ready: true
+    });
+  }
 };
 
 // Reference to setAuthState (will be set in component)
@@ -211,6 +224,20 @@ export default function KeycloakProvider({ children }) {
   useEffect(() => {
     setAuthState = setAuthStateInternal;
   }, []);
+
+  // Start/stop token refresh interval based on authentication state
+  useEffect(() => {
+    if (authState.authenticated) {
+      startTokenRefreshInterval();
+    } else {
+      stopTokenRefreshInterval();
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      stopTokenRefreshInterval();
+    };
+  }, [authState.authenticated]);
 
   // Only run after component is mounted (client-side only)
   useEffect(() => {
@@ -269,14 +296,10 @@ export default function KeycloakProvider({ children }) {
             // Clean up URL and redirect to dashboard if login was initiated
             window.history.replaceState({}, document.title, window.location.pathname);
             
-            setAuthStateInternal({
-              keycloak: {
-                login: () => initiateLogin(),
-                logout: () => logoutUser(),
-                tokenParsed: payload
-              },
-              authenticated: true,
-              ready: true
+            setAuthenticated({
+              login: () => initiateLogin(),
+              logout: () => logoutUser(),
+              tokenParsed: payload
             });
             
             // Redirect to dashboard only if this was a login (not silent SSO)
@@ -307,14 +330,10 @@ export default function KeycloakProvider({ children }) {
             if (payload.exp * 1000 > Date.now()) {
               console.log("Safari: Using stored token", payload.preferred_username);
               console.log("Safari: Stored token payload:", payload);
-              setAuthStateInternal({
-                keycloak: {
-                  login: () => initiateLogin(),
-                  logout: () => logoutUser(),
-                  tokenParsed: payload
-                },
-                authenticated: true,
-                ready: true
+              setAuthenticated({
+                login: () => initiateLogin(),
+                logout: () => logoutUser(),
+                tokenParsed: payload
               });
               
               // Redirect authenticated users to dashboard if they're on home page or sign-in page

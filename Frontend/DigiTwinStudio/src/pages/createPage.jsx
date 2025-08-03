@@ -11,6 +11,7 @@ import FloppyFillIcon from "../assets/icons/floppy-fill.svg?react";
 import QuestionCircleIcon from "../assets/icons/question-circle.svg?react";
 import { useTranslation } from "react-i18next";
 import { KeycloakContext } from "../KeycloakContext";
+import { authenticatedFetch } from "../utils/tokenManager";
 import "../styles/createPage.css";
 
 function CreatePage() {
@@ -379,77 +380,69 @@ function CreatePage() {
     };
     
     try {
-      // Prepare headers
-      const headers = {
-        'Content-Type': 'application/json'
-      };
-      
-      // Add Authorization header if user is logged in
-      let token = null;
-      
-      // Try multiple sources for the token
-      token = sessionStorage.getItem('access_token') || 
-              localStorage.getItem('authToken') || 
-              (keycloak && keycloak.token) ||
-              null;
-      
-      console.log('Authentication status:', authenticated);
-      console.log('Keycloak object:', keycloak);
-      console.log('SessionStorage access_token:', sessionStorage.getItem('access_token') ? 'Present' : 'Missing');
-      console.log('Using token:', token ? `Present (${token.substring(0, 20)}...)` : 'No token');
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
       console.log('Saving AASX model:', finalData);
-      console.log('Request headers:', headers);
       
-      // Use authenticated endpoint if user is authenticated, otherwise use guest endpoint
-      const endpoint = token ? 'http://localhost:9090/models/new' : 'http://localhost:9090/guest/models/new';
-      console.log('Using endpoint:', endpoint);
+      let response;
+      let responseData;
       
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(finalData)
-      });
+      // Check if user is authenticated first
+      const hasToken = sessionStorage.getItem('access_token') || 
+                      localStorage.getItem('authToken') || 
+                      (keycloak && keycloak.token);
       
-      if (response.ok) {
-        // Get the response data
-        const responseData = await response.json();
-        console.log('Model created successfully:', responseData);
+      if (authenticated && hasToken) {
+        // User is authenticated - use authenticated endpoint ONLY
+        console.log('User is authenticated, using authenticated endpoint');
+        response = await authenticatedFetch('http://localhost:9090/models/new', {
+          method: 'POST',
+          body: JSON.stringify(finalData)
+        }, keycloak);
         
-        // Extract id and idShort from response
-        const modelId = responseData.id;
-        const modelIdShort = responseData.aas?.idShort;
-        
-        // Clear the templates after successful save
-        sessionStorage.removeItem('submodelTemplates');
-        setSubmodelTemplates([]);
-        
-        // Navigate to createComplete page with model data
-        navigate('/create/complete', { 
-          state: { 
-            modelName: formData.idShort || 'Untitled Model',
-            modelId: modelId,
-            modelIdShort: modelIdShort
-          } 
-        });
-      } else {
-        // Handle error response
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.message || `Error: ${response.status} ${response.statusText}`;
-        console.error('Error saving model:', errorMessage);
-        
-        if (response.status === 401) {
-          showToast('Authentication required. Please sign in and try again.', 'warning');
-        } else if (response.status === 403) {
-          showToast('Access denied. You do not have permission to create models.', 'danger');
+        if (response.ok) {
+          responseData = await response.json();
+          console.log('Model created successfully (authenticated):', responseData);
         } else {
-          showToast(`Failed to save model: ${errorMessage}`, 'danger');
+          throw new Error(`Authenticated request failed: ${response.status} ${response.statusText}`);
+        }
+      } else {
+        // User is not authenticated - use guest endpoint ONLY
+        console.log('User is not authenticated, using guest endpoint');
+        response = await fetch('http://localhost:9090/guest/models/new', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(finalData)
+        });
+        
+        if (response.ok) {
+          responseData = await response.json();
+          console.log('Model created successfully (guest):', responseData);
+        } else {
+          throw new Error(`Guest request failed: ${response.status} ${response.statusText}`);
         }
       }
+      
+      // Extract id and idShort from response
+      const modelId = responseData.id;
+      const modelIdShort = responseData.aas?.idShort;
+      
+      // Clear the templates after successful save
+      sessionStorage.removeItem('submodelTemplates');
+      setSubmodelTemplates([]);
+      
+      // Show success message
+      showToast('Model saved successfully!', 'success');
+      
+      // Navigate to createComplete page with model data
+      navigate('/create/complete', { 
+        state: { 
+          modelName: formData.idShort || 'Untitled Model',
+          modelId: modelId,
+          modelIdShort: modelIdShort
+        } 
+      });
+      
     } catch (error) {
       console.error('Network error saving model:', error);
       console.error('Error details:', {
