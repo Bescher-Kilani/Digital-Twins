@@ -5,8 +5,6 @@ import lombok.RequiredArgsConstructor;
 import org.DigiTwinStudio.DigiTwin_Backend.adapter.MultipartFileAdapter;
 
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
-import org.DigiTwinStudio.DigiTwin_Backend.domain.PublishMetadata;
-import org.DigiTwinStudio.DigiTwin_Backend.domain.Tag;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.UploadedFile;
 
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
@@ -22,7 +20,6 @@ import org.DigiTwinStudio.DigiTwin_Backend.mapper.AASModelMapper;
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.SubmodelMapper;
 
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.AASModelRepository;
-import org.DigiTwinStudio.DigiTwin_Backend.repositories.MarketPlaceEntryRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.TagRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.UploadedFileRepository;
 
@@ -65,7 +62,7 @@ public class AASModelService {
      */
     @Transactional(readOnly = true)
     public List<AASModelDto> getAllForUser(String userId) {
-        List<AASModel> models = aasModelRepository.findByOwnerIdAndDeletedFalse(userId);
+        List<AASModel> models = aasModelRepository.findByOwnerId(userId);
         return models.stream().map(aasModelMapper::toDto).toList();
     }
 
@@ -100,7 +97,6 @@ public class AASModelService {
                 .ownerId(userId)
                 .createdAt(now)
                 .updatedAt(now)
-                .deleted(false)
                 .published(false)
                 .aas(shell)
                 .build();
@@ -148,7 +144,6 @@ public class AASModelService {
                 .ownerId(userId)
                 .createdAt(now)
                 .updatedAt(now)
-                .deleted(false)
                 .published(false)
                 .aas(aasModelDto.getAas())
                 .submodels(aasModelDto.getSubmodels())
@@ -161,18 +156,34 @@ public class AASModelService {
     }
 
     /**
-     * Soft-deletes a model (marks as deleted) for the specified user.
+     * Permanently deletes an AAS model and all uploaded files referenced by its submodels.
+     * This is a hard delete: the model and its files are immediately removed from the database.
      *
-     * @param id the ID of the model to delete
+     * @param id     the ID of the model to delete
      * @param userId the ID of the user performing the deletion
-     * @throws NotFoundException if the model does not exist or does not belong to the user
+     * @throws NotFoundException   if the model does not exist or does not belong to the user
+     * @throws BadRequestException if a referenced file or the model itself could not be deleted
      */
-    public void deleteModel(String id, String userId) {
+    public void hardDeleteModel(String id, String userId) {
         AASModel model = getModelOrThrow(id, userId);
 
-        model.setDeleted(true);
-        model.setUpdatedAt(LocalDateTime.now());
-        aasModelRepository.save(model);
+        if (model.getSubmodels() != null && !model.getSubmodels().isEmpty()) {
+            for (DefaultSubmodel submodel : model.getSubmodels()) {
+                for (String fileId : findFileIdsInSubmodel(submodel)) {
+                    try {
+                        uploadedFileRepository.deleteById(fileId);
+                    } catch (Exception e) {
+                        throw new BadRequestException("Failed to delete uploaded file: " + fileId, e);
+                    }
+                }
+            }
+        }
+
+        try {
+            aasModelRepository.deleteById(model.getId());
+        } catch (Exception e) {
+            throw new BadRequestException("Failed to delete model: " + model.getId(), e);
+        }
     }
 
     /**
@@ -329,16 +340,32 @@ public class AASModelService {
     public AASModelDto removeSubmodel(String id, String submodelId, String userId) {
         AASModel model = getModelOrThrow(id, userId);
 
-        boolean removed = model.getSubmodels().removeIf(submodel ->
-                Objects.equals(submodel.getId(), submodelId)
-        );
+        if (model.getSubmodels() == null || model.getSubmodels().isEmpty()) {
+            throw new NotFoundException("No submodels present in this model.");
+        }
 
-        if (!removed) {
+        DefaultSubmodel toRemove = null;
+        for (DefaultSubmodel submodel : model.getSubmodels()) {
+            if (Objects.equals(submodel.getId(), submodelId)) {
+                toRemove = submodel;
+                break;
+            }
+        }
+
+        if (toRemove == null) {
             throw new NotFoundException("Submodel with ID " + submodelId + " not found.");
         }
 
-        model.setUpdatedAt(LocalDateTime.now());
+        for (String fileId : findFileIdsInSubmodel(toRemove)) {
+            try {
+                uploadedFileRepository.deleteById(fileId);
+            } catch (Exception e) {
+                throw new BadRequestException("Failed to delete uploaded file: " + fileId, e);
+            }
+        }
 
+        model.getSubmodels().remove(toRemove);
+        model.setUpdatedAt(LocalDateTime.now());
         return aasModelMapper.toDto(aasModelRepository.save(model));
     }
 
@@ -356,25 +383,29 @@ public class AASModelService {
 
         if (submodels != null && !submodels.isEmpty()) {
             for (DefaultSubmodel submodel : submodels) {
-                List<SubmodelElement> elements = submodel.getSubmodelElements();
+                for (String fileId : findFileIdsInSubmodel(submodel)) {
+                    UploadedFile file = uploadedFileRepository.findById(fileId)
+                            .orElseThrow(() -> new NotFoundException("Referenced file not found: " + fileId));
+                    MultipartFile multipartFile = new MultipartFileAdapter(file);
+                    fileUploadValidator.validate(multipartFile);
+                }
+            }
+        }
+    }
 
-                for (SubmodelElement element : elements) {
-                    if (element instanceof File fileElement) {
-                        String fileId = fileElement.getValue();
-
-                        if (fileId == null || fileId.isBlank()) {
-                            continue;
-                        }
-
-                        UploadedFile file = uploadedFileRepository.findById(fileId)
-                                .orElseThrow(() -> new NotFoundException("Referenced file not found: " + fileId));
-
-                        MultipartFile multipartFile = new MultipartFileAdapter(file);
-                        fileUploadValidator.validate(multipartFile);
+    private List<String> findFileIdsInSubmodel(DefaultSubmodel submodel) {
+        List<String> fileIds = new ArrayList<>();
+        if (submodel.getSubmodelElements() != null && !submodel.getSubmodelElements().isEmpty()) {
+            for (SubmodelElement element : submodel.getSubmodelElements()) {
+                if (element instanceof File fileElem) {
+                    String fileId = fileElem.getValue();
+                    if (fileId != null && !fileId.isBlank()) {
+                        fileIds.add(fileId);
                     }
                 }
             }
         }
+        return fileIds;
     }
 
     private void validateOwnership(AASModel model, String userId) {
@@ -384,7 +415,7 @@ public class AASModelService {
     }
 
     private AASModel getModelOrThrow(String id, String userId) {
-        AASModel model = aasModelRepository.findByIdAndDeletedFalse(id)
+        AASModel model = aasModelRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Model with ID '" + id + "' not found."));
         validateOwnership(model, userId);
         return model;
