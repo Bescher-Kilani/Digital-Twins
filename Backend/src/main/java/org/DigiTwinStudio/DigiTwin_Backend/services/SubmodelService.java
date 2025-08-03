@@ -1,23 +1,30 @@
 package org.DigiTwinStudio.DigiTwin_Backend.services;
 
 import com.fasterxml.jackson.databind.JsonNode;
+
 import lombok.RequiredArgsConstructor;
+
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.SubmodelDto;
+
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.Template;
+
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.BadRequestException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.NotFoundException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException;
+
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.SubmodelMapper;
+
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.AASModelRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.TemplateRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.UploadedFileRepository;
+
 import org.DigiTwinStudio.DigiTwin_Backend.validation.SubmodelValidator;
+
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonDeserializer;
+
 import org.springframework.stereotype.Service;
-
-
 
 @Service
 @RequiredArgsConstructor
@@ -31,10 +38,10 @@ public class SubmodelService {
     private final JsonDeserializer jsonDeserializer = new JsonDeserializer();
 
     /**
-     * Validate the given SubmodelDto against AAS4J structural rules.
+     * Validates a submodel DTO using AAS4J structural rules.
      *
-     * @param submodelDto the DTO representing the Submodel to validate
-     * @throws ValidationException if validation fails
+     * @param submodelDto the submodel to validate
+     * @throws ValidationException if the submodel is invalid
      */
     public void validate(SubmodelDto submodelDto) {
         DefaultSubmodel submodel = submodelMapper.fromDto(submodelDto);
@@ -46,9 +53,9 @@ public class SubmodelService {
     }
 
     /**
-     * Check whether a referenced file ID exists in the repository.
+     * Checks if a file with the given ID exists.
      *
-     * @param fileId the ID of the uploaded file
+     * @param fileId the file ID to check
      * @return true if the file exists, false otherwise
      */
     public boolean isFileReferenceValid(String fileId) {
@@ -56,14 +63,12 @@ public class SubmodelService {
     }
 
     /**
-     * Create an empty SubmodelDto based on the JSON template.
+     * Creates an empty submodel DTO from the specified template.
      *
-     * returns only the Submodel without any template metadata.
-     *
-     * @param templateId the ID of the template to load
-     * @return a SubmodelDto containing the deserialized Submodel
-     * @throws NotFoundException   if the template cannot be found
-     * @throws ValidationException if the JSON cannot be converted to a Submodel
+     * @param templateId the template ID
+     * @return a new submodel DTO based on the template
+     * @throws NotFoundException if the template is not found
+     * @throws ValidationException if the template JSON is invalid
      */
     public SubmodelDto createEmptySubmodelFromTemplate(String templateId) {
         Template template = templateRepository.findById(templateId)
@@ -81,12 +86,12 @@ public class SubmodelService {
     }
 
     /**
-     * Retrieve an existing SubmodelDto from a given AASModel.
+     * Retrieves a submodel DTO from an AAS model.
      *
-     * @param modelId    the ID of the AASModel
-     * @param submodelId the IdShort or Identifier of the Submodel
-     * @return the corresponding SubmodelDto
-     * @throws NotFoundException if the model or submodel cannot be found
+     * @param modelId    the model ID
+     * @param submodelId the submodel ID or IdShort
+     * @return the submodel DTO
+     * @throws NotFoundException if the model or submodel is not found
      */
     public SubmodelDto getSubmodel(String modelId, String submodelId) {
         AASModel model = aasModelRepository.findById(modelId)
