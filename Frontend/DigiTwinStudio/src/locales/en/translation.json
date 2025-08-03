@@ -58,7 +58,8 @@
     "importModel": "Import Model",
     "lastEdit": "Last edit",
     "open": "Open",
-    "download": "Download"
+    "download": "Download",
+    "search": "Search models..."
   },
   "create": {
     "buttons": {

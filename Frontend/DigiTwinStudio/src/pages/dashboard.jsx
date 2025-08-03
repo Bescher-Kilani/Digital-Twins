@@ -22,6 +22,7 @@ export default function Dashboard() {
   const [toasts, setToasts] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [modelToDelete, setModelToDelete] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
   const modelsPerPage = 4;
   
@@ -48,11 +49,8 @@ export default function Dashboard() {
             method: 'GET'
           }, keycloak);
         } else {
-          // User is not authenticated - use guest endpoint ONLY
-          console.log('User is not authenticated, using guest endpoint for models');
-          // Note: There might not be a guest endpoint for listing models
-          // You might need to just show empty state or handle this differently
-          setModels([]);
+          // User is not authenticated
+          console.log('User is not authenticated');
           return;
         }
         
@@ -61,7 +59,6 @@ export default function Dashboard() {
         }
         
         const data = await response.json();
-        console.log('Fetched models:', data);
         
         // Transform the API data to match the expected format for the UI
         const transformedModels = data.map(model => ({
@@ -229,9 +226,13 @@ export default function Dashboard() {
         setModels(prevModels => prevModels.filter(m => m.id !== model.id));
         showToast(`Model "${model.title}" deleted successfully!`, 'success');
         
-        // If we're on a page that no longer has models, go to page 1
+        // If we're on a page that no longer has models after filtering, go to page 1
         const remainingModels = models.filter(m => m.id !== model.id);
-        const newTotalPages = Math.ceil(remainingModels.length / modelsPerPage);
+        const remainingFilteredModels = remainingModels.filter(m => 
+          m.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          m.description.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        const newTotalPages = Math.ceil(remainingFilteredModels.length / modelsPerPage);
         if (currentPage > newTotalPages && newTotalPages > 0) {
           setCurrentPage(1);
         }
@@ -268,12 +269,24 @@ export default function Dashboard() {
     setShowDeleteModal(false);
     setModelToDelete(null);
   };
+
+  // Filter models based on search term
+  const filteredModels = models.filter(model => 
+    model.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    model.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Handle search input change
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to first page when searching
+  };
   
   // Calculate pagination
   const indexOfLastModel = currentPage * modelsPerPage;
   const indexOfFirstModel = indexOfLastModel - modelsPerPage;
-  const currentModels = models.slice(indexOfFirstModel, indexOfLastModel);
-  const totalPages = Math.ceil(models.length / modelsPerPage);
+  const currentModels = filteredModels.slice(indexOfFirstModel, indexOfLastModel);
+  const totalPages = Math.ceil(filteredModels.length / modelsPerPage);
   
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -293,8 +306,10 @@ export default function Dashboard() {
         <Col md={8}>
           <Form.Control
             type="text"
-            placeholder="Search"
+            placeholder={t("dashboard.search") || "Search models..."}
             className="mb-2"
+            value={searchTerm}
+            onChange={handleSearchChange}
           />
         </Col>
         <Col md={4} className="text-md-end">
@@ -334,6 +349,18 @@ export default function Dashboard() {
               <p>You haven't created any digital twin models yet. Get started by creating your first model!</p>
               <Button variant="primary" onClick={handleNewModel}>
                 <PlusIcon></PlusIcon> Create your first model
+              </Button>
+            </Card.Body>
+          </Card>
+        )}
+
+        {!loading && !error && models.length > 0 && filteredModels.length === 0 && (
+          <Card className="text-white model-container">
+            <Card.Body className="text-center py-5">
+              <h5>No models found</h5>
+              <p>No models match your search criteria "{searchTerm}". Try a different search term.</p>
+              <Button variant="outline-primary" onClick={() => setSearchTerm('')}>
+                Clear search
               </Button>
             </Card.Body>
           </Card>
@@ -384,7 +411,7 @@ export default function Dashboard() {
       </div>
       
       {/* Pagination */}
-      {!loading && totalPages > 1 && models.length > 0 && (
+      {!loading && totalPages > 1 && filteredModels.length > 0 && (
         <Row className="mt-4">
           <Col className="d-flex justify-content-center">
             <Pagination>
