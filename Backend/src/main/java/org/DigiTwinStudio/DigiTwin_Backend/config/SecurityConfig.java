@@ -51,7 +51,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/guest/**", "/submodels/templates").permitAll()
+                        .requestMatchers("/guest/**", "/marketplace**", "/tags").permitAll()
                         .anyRequest().authenticated()
                 )
                 .csrf(AbstractHttpConfigurer::disable)
@@ -62,20 +62,20 @@ public class SecurityConfig {
 
     /**
      * Custom JWT decoder that accepts multiple issuer URIs for Docker compatibility.
-     * 
+     *
      * @return configured JwtDecoder
      */
     @Bean
     public JwtDecoder jwtDecoder() {
         NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withJwkSetUri(issuerUri + "/protocol/openid-connect/certs").build();
-        
+
         OAuth2TokenValidator<Jwt> issuerValidator = new OAuth2TokenValidator<Jwt>() {
             @Override
             public OAuth2TokenValidatorResult validate(Jwt jwt) {
                 String issuer = jwt.getClaimAsString(JwtClaimNames.ISS);
                 List<String> validIssuers = Arrays.asList(
-                    "http://localhost:8080/realms/DigiTwinStudio",  // Frontend perspective
-                    "http://keycloak:8080/realms/DigiTwinStudio"    // Backend Docker perspective
+                        "http://localhost:8080/realms/DigiTwinStudio",  // Frontend perspective
+                        "http://keycloak:8080/realms/DigiTwinStudio"    // Backend Docker perspective
                 );
                 if (validIssuers.contains(issuer)) {
                     return OAuth2TokenValidatorResult.success();
@@ -84,13 +84,13 @@ public class SecurityConfig {
                 return OAuth2TokenValidatorResult.failure(error);
             }
         };
-        
+
         // Combine with timestamp validator
         OAuth2TokenValidator<Jwt> withIssuer = new DelegatingOAuth2TokenValidator<>(
-            new JwtTimestampValidator(),
-            issuerValidator
+                new JwtTimestampValidator(),
+                issuerValidator
         );
-        
+
         jwtDecoder.setJwtValidator(withIssuer);
         return jwtDecoder;
     }
@@ -112,14 +112,14 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:5173",  // Development frontend
-            "http://localhost:3000",  // Docker frontend
-            "http://frontend:80"      // Internal Docker network
+                "http://localhost:5173",  // Development frontend
+                "http://localhost:3000",  // Docker frontend
+                "http://frontend:80"      // Internal Docker network
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
