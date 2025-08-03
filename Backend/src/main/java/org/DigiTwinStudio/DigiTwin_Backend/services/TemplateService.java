@@ -62,7 +62,7 @@ public class TemplateService {
      *
      * @throws RuntimeException if fetching or mapping fails
      */
-    @Scheduled(fixedRate = 1000 * 60 * 60 * 24 * 7) // Every week (value is in milliseconds)
+    @Scheduled(fixedRate = 1000 * 60 * 60 * 24) // Every day (value is in milliseconds)
     public void syncTemplatesFromRepo() {
         log.info("syncTemplatesFromRepo");
         List<Template> fetchedTemplates = smtRepoClient.fetchTemplates();
