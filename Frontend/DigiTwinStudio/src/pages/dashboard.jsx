@@ -63,8 +63,8 @@ export default function Dashboard() {
         // Transform the API data to match the expected format for the UI
         const transformedModels = data.map(model => ({
           id: model.id,
-          title: model.aas?.displayName?.[0]?.text || model.aas?.idShort || 'Untitled Model',
-          description: model.aas?.description?.[0]?.text || 'No description available',
+          title: model.aas?.displayName?.[0]?.text || model.aas?.idShort || t("dashboard.untitledModel"),
+          description: model.aas?.description?.[0]?.text || t("dashboard.noDescription"),
           lastEdit: model.updatedAt ? new Date(model.updatedAt).toLocaleDateString('en-US', {
             day: 'numeric',
             month: 'long',
@@ -111,7 +111,7 @@ export default function Dashboard() {
   // Function to handle file downloads
   const handleDownload = async (model, format) => {
     if (!model.id) {
-      showToast('Model information is missing. Cannot download file.', 'danger');
+      showToast(t("dashboard.missingInfo"), 'danger');
       return;
     }
 
@@ -154,8 +154,8 @@ export default function Dashboard() {
         
         // Clean up the URL object
         window.URL.revokeObjectURL(downloadUrl);
-        
-        showToast(`${format} file downloaded successfully!`, 'success');
+
+        showToast(t("dashboard.downloadSuccess", { format }), 'success');
       } else {
         // Handle error response
         const errorData = await response.json().catch(() => ({}));
@@ -163,13 +163,13 @@ export default function Dashboard() {
         console.error('Error downloading file:', errorMessage);
         
         if (response.status === 401) {
-          showToast('Authentication required. Please sign in and try again.', 'warning');
+          showToast(t("dashboard.authRequired"), 'warning');
         } else if (response.status === 403) {
-          showToast('Access denied. You do not have permission to download this file.', 'danger');
+          showToast(t("dashboard.accessDenied"), 'danger');
         } else if (response.status === 404) {
-          showToast('File not found. The model may have been deleted.', 'danger');
+          showToast(t("dashboard.fileNotFound"), 'danger');
         } else {
-          showToast(`Failed to download ${format} file: ${errorMessage}`, 'danger');
+          showToast(t("dashboard.downloadFailed", { format, errorMessage }), 'danger');
         }
       }
     } catch (error) {
@@ -177,9 +177,9 @@ export default function Dashboard() {
       
       // Check if it's a CORS or network error
       if (error.message.includes('Load failed') || error.message.includes('CORS') || error.message.includes('Network request failed')) {
-        showToast('Connection error: Unable to reach the server.', 'danger');
+        showToast(t("dashboard.connectionError"), 'danger');
       } else {
-        showToast('Network error: Unable to download file. Please check your connection and try again.', 'danger');
+        showToast(t("dashboard.networkError"), 'danger');
       }
     }
   };
@@ -187,7 +187,7 @@ export default function Dashboard() {
   // Function to handle model deletion
   const handleDelete = (model) => {
     if (!model.id) {
-      showToast('Model information is missing. Cannot delete model.', 'danger');
+      showToast(t("dashboard.missingInfoDelete"), 'danger');
       return;
     }
 
@@ -217,15 +217,15 @@ export default function Dashboard() {
         }, keycloak);
       } else {
         // User is not authenticated - this shouldn't happen for delete operations
-        showToast('Authentication required to delete models.', 'warning');
+        showToast(t("dashboard.authRequired"), 'warning');
         return;
       }
 
       if (response.ok) {
         // Remove the model from the local state
         setModels(prevModels => prevModels.filter(m => m.id !== model.id));
-        showToast(`Model "${model.title}" deleted successfully!`, 'success');
-        
+        showToast(t("dashboard.deleteSuccess", { title: model.title }), 'success');
+
         // If we're on a page that no longer has models after filtering, go to page 1
         const remainingModels = models.filter(m => m.id !== model.id);
         const remainingFilteredModels = remainingModels.filter(m => 
@@ -243,13 +243,13 @@ export default function Dashboard() {
         console.error('Error deleting model:', errorMessage);
         
         if (response.status === 401) {
-          showToast('Authentication required. Please sign in and try again.', 'warning');
+          showToast(t("dashboard.authRequired"), 'warning');
         } else if (response.status === 403) {
-          showToast('Access denied. You do not have permission to delete this model.', 'danger');
+          showToast(t("dashboard.accessDenied"), 'danger');
         } else if (response.status === 404) {
-          showToast('Model not found. It may have already been deleted.', 'danger');
+          showToast(t("dashboard.modelNotFound"), 'danger');
         } else {
-          showToast(`Failed to delete model: ${errorMessage}`, 'danger');
+          showToast(t("dashboard.deleteError", { errorMessage }), 'danger');
         }
       }
     } catch (error) {
@@ -257,9 +257,9 @@ export default function Dashboard() {
       
       // Check if it's a CORS or network error
       if (error.message.includes('Load failed') || error.message.includes('CORS') || error.message.includes('Network request failed')) {
-        showToast('Connection error: Unable to reach the server.', 'danger');
+        showToast(t("dashboard.connectionError"), 'danger');
       } else {
-        showToast('Network error: Unable to delete model. Please check your connection and try again.', 'danger');
+        showToast(t("dashboard.networkErrorDelete"), 'danger');
       }
     }
   };
@@ -325,7 +325,7 @@ export default function Dashboard() {
         <Row className="mb-3">
           <Col>
             <div className="alert alert-danger" role="alert">
-              <strong>Error loading models:</strong> {error}
+              <strong>{t("dashboard.errorLoading")}</strong> {error}
             </div>
           </Col>
         </Row>
@@ -335,7 +335,7 @@ export default function Dashboard() {
       {loading && (
         <Row className="mb-3">
           <Col className="text-center">
-            <div className="text-white">Loading models...</div>
+            <div className="text-white">{t("dashboard.loading")}</div>
           </Col>
         </Row>
       )}
@@ -345,10 +345,10 @@ export default function Dashboard() {
         {!loading && !error && models.length === 0 && (
           <Card className="text-white model-container">
             <Card.Body className="text-center py-5">
-              <h5>No models created yet</h5>
-              <p>You haven't created any digital twin models yet. Get started by creating your first model!</p>
+              <h5>{t("dashboard.noModels")}</h5>
+              <p>{t("dashboard.noModelsDescription")}</p>
               <Button variant="primary" onClick={handleNewModel}>
-                <PlusIcon></PlusIcon> Create your first model
+                <PlusIcon></PlusIcon> {t("dashboard.createFirstModel")}
               </Button>
             </Card.Body>
           </Card>
@@ -357,10 +357,10 @@ export default function Dashboard() {
         {!loading && !error && models.length > 0 && filteredModels.length === 0 && (
           <Card className="text-white model-container">
             <Card.Body className="text-center py-5">
-              <h5>No models found</h5>
-              <p>No models match your search criteria "{searchTerm}". Try a different search term.</p>
+              <h5>{t("dashboard.noModelsFound")}</h5>
+              <p>{t("dashboard.noModelsFoundDescription", { searchTerm })}</p>
               <Button variant="outline-primary" onClick={() => setSearchTerm('')}>
-                Clear search
+                {t("dashboard.clearSearch")}
               </Button>
             </Card.Body>
           </Card>
@@ -400,9 +400,9 @@ export default function Dashboard() {
                   size="sm" 
                   variant="danger" 
                   onClick={() => handleDelete(model)}
-                  title="Delete model"
+                  title={t("dashboard.delete")}
                 >
-                  <TrashIcon></TrashIcon> Delete
+                  <TrashIcon></TrashIcon> {t("dashboard.delete")}
                 </Button>
               </div>
             </Card.Body>
@@ -473,11 +473,11 @@ export default function Dashboard() {
       >
         {modelToDelete && (
           <p>
-            Are you sure you want to delete the model <strong>"{modelToDelete.title}"</strong>?
+            {t("dashboard.confirmDelete", { modelName: modelToDelete.title })}
           </p>
         )}
         <p className="text-warning mb-0">
-          <small>This action cannot be undone.</small>
+          <small>{t("dashboard.undo")}</small>
         </p>
       </Modal.Body>
       <Modal.Footer 
@@ -487,11 +487,11 @@ export default function Dashboard() {
         }}
       >
         <Button variant="secondary" onClick={cancelDelete}>
-          Cancel
+          {t("dashboard.cancel")}
         </Button>
         <Button variant="danger" onClick={confirmDelete}>
           <TrashIcon style={{ width: "16px", height: "16px", marginRight: "4px" }} />
-          Delete Model
+          {t("dashboard.deleteModel")}
         </Button>
       </Modal.Footer>
     </Modal>
