@@ -405,7 +405,11 @@ function CreatePage() {
       console.log('Saving AASX model:', finalData);
       console.log('Request headers:', headers);
       
-      const response = await fetch('http://localhost:9090/guest/models/new', {
+      // Use authenticated endpoint if user is authenticated, otherwise use guest endpoint
+      const endpoint = token ? 'http://localhost:9090/models/new' : 'http://localhost:9090/guest/models/new';
+      console.log('Using endpoint:', endpoint);
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: headers,
         body: JSON.stringify(finalData)
