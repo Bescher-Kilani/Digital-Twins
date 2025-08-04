@@ -228,7 +228,10 @@ public class AASModelServiceTest {
     void addEntryModelToUser_copiesPublishedEntry_savesAndIncrementsDownload() {
         String entryId = "entry-1";
         AASModelDto dto = new AASModelDto();
-        dto.setAas(new DefaultAssetAdministrationShell());
+
+        DefaultAssetAdministrationShell shell = new DefaultAssetAdministrationShell();
+        shell.setIdShort("TemplateAAS");
+        dto.setAas(shell);
         dto.setSubmodels(new ArrayList<>());
 
         when(marketPlaceService.getPublishedModel(entryId)).thenReturn(dto);
