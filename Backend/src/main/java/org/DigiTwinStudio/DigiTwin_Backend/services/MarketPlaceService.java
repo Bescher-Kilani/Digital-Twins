@@ -12,6 +12,7 @@ import org.DigiTwinStudio.DigiTwin_Backend.dtos.MarketplaceSearchRequest;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.PublishRequestDto;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.BadRequestException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ForbiddenException;
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.NotFoundException;
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.AASModelMapper;
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.MarketplaceMapper;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.AASModelRepository;
@@ -44,7 +45,7 @@ public class MarketPlaceService {
 
     /**
      * Publishes a model: sets publish metadata, updates tags, and saves the model as published.
-     *
+     * Creates MarketplaceEntry
      * @param request publish info including author, description, and tag IDs
      * @param model the model to publish
      * @throws BadRequestException if any tag ID is invalid
@@ -90,6 +91,7 @@ public class MarketPlaceService {
 
     /**
      * Unpublishes a model, resets publish metadata, and updates tag usage counts.
+     * Deletes MarketplaceEntry
      *
      * @param userId user performing the operation
      * @param model the model to unpublish
@@ -118,6 +120,10 @@ public class MarketPlaceService {
         model.setPublishMetadata(null);
         model.setUpdatedAt(LocalDateTime.now());
         aasModelRepository.save(model);
+
+        //remove marketPlaceEntry
+        MarketplaceEntry marketplaceEntry = marketPlaceEntryRepository.findById(model.getId()).orElseThrow(() -> new NotFoundException("Marketplace entry with id " + model.getId() + " not found."));
+        this.marketPlaceEntryRepository.delete(marketplaceEntry);
     }
 
     /**
