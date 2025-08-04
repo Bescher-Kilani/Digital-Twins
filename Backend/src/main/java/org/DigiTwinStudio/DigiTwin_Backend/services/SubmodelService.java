@@ -5,20 +5,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.SubmodelDto;
-
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.Template;
-
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.BadRequestException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.NotFoundException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException;
-
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.SubmodelMapper;
-
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.AASModelRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.TemplateRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.UploadedFileRepository;
-
 import org.DigiTwinStudio.DigiTwin_Backend.validation.SubmodelValidator;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
@@ -26,6 +21,9 @@ import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonDeserializer;
 
 import org.springframework.stereotype.Service;
 
+/**
+ * Provides submodel validation, creation, and lookup for AAS models.
+ */
 @Service
 @RequiredArgsConstructor
 public class SubmodelService {

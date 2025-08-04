@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
-
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.AASModelRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.UploadedFileRepository;
 
@@ -16,6 +15,9 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Scheduled service for cleaning up expired guest models and their files.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor

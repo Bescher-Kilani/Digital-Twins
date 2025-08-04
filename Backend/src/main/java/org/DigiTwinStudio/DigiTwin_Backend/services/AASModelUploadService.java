@@ -4,15 +4,11 @@ import lombok.RequiredArgsConstructor;
 
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.PublishMetadata;
-
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
-
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.BadRequestException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.UploadException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException;
-
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.AASModelMapper;
-
 import org.DigiTwinStudio.DigiTwin_Backend.validation.AASModelValidator;
 import org.DigiTwinStudio.DigiTwin_Backend.validation.FileUploadValidator;
 
@@ -29,6 +25,9 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Environment;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Handles uploading and validating AAS models from JSON files.
+ */
 @Service
 @RequiredArgsConstructor
 public class AASModelUploadService {

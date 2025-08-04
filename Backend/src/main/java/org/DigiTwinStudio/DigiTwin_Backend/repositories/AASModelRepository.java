@@ -1,6 +1,7 @@
 package org.DigiTwinStudio.DigiTwin_Backend.repositories;
 
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
+
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
@@ -8,6 +9,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Repository for accessing aas model data.
+ */
 @Repository
 public interface AASModelRepository extends MongoRepository<AASModel, String> {
 

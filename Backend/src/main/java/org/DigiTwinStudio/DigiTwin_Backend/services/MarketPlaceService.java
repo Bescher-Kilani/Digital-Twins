@@ -6,18 +6,14 @@ import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.MarketplaceEntry;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.PublishMetadata;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.Tag;
-
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.MarketplaceEntryDto;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.MarketplaceSearchRequest;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.PublishRequestDto;
-
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.BadRequestException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ForbiddenException;
-
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.AASModelMapper;
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.MarketplaceMapper;
-
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.AASModelRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.MarketPlaceEntryRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.TagRepository;
@@ -33,6 +29,9 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.*;
 
+/**
+ * Handles publishing, searching, and managing marketplace entries and tags.
+ */
 @Service
 @RequiredArgsConstructor
 public class MarketPlaceService {
