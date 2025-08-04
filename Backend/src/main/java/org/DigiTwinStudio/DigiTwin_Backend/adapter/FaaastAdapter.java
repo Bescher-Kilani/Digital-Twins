@@ -5,13 +5,18 @@ import io.adminshell.aas.v3.dataformat.aasx.AASXSerializer;
 import io.adminshell.aas.v3.model.AssetAdministrationShell;
 import io.adminshell.aas.v3.model.AssetAdministrationShellEnvironment;
 import io.adminshell.aas.v3.model.impl.DefaultAssetAdministrationShellEnvironment;
+
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ExportException;
+
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Collections;
 
+/**
+ * Adapter for converting Asset Administration Shells to AASX byte arrays.
+ */
 @Component
 public class FaaastAdapter {
 

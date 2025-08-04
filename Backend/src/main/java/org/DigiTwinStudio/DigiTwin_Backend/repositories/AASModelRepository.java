@@ -1,5 +1,6 @@
 package org.DigiTwinStudio.DigiTwin_Backend.repositories;
 
+import lombok.NonNull;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -21,7 +22,8 @@ public interface AASModelRepository extends MongoRepository<AASModel, String> {
      * @param id the unique identifier of the model
      * @return an Optional containing the found AASModel, or empty if not found
      */
-    Optional<AASModel> findById(String id);
+    @NonNull
+    Optional<AASModel> findById(@NonNull String id);
 
     /**
      * Returns all models that belong to a specific owner.

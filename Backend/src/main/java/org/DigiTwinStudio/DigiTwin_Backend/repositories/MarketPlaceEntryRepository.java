@@ -21,5 +21,6 @@ public interface MarketPlaceEntryRepository extends MongoRepository<MarketplaceE
      * @param id the entry ID
      * @return an Optional with the entry if found
      */
+    @NonNull
     Optional<MarketplaceEntry> findById(@NonNull String id);
 }

@@ -4,9 +4,17 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
 
+/**
+ * Spring configuration for WebClient beans.
+ */
 @Configuration
 public class WebClientConfig {
 
+    /**
+     * Configures a {@link WebClient} for the SMT-Repo API with increased memory limit.
+     *
+     * @return the configured WebClient instance
+     */
     @Bean
     public WebClient smtRepoWebClient() {
         return WebClient.builder()

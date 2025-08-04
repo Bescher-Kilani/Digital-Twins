@@ -21,6 +21,7 @@ public interface TemplateRepository extends MongoRepository<Template, String> {
      * @param id the template ID
      * @return an Optional containing the template if found
      */
+    @NonNull
     Optional<Template> findById(@NonNull String id);
 
     /**
