@@ -224,7 +224,9 @@ public class AASModelService {
         newModel.setUpdatedAt(now);
         newModel.setCreatedAt(now);
         newModel.setPublishMetadata(null);
-
+        // mark as: "from ModelHub"
+        newModel.getAas().setIdShort(newModel.getAas().getIdShort().concat(" - ModelHub"));
+        newModel.setAas(newModel.getAas());
         this.aasModelRepository.save(newModel);
         this.marketPlaceService.incrementDownloadCount(entryId);
     }

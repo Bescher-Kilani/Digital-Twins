@@ -16,6 +16,8 @@ public class MarketplaceEntryDto {
 
     private String id;
 
+    private String name;
+
     private String author;
 
     private String shortDescription;
