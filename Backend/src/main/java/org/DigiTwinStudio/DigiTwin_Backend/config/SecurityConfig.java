@@ -15,14 +15,15 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
 import java.util.Arrays;
 import java.util.List;
 
 /**
- * Configuration class for Spring Security settings.
+ * Configures Spring Security for OAuth2/JWT authentication with Keycloak.
  * <p>
- * This configuration enables OAuth2 resource server support and defines access rules
- * for guest and authenticated endpoints.
+ * Sets up public and protected API routes, CORS for frontend access, and a custom JWT decoder for Docker compatibility.
+ * </p>
  */
 @Configuration
 @EnableWebSecurity
@@ -32,20 +33,11 @@ public class SecurityConfig {
     private String issuerUri;
 
     /**
-     * Defines the security filter chain for HTTP requests.
+     * Defines access rules, enables JWT authentication, disables CSRF, and configures CORS.
      *
-     * <p>Key configurations:
-     * <ul>
-     *   <li>Allows unrestricted access to all endpoints under {@code /guest/**}.</li>
-     *   <li>Requires authentication for all other endpoints.</li>
-     *   <li>Disables CSRF protection (useful for stateless REST APIs).</li>
-     *   <li>Enables JWT-based OAuth2 resource server authentication.</li>
-     *   <li>Configures CORS to allow frontend requests.</li>
-     * </ul>
-     *
-     * @param http the {@link HttpSecurity} to modify
-     * @return the configured {@link SecurityFilterChain}
-     * @throws Exception if an error occurs while building the security configuration
+     * @param http the HTTP security configuration
+     * @return the configured security filter chain
+     * @throws Exception if a configuration error occurs
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -96,17 +88,9 @@ public class SecurityConfig {
     }
 
     /**
-     * Configures CORS settings for the application.
+     * CORS configuration for local and Docker frontend origins.
      *
-     * <p>This configuration allows:
-     * <ul>
-     *   <li>Requests from the frontend running on localhost:5173</li>
-     *   <li>All HTTP methods (GET, POST, PUT, DELETE, OPTIONS)</li>
-     *   <li>All headers</li>
-     *   <li>Credentials to be included in requests</li>
-     * </ul>
-     *
-     * @return the {@link CorsConfigurationSource} with the defined settings
+     * @return the configured CORS configuration source
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {

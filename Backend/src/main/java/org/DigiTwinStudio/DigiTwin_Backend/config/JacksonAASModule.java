@@ -1,23 +1,16 @@
 package org.DigiTwinStudio.DigiTwin_Backend.config;
 
 import com.fasterxml.jackson.databind.module.SimpleModule;
+
 import org.eclipse.digitaltwin.aas4j.v3.model.*;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.*;
 
 /**
- * Custom Jackson module for Asset Administration Shell (AAS4j v3) models.
+ * Jackson module for AAS4j v3 (Asset Administration Shell) models.
  * <p>
- * This module configures Jackson to handle the (de)serialization of AAS4j interfaces
- * by mapping them to their default implementation classes and registers custom deserializers
- * for enums and polymorphic submodel elements. This allows for dynamic and robust
- * (de)serialization of AAS-conformant JSON data structures in a Spring Boot environment.
+ * Maps AAS4j interfaces to their default implementations and registers custom deserializers
+ * for enums and submodel elements. Enables correct JSON (de)serialization for AAS models.
  * </p>
- * <ul>
- *   <li>Maps all relevant AAS4j interfaces to their {@code Default*} implementations.</li>
- *   <li>Registers custom deserializers for enums such as {@link ModellingKind}, {@link KeyTypes}, etc.,
- *       to support various JSON representations and naming variations.</li>
- *   <li>Provides a polymorphic deserializer for {@link SubmodelElement} based on the {@code modelType} field.</li>
- * </ul>
  */
 public class JacksonAASModule extends SimpleModule {
 

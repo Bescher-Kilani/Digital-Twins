@@ -2,20 +2,17 @@ package org.DigiTwinStudio.DigiTwin_Backend.config;
 
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
+
 import org.eclipse.digitaltwin.aas4j.v3.model.*;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.*;
 
 import java.io.IOException;
 
 /**
- * Custom Jackson deserializer for the {@link SubmodelElement} interface.
+ * Jackson deserializer for polymorphic {@link SubmodelElement} objects.
  * <p>
- * This deserializer handles polymorphic deserialization of AAS4j submodel elements.
- * It inspects the {@code modelType} field in the JSON object and delegates
- * the deserialization to the corresponding concrete implementation class
- * (e.g., {@link DefaultProperty}, {@link DefaultMultiLanguageProperty}, etc.).
- * <br>
- * If the {@code modelType} is unknown, an {@link IOException} is thrown.
+ * Chooses the correct AAS4j implementation based on the {@code modelType} property in the JSON.
+ * Throws {@link IOException} if the type is unknown.
  * </p>
  */
 public class SubmodelElementDeserializer extends JsonDeserializer<SubmodelElement> {

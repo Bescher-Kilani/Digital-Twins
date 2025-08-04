@@ -23,7 +23,6 @@ import org.DigiTwinStudio.DigiTwin_Backend.validation.FileUploadValidator;
 import org.eclipse.digitaltwin.aas4j.v3.model.File;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
-import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultAssetAdministrationShell;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -75,20 +74,6 @@ public class AASModelService {
     public AASModelDto getModelById(String id, String userId) {
         AASModel model = getModelOrThrow(id, userId);
         return aasModelMapper.toDto(model);
-    }
-
-    /**
-     * Creates a new empty AAS model for a user.
-     *
-     * @param userId user ID
-     * @return the created {@link AASModelDto}
-     */
-    public AASModelDto createEmptyModel(String userId) {
-        AASModel model = buildEmptyModel(userId);
-        validateModelWithFiles(model);
-        aasModelValidator.validate(model);
-
-        return aasModelMapper.toDto(aasModelRepository.save(model));
     }
 
     /**
@@ -340,19 +325,6 @@ public class AASModelService {
                 .orElseThrow(() -> new NotFoundException("Referenced file not found: " + fileId));
         MultipartFile multipartFile = new MultipartFileAdapter(file);
         fileUploadValidator.validate(multipartFile);
-    }
-
-    private AASModel buildEmptyModel(String userId) {
-        LocalDateTime now = LocalDateTime.now();
-        DefaultAssetAdministrationShell shell = new DefaultAssetAdministrationShell();
-        shell.setSubmodels(new ArrayList<>());
-        return AASModel.builder()
-                .ownerId(userId)
-                .createdAt(now)
-                .updatedAt(now)
-                .published(false)
-                .aas(shell)
-                .build();
     }
 
     private AASModel buildModelFromDto(String userId, AASModelDto dto) {

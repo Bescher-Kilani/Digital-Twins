@@ -18,13 +18,13 @@ import java.util.List;
 public class PublishMetadata {
 
     // visible author name can be a user or organization
-    String author;
+    private String author;
 
     // description visible in the Marketplace
-    String shortDescription;
+    private String shortDescription;
 
     // references to Tag objects
-    List<String> tagIds;
+    private List<String> tagIds;
 
-    LocalDateTime publishedAt;
+    private LocalDateTime publishedAt;
 }

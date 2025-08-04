@@ -8,20 +8,14 @@ import java.io.IOException;
 import java.util.Arrays;
 
 /**
- * Generic Jackson deserializer for Enum types.
+ * Generic Jackson deserializer for enums.
  * <p>
- * This deserializer enables robust parsing of enums from JSON by accepting
- * various representations (including different cases, underscores, dashes,
- * spaces, and even XML prefixes like "xs:"). The raw JSON value is normalized
- * and then matched against the enum constants in a case-insensitive way.
- * </p>
- *
+ * Accepts flexible JSON input (case-insensitive, dashes, underscores, spaces, and "xs:" prefix).
+ * Normalizes the input and maps it to the matching enum constant.
  * <p>
- * Example: The JSON value <code>"xs:string"</code> or <code>"String"</code>
- * will both be mapped to <code>STRING</code> in the corresponding enum.
- * </p>
+ * Example: "xs:string", "string", or "String" → STRING
  *
- * @param <T> the specific Enum type
+ * @param <T> Enum type
  */
 public class GenericEnumDeserializer<T extends Enum<T>> extends JsonDeserializer<T> {
     private final Class<T> enumType;

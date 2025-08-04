@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.UploadedFile;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.UploadedFileRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.FileStorageException;
-import org.DigiTwinStudio.DigiTwin_Backend.exceptions.NotFoundException;
 
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.aasx.InMemoryFile;
 
@@ -22,7 +21,6 @@ import static org.springframework.data.mongodb.core.query.Query.query;
 
 import org.bson.types.ObjectId;
 
-import java.io.InputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -35,41 +33,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class FileStorageService {
+
     private final UploadedFileRepository uploadedFileRepository;
     private final GridFsTemplate gridFsTemplate;
-
-    /**
-     * Retrieves the binary contents of all files associated with the given model ID.
-     * This method queries the UploadedFile-repository for all entries matching the given modelId,
-     * then loads the actual file content from MongoDB GridFS using the stored GridFS ObjectId (found in storagePath).
-     *
-     * @param modelId the ID of the model whose associated files should be retrieved
-     * @return a list of byte arrays, each representing the full binary content of one file
-     * @throws RuntimeException if reading any file from GridFS fails or if a GridFS file is missing
-     */
-    public List<byte[]> getFileContentsByModelId(String modelId) {
-        List<UploadedFile> uploadedFiles = uploadedFileRepository.findAllByModelId(modelId);
-        List<byte[]> fileContents = new ArrayList<>();
-
-        for (UploadedFile file : uploadedFiles) {
-            try {
-                ObjectId gridFsId = new ObjectId(file.getStoragePath());
-                GridFSFile gridFSFile = gridFsTemplate.findOne(Query.query(Criteria.where("_id").is(gridFsId)));
-
-                if (gridFSFile != null) {
-                    GridFsResource resource = gridFsTemplate.getResource(gridFSFile);
-                    byte[] content = resource.getInputStream().readAllBytes();
-                    fileContents.add(content);
-                } else {
-                    System.err.println("GridFS file not found for ID: " + file.getStoragePath());
-                }
-            } catch (IOException | IllegalArgumentException e) {
-                throw new RuntimeException("Error reading file content from GridFS for ID: " + file.getStoragePath(), e);
-            }
-        }
-
-        return fileContents;
-    }
 
     /**
      * Stores the uploaded file in MongoDB GridFS and saves metadata in a separate Mongo collection.
@@ -136,68 +102,6 @@ public class FileStorageService {
 
         } catch (Exception e) {
             throw new FileStorageException("Error deleting file from GridFS", e);
-        }
-    }
-
-    /**
-     * Returns metadata (like filename, size, contentType) for a file with given ID.
-     *
-     * @param fileId ID of the uploaded file
-     * @return Optional containing UploadedFile metadata if present
-     */
-    public UploadedFile getMetadata(String fileId) {
-        return uploadedFileRepository.findById(fileId)
-                .orElseThrow(() -> new FileStorageException("File metadata not found for ID: " + fileId));
-    }
-
-    /**
-     * Loads binary file content from GridFS for a given UploadedFile ID.
-     *
-     * @param fileId ID of the file (not the GridFS ID!)
-     * @return InputStream to read file content
-     * @throws FileStorageException if the file or its GridFS content is missing
-     */
-    public InputStream getFileContent(String fileId) {
-        UploadedFile file = uploadedFileRepository.findById(fileId)
-                .orElseThrow(() -> new NotFoundException("File metadata not found for ID: " + fileId));
-
-        try {
-            ObjectId gridFsId = new ObjectId(file.getStoragePath());
-            GridFSFile gridFSFile = gridFsTemplate.findOne(Query.query(Criteria.where("_id").is(gridFsId)));
-
-            if (gridFSFile == null) {
-                throw new NotFoundException("GridFS file not found for ID: " + file.getStoragePath());
-            }
-
-            GridFsResource resource = gridFsTemplate.getResource(gridFSFile);
-            return resource.getInputStream();
-
-        } catch (Exception e) {
-            throw new FileStorageException("Failed to load file content for ID: " + fileId, e);
-        }
-    }
-
-    /**
-     * Checks if both metadata and content exist for a given file ID.
-     *
-     * @param fileId ID of the file (UploadedFile.id)
-     * @return true if both metadata and GridFS content exist
-     */
-    public boolean exists(String fileId) {
-        UploadedFile file = uploadedFileRepository.findById(fileId)
-                .orElse(null);
-        if (file == null) return false;
-
-        try {
-            ObjectId gridFsId = new ObjectId(file.getStoragePath());
-            GridFSFile gridFile = gridFsTemplate.findOne(Query.query(Criteria.where("_id").is(gridFsId)));
-            return gridFile != null;
-
-        } catch (IllegalArgumentException e) {
-            // invalid ObjectId – something is broken in storagePath
-            throw new FileStorageException("Invalid GridFS ID in storagePath: " + file.getStoragePath(), e);
-        } catch (Exception e) {
-            throw new FileStorageException("Unexpected error while checking file existence", e);
         }
     }
 
