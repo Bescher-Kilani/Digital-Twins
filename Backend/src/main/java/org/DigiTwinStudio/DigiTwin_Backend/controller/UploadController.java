@@ -1,18 +1,18 @@
 package org.DigiTwinStudio.DigiTwin_Backend.controller;
 
+import lombok.RequiredArgsConstructor;
+
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.UploadResponseDto;
 import org.DigiTwinStudio.DigiTwin_Backend.services.AASModelUploadService;
 import org.DigiTwinStudio.DigiTwin_Backend.services.PropertyFileUploadService;
-import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-
 
 /**
  * REST controller for handling upload operations of AAS models and property files.
@@ -59,7 +59,6 @@ public class UploadController {
         return ResponseEntity.ok(response);
     }
 
-
     /**
      * Deletes an uploaded file by its ID.
      *
@@ -74,5 +73,4 @@ public class UploadController {
         propertyFileUploadService.deleteFile(fileId, jwt.getSubject());
         return ResponseEntity.noContent().build();
     }
-
 }

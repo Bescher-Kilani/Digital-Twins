@@ -1,11 +1,15 @@
 package org.DigiTwinStudio.DigiTwin_Backend.domain;
 
 import lombok.*;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
+/**
+ * Entity representing an uploaded file and its metadata.
+ */
 @Document("uploadedFiles")
 @Data
 @NoArgsConstructor
@@ -16,17 +20,22 @@ public class UploadedFile {
     @Id
     private String id;
 
-    private String modelId; // id of the model that uses the file
+    // id of the model that uses the file
+    private String modelId;
 
     private String filename;
 
-    private String contentType; // e.g., "application/json", "image/png"
+    // e.g., "application/json", "image/png"
+    private String contentType;
 
-    private long size; // Size in bytes
+    // Size in bytes
+    private long size;
 
-    private String storagePath; // GridFS-ID
+    // GridFS-ID
+    private String storagePath;
 
-    private String ownerId; // ID of the user who uploaded the file for authentication and authorization purposes
+    // ID of the user who uploaded the file for authentication and authorization purposes
+    private String ownerId;
 
     private LocalDateTime uploadedAt;
 }
