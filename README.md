@@ -87,7 +87,7 @@ A team of five students developed the application with the objective of making D
 With the default configuration, the frontend is accessible at:
 
 ```
-http://localhost:3030
+http://localhost:3000
 ```
 
 ---
