@@ -14,9 +14,11 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
-
 import java.util.List;
 
+/**
+ * REST controller for submodel operations and template access.
+ */
 @RestController
 @RequestMapping
 @RequiredArgsConstructor

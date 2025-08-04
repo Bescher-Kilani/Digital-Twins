@@ -8,17 +8,23 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Metadata for published AAS models, including author, description, tags, and publish time.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class PublishMetadata {
 
-    String author; // visible author name can be a user or organization
+    // visible author name can be a user or organization
+    String author;
 
-    String shortDescription; // description visible in the Marketplace
+    // description visible in the Marketplace
+    String shortDescription;
 
-    List<String> tagIds; // references to Tag objects
+    // references to Tag objects
+    List<String> tagIds;
 
     LocalDateTime publishedAt;
 }

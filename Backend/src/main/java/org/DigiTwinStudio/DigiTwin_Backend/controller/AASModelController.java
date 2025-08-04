@@ -11,9 +11,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
-
 import java.util.List;
 
+/**
+ * REST controller for CRUD and publishing operations on AAS models.
+ */
 @RestController
 @RequestMapping("/models")
 @RequiredArgsConstructor
@@ -112,6 +114,4 @@ public class AASModelController {
         this.aasModelService.unpublishModel(id, jwt.getSubject());
         return ResponseEntity.ok().build();
     }
-
-
 }
