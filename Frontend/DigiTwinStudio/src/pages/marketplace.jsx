@@ -3,7 +3,6 @@ import { useState, useEffect, useContext } from "react";
 import modelImage from "../assets/homepage_model.png";
 import "../styles/dashboard.css";
 import "../styles/submodelTemplateSelection.css";
-import DownloadIcon from "../assets/icons/arrow-bar-down.svg?react";
 import PlusIcon from "../assets/icons/plus-lg.svg?react";
 import { KeycloakContext } from "../KeycloakContext";
 import { authenticatedFetch } from "../utils/tokenManager";
@@ -15,7 +14,6 @@ export default function Marketplace() {
     const [searchText, setSearchText] = useState("");
     const [selectedTags, setSelectedTags] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [downloadFormats, setDownloadFormats] = useState({}); // { entryId: "AASX" | "JSON" }
     const [toasts, setToasts] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const entriesPerPage = 9;
@@ -140,36 +138,6 @@ export default function Marketplace() {
         await performSearch(searchText, selectedTags);
     };
 
-    // 3. Download-Funktion mit Formatwahl
-    const handleDownload = async (entryId, title) => {
-        const format = downloadFormats[entryId] || "AASX";
-        try {
-            const response = await authenticatedFetch(`http://localhost:9090/marketplace/${entryId}/download?format=${format}`, {
-                method: 'GET',
-            }, keycloak);
-
-            if (!response.ok) {
-                throw new Error('Download failed');
-            }
-
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = `${title}.${format.toLowerCase()}`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-            
-            showToast("Download successful", `${title} downloaded successfully!`);
-        } catch (error) {
-            console.error('Error downloading model:', error);
-            showToast("Download failed", "Failed to download the model. Please try again.", true);
-        }
-    };
-
     const handleSave = async (entryId, title) => {
         if (!authenticated) {
             showToast("Authentication required", "Please log in to save models.", true);
@@ -229,7 +197,7 @@ export default function Marketplace() {
                 }
             `}</style>
             <Container className="py-4">
-                <h2 className="text-white mb-3">Browse and download models for Digital Twins</h2>
+                <h2 className="text-white mb-3">Browse and save models for Digital Twins</h2>
 
                 {/* Filterzeile: Suche & Kategorieauswahl */}
                 <Row className="mb-3">
@@ -380,50 +348,24 @@ export default function Marketplace() {
                                             style={{ height: 80, marginRight: "0.5rem" }}
                                         />
                                         <div className="flex-grow-1">
-                                            <h5 className="mb-1"></h5>
+                                            <h5 className="mb-1">{entry.name || "Untitled Model"}</h5>
                                             <p className="mb-1" style={{ fontSize: "0.9rem" }}>
                                                 {entry.shortDescription || "No description available"}
                                             </p>
                                             <small>Author: {entry.author}</small><br />
-                                            <small>Published: {entry.publishedAt?.substring(0, 10)}</small>
+                                            <small>Published: {entry.publishedAt?.substring(0, 10)}</small><br />
+                                            <small>Downloads: {entry.downloadCount || 0}</small>
                                         </div>
                                     </div>
 
                                     <div className="mt-auto d-flex flex-column gap-2">
                                         <div className="d-flex gap-2">
-                                            <Dropdown>
-                                                <Dropdown.Toggle 
-                                                    variant="primary" 
-                                                    size="sm" 
-                                                    className="d-flex align-items-center"
-                                                >
-                                                    <DownloadIcon className="me-1" style={{ width: '16px', height: '16px' }} /> Download
-                                                </Dropdown.Toggle>
-                                                <Dropdown.Menu>
-                                                    <Dropdown.Item 
-                                                        onClick={() => {
-                                                            setDownloadFormats(prev => ({...prev, [entry.id]: "AASX"}));
-                                                            handleDownload(entry.id, entry.name);
-                                                        }}
-                                                    >
-                                                        Download as AASX
-                                                    </Dropdown.Item>
-                                                    <Dropdown.Item 
-                                                        onClick={() => {
-                                                            setDownloadFormats(prev => ({...prev, [entry.id]: "JSON"}));
-                                                            handleDownload(entry.id, entry.name);
-                                                        }}
-                                                    >
-                                                        Download as JSON
-                                                    </Dropdown.Item>
-                                                </Dropdown.Menu>
-                                            </Dropdown>
-                                            
                                             <Button
                                                 size="sm"
-                                                variant="outline-success"
+                                                variant="success"
                                                 onClick={() => handleSave(entry.id, entry.name)}
                                                 className="d-flex align-items-center"
+                                                style={{ color: 'white' }}
                                             >
                                                 <PlusIcon className="me-1" style={{ width: '16px', height: '16px' }} /> Save
                                             </Button>

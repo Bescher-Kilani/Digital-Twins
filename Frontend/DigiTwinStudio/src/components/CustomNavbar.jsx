@@ -53,7 +53,7 @@ function CustomNavbar() {
           <span className="ms-2">DigiTwin Studio</span>
         </Navbar.Brand>
         <nav>
-          <Nav.Link as={Link} to="/marketplace" className="text-light">{t("nav.marketplace")}</Nav.Link>
+          <Nav.Link as={Link} to="/modelhub" className="text-light">{t("nav.modelhub")}</Nav.Link>
         </nav>
         <Nav className="ms-auto align-items-center">
           <NavDropdown
