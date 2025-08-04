@@ -140,5 +140,36 @@
     "noTemplatesSearch": "No templates match your search criteria \"{{searchTerm}}\". Try a different search term.",
     "noTemplatesAvailable": "No templates are available at the moment.",
     "clearSearch": "Clear search"
+  },
+  "createComplete": {
+    "progress": {
+      "details": "Fill the Details",
+      "allDone": "All done"
+    },
+    "title": "Model Created",
+    "subtitle": "Your model with the Name {{modelName}} has been created and is ready for download.",
+    "dashboardAccess": "You can access this model from your dashboard at any time.",
+    "incompleteInfo": "Model information is incomplete. Download functionality may not be available.",
+    "buttons": {
+      "backToDashboard": "Back to Dashboard",
+      "downloadAASX": "Download AASX",
+      "downloadJSON": "Download JSON"
+    },
+    "toasts": {
+      "missingInfo": "Model information is missing. Cannot download file.",
+      "downloadSuccess": "{{format}} file downloaded successfully!",
+      "authRequired": "Authentication required. Please sign in and try again.",
+      "accessDenied": "Access denied. You do not have permission to download this file.",
+      "fileNotFound": "File not found. The model may have been deleted.",
+      "downloadFailed": "Failed to download {{format}} file: {{errorMessage}}",
+      "connectionError": "Connection error: Unable to reach the server.",
+      "networkError": "Network error: Unable to download file. Please check your connection and try again.",
+      "titles": {
+        "error": "Error",
+        "warning": "Warning",
+        "success": "Success",
+        "notification": "Notification"
+      }
+    }
   }
 }

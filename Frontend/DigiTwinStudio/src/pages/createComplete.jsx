@@ -6,10 +6,12 @@ import ChevronLeftIcon from "../assets/icons/chevron-left.svg?react";
 import DownloadIcon from "../assets/icons/arrow-bar-down.svg?react";
 import { KeycloakContext } from "../KeycloakContext";
 import { authenticatedFetch } from "../utils/tokenManager";
+import { useTranslation } from "react-i18next";
 
 export default function CreateComplete() {
   const location = useLocation();
   const { keycloak, authenticated } = useContext(KeycloakContext);
+  const { t } = useTranslation();
   const modelName = location.state?.modelName || "Untitled Model";
   const modelId = location.state?.modelId;
   const modelIdShort = location.state?.modelIdShort;
@@ -42,7 +44,7 @@ export default function CreateComplete() {
   // Function to handle file downloads
   const handleDownload = async (format) => {
     if (!modelId || !modelIdShort) {
-      showToast('Model information is missing. Cannot download file.', 'danger');
+      showToast(t('createComplete.toasts.missingInfo'), 'danger');
       return;
     }
 
@@ -89,7 +91,7 @@ export default function CreateComplete() {
         // Clean up the URL object
         window.URL.revokeObjectURL(downloadUrl);
         
-        showToast(`${format} file downloaded successfully!`, 'success');
+        showToast(t('createComplete.toasts.downloadSuccess', { format }), 'success');
       } else {
         // Handle error response
         const errorData = await response.json().catch(() => ({}));
@@ -97,13 +99,13 @@ export default function CreateComplete() {
         console.error('Error downloading file:', errorMessage);
         
         if (response.status === 401) {
-          showToast('Authentication required. Please sign in and try again.', 'warning');
+          showToast(t('createComplete.toasts.authRequired'), 'warning');
         } else if (response.status === 403) {
-          showToast('Access denied. You do not have permission to download this file.', 'danger');
+          showToast(t('createComplete.toasts.accessDenied'), 'danger');
         } else if (response.status === 404) {
-          showToast('File not found. The model may have been deleted.', 'danger');
+          showToast(t('createComplete.toasts.fileNotFound'), 'danger');
         } else {
-          showToast(`Failed to download ${format} file: ${errorMessage}`, 'danger');
+          showToast(t('createComplete.toasts.downloadFailed', { format, errorMessage }), 'danger');
         }
       }
     } catch (error) {
@@ -111,9 +113,9 @@ export default function CreateComplete() {
       
       // Check if it's a CORS or network error
       if (error.message.includes('Load failed') || error.message.includes('CORS') || error.message.includes('Network request failed')) {
-        showToast('Connection error: Unable to reach the server.', 'danger');
+        showToast(t('createComplete.toasts.connectionError'), 'danger');
       } else {
-        showToast('Network error: Unable to download file. Please check your connection and try again.', 'danger');
+        showToast(t('createComplete.toasts.networkError'), 'danger');
       }
     }
   };
@@ -122,8 +124,8 @@ export default function CreateComplete() {
     <div className="create-template-container">
         <Container className="py-4">
       <div className="d-flex mb-1">
-        <div className="text-success step-progress-item step-progress-left">Fill the Details</div>
-        <div className="text-success step-progress-item step-progress-right">All done</div>
+        <div className="text-success step-progress-item step-progress-left">{t('createComplete.progress.details')}</div>
+        <div className="text-success step-progress-item step-progress-right">{t('createComplete.progress.allDone')}</div>
       </div>
 
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -135,16 +137,16 @@ export default function CreateComplete() {
       <Card className="text-white mx-auto mb-4 create-complete-card">
         <Card.Body className="d-flex flex-column">
           <div>
-            <h1>Model Created</h1>
+            <h1>{t('createComplete.title')}</h1>
             <h3 className="mt-4">
-              Your model with the Name <strong>{modelName}</strong> has been created and is ready for download.
+              {t('createComplete.subtitle', { modelName })}
             </h3>
             {authenticated && (
-              <p className="mt-3">You can access this model from your dashboard at any time.</p>
+              <p className="mt-3">{t('createComplete.dashboardAccess')}</p>
             )}
             {(!modelId || !modelIdShort) && (
               <p className="mt-3 text-warning">
-                <small>Model information is incomplete. Download functionality may not be available.</small>
+                <small>{t('createComplete.incompleteInfo')}</small>
               </p>
             )}
           </div>
@@ -154,7 +156,7 @@ export default function CreateComplete() {
       {authenticated && (
         <Button as={Link} to="/dashboard" className="mb-2 create-complete-button">
           <ChevronLeftIcon style={{ fill: "white", width: "16px", height: "16px" }}/>
-          Back to Dashboard
+          {t('createComplete.buttons.backToDashboard')}
         </Button>
       )}
       <Button 
@@ -163,7 +165,7 @@ export default function CreateComplete() {
         disabled={!modelId || !modelIdShort}
       >
         <DownloadIcon style={{ fill: "white", width: "16px", height: "16px" }}/>
-        Download AASX
+        {t('createComplete.buttons.downloadAASX')}
         </Button>
       <Button 
         className="mb-2 create-complete-button"
@@ -171,7 +173,7 @@ export default function CreateComplete() {
         disabled={!modelId || !modelIdShort}
       >
         <DownloadIcon style={{ fill: "white", width: "16px", height: "16px" }}/>
-        Download JSON
+        {t('createComplete.buttons.downloadJSON')}
         </Button>
     </div>
         </Card.Body>
@@ -200,9 +202,9 @@ export default function CreateComplete() {
           >
             <Toast.Header>
               <strong className="me-auto">
-                {toast.variant === 'danger' ? 'Error' : 
-                 toast.variant === 'warning' ? 'Warning' : 
-                 toast.variant === 'success' ? 'Success' : 'Notification'}
+                {toast.variant === 'danger' ? t('createComplete.toasts.titles.error') : 
+                 toast.variant === 'warning' ? t('createComplete.toasts.titles.warning') : 
+                 toast.variant === 'success' ? t('createComplete.toasts.titles.success') : t('createComplete.toasts.titles.notification')}
               </strong>
             </Toast.Header>
             <Toast.Body>

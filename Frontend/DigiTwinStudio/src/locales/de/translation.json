@@ -140,5 +140,36 @@
     "noTemplatesSearch": "Es wurden keine Vorlagen gefunden, die Ihren Suchkriterien \"{{searchTerm}}\" entsprechen. Versuchen Sie es mit einem anderen Suchbegriff.",
     "noTemplatesAvailable": "Derzeit sind keine Vorlagen verfügbar.",
     "clearSearch": "Suche löschen"
+  },
+  "createComplete": {
+    "progress": {
+      "details": "Details ausfüllen",
+      "allDone": "Fertig"
+    },
+    "title": "Modell erstellt",
+    "subtitle": "Ihr Modell mit dem Namen {{modelName}} wurde erstellt und ist zum Download bereit.",
+    "dashboardAccess": "Sie können jederzeit über Ihr Dashboard auf dieses Modell zugreifen.",
+    "incompleteInfo": "Modellinformationen sind unvollständig. Download-Funktionalität ist möglicherweise nicht verfügbar.",
+    "buttons": {
+      "backToDashboard": "Zurück zum Dashboard",
+      "downloadAASX": "AASX herunterladen",
+      "downloadJSON": "JSON herunterladen"
+    },
+    "toasts": {
+      "missingInfo": "Modellinformationen fehlen. Datei kann nicht heruntergeladen werden.",
+      "downloadSuccess": "{{format}}-Datei erfolgreich heruntergeladen!",
+      "authRequired": "Authentifizierung erforderlich. Bitte melden Sie sich an und versuchen Sie es erneut.",
+      "accessDenied": "Zugriff verweigert. Sie haben keine Berechtigung, diese Datei herunterzuladen.",
+      "fileNotFound": "Datei nicht gefunden. Das Modell wurde möglicherweise gelöscht.",
+      "downloadFailed": "Fehler beim Herunterladen der {{format}}-Datei: {{errorMessage}}",
+      "connectionError": "Verbindungsfehler: Server kann nicht erreicht werden.",
+      "networkError": "Netzwerkfehler: Datei kann nicht heruntergeladen werden. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+      "titles": {
+        "error": "Fehler",
+        "warning": "Warnung",
+        "success": "Erfolgreich",
+        "notification": "Benachrichtigung"
+      }
+    }
   }
 }
