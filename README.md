@@ -18,7 +18,7 @@ It also supports generic instantiation of any Submodel-Template from the officia
 ## Project Background
 
 This work was commissioned by the Fraunhofer-Institut für Optronik, Systemtechnik und Bildauswertung (IOSB) in Karlsruhe and carried out as part of the university course "Praxis der Softwareentwicklung".
-A team of five students developed the application with the objective of making Digital Twin modeling more accessible, intuitive, and efficient.
+A team of four students developed the application with the objective of making Digital Twin modeling more accessible, intuitive, and efficient.
 
 ---
 
