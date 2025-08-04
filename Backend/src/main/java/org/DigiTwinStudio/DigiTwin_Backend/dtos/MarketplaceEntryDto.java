@@ -5,6 +5,9 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Data transfer object for marketplace entry information.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

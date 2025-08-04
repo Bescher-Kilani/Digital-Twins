@@ -8,12 +8,18 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Request DTO for searching marketplace entries by text, date, or tags.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class MarketplaceSearchRequest {
+
     private String searchText;              // text (name/description/author)
+
     private LocalDateTime publishedAfter;   // "newer than"
+
     private List<String> tagIds;
 }

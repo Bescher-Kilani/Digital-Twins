@@ -4,6 +4,9 @@ import lombok.*;
 
 import java.util.List;
 
+/**
+ * DTO for a publish request with author, description, and tags.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
