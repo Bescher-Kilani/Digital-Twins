@@ -4,21 +4,21 @@
 
 A Digital Twin is a virtual representation of a physical object or process, enabling real-time observation, analysis, simulation, and optimization throughout its lifecycle.
 
-This project simplifies the creation and management of Submodel-Templates for Digital Twins, reducing the complexity of existing tools such as the [AASX Package Explorer](https://github.com/eclipse-aaspe/package-explorer).
+This project streamlines the creation and management of Submodel-Templates for Digital Twins, addressing the complexity of existing tools such as the [AASX Package Explorer](https://github.com/eclipse-aaspe/package-explorer).
 
-Our web-based application allows users to easily instantiate selected Submodel-Templates, specifically:
+Our web-based application enables users to easily instantiate selected Submodel-Templates, specifically:
 
 * Digital Nameplate for Industrial Equipment
 * Carbon Footprint
 
-Additionally, the application supports generic instantiation of any Submodel-Template from the official [IDTA repository](https://industrialdigitaltwin.org/content-hub/teilmodelle), ensuring that templates are always up to date.
+It also supports generic instantiation of any Submodel-Template from the official [IDTA repository](https://industrialdigitaltwin.org/content-hub/teilmodelle), ensuring that templates are always current.
 
 ---
 
 ## Project Background
 
-This project was commissioned by the Fraunhofer-Institut für Optronik, Systemtechnik und Bildauswertung (IOSB) in Karlsruhe and developed as part of the university course "Praxis der Softwareentwicklung".
-It was implemented by a team of four students with the goal of making Digital Twin modeling more accessible, intuitive, and efficient.
+This work was commissioned by the Fraunhofer-Institut für Optronik, Systemtechnik und Bildauswertung (IOSB) in Karlsruhe and carried out as part of the university course "Praxis der Softwareentwicklung".
+A team of five students developed the application with the objective of making Digital Twin modeling more accessible, intuitive, and efficient.
 
 ---
 
@@ -26,8 +26,8 @@ It was implemented by a team of four students with the goal of making Digital Tw
 
 ### Template Management
 
-* Automatic retrieval of the latest Submodel-Templates from the IDTA repository.
-* Always up to date without manual updates.
+* Automated retrieval of the latest Submodel-Templates from the IDTA repository.
+* Continuous access to up-to-date templates without manual intervention.
 
 ### User Management
 
@@ -38,13 +38,13 @@ It was implemented by a team of four students with the goal of making Digital Tw
   * Download models in JSON or AASX format.
 * **Registered users**:
 
-  * Personal dashboard with all created models.
+  * Dashboard displaying all created models.
   * Publish models to the ModelHub for others to view and save.
   * Delete, publish, or unpublish models at any time.
 
 ### ModelHub Search
 
-* Search models by name, description, author, tags, or published date.
+* Search functionality by name, description, author, tags, or published date.
 
 ---
 
@@ -62,31 +62,45 @@ It was implemented by a team of four students with the goal of making Digital Tw
    git clone <your-repo-url>
    cd <your-repo-folder>
    ```
-
 2. Build the Docker container:
 
    ```bash
    docker-compose build
    ```
-
 3. Start the application:
 
    ```bash
    docker-compose up -d
    ```
-
 4. Stop and remove containers:
 
    ```bash
    docker-compose down
    ```
-
 5. Update the application:
 
    ```bash
    docker-compose build
    docker-compose up -d
    ```
+
+With the default configuration, the frontend is accessible at:
+
+```
+http://localhost:3030
+```
+
+---
+
+## Database Information
+
+The application uses **MongoDB** as its database. To perform manual database operations, use **MongoDB Compass**. Connect using the MongoDB connection URI found in the `application.properties` file. This URI contains the necessary credentials and host information to access the database directly.
+
+Example connection string format:
+
+```
+mongodb://<username>:<password>@<host>:<port>/<database>
+```
 
 ---
 
@@ -96,21 +110,19 @@ It was implemented by a team of four students with the goal of making Digital Tw
 
    * Select a Submodel-Template from the template list.
    * Fill in the required fields in the form interface.
-
 2. **Publish to ModelHub**
 
    * Logged-in users can make their model public for others to view and save.
-
 3. **Search for Models**
 
-   * Use the search function to find models by name, description, author, tags, or published date.
+   * Use the search function to locate models by name, description, author, tags, or published date.
 
 ---
 
 ## Goal
 
-The goal of this project is to make Digital Twin modeling efficient, accessible, and user-friendly by:
+This project aims to make Digital Twin modeling efficient, accessible, and user-friendly by:
 
-* Reducing the entry barrier for small teams and companies.
+* Lowering the entry barrier for small teams and companies.
 * Providing an intuitive interface without unnecessary complexity.
-* Ensuring that current and relevant templates are always available.
+* Ensuring access to current and relevant templates at all times.
