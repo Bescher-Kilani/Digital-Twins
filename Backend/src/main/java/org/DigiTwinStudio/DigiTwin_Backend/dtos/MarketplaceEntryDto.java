@@ -25,4 +25,6 @@ public class MarketplaceEntryDto {
     private List<String> tagIds;
 
     private LocalDateTime publishedAt;
+
+    private int downloadCount;
 }
