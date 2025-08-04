@@ -1,13 +1,16 @@
 package org.DigiTwinStudio.DigiTwin_Backend.dtos;
 
 import lombok.*;
+
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultAssetAdministrationShell;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
-
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Data transfer object for Asset Administration Shell (AAS) models.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

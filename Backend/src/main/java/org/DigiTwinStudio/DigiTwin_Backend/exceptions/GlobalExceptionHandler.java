@@ -8,10 +8,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-
 import java.time.Instant;
 import java.util.Map;
 
+/**
+ * Handles and formats API exceptions globally for consistent error responses.
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 

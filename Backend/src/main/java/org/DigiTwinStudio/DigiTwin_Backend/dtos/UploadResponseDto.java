@@ -4,6 +4,9 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+/**
+ * DTO for the response after a successful file upload.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,5 +22,4 @@ public class UploadResponseDto {
     private long size;
 
     private LocalDateTime uploadedAt;
-
 }

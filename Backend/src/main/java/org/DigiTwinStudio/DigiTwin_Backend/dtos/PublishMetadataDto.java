@@ -1,9 +1,13 @@
 package org.DigiTwinStudio.DigiTwin_Backend.dtos;
 
 import lombok.*;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * DTO for publish metadata of an AAS model.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
