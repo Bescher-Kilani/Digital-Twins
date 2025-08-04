@@ -67,6 +67,7 @@
     "cancel": "Cancel",
     "deleteModel": "Delete Model",
     "undo": "This action cannot be undone.",
+    "undoPublished": "This action will also unpublish your model. This action cannot be undone.",
     "errorLoading": "Error loading models:",
     "loading": "Loading models...",
     "noModels": "No models created yet.",
@@ -90,7 +91,8 @@
     "accesDeniedDelete": "Access denied. You do not have permission to delete this model.",
     "modelNotFound": "Model not found. It may have already been deleted.",
     "deleteError": "Failed to delete model: {{errorMessage}}",
-    "networkErrorDelete": "Network error: Unable to delete model. Please check your connection and try again."
+    "networkErrorDelete": "Network error: Unable to delete model. Please check your connection and try again.",
+    "unpublish": "Unpublish"
   },
   "create": {
     "buttons": {

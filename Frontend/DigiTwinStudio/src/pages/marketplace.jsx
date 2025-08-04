@@ -1,16 +1,34 @@
-import { Container, Row, Col, Button, Form, Card } from "react-bootstrap";
-import { useState, useEffect } from "react";
+import { Container, Row, Col, Button, Form, Card, Dropdown, Toast, ToastContainer } from "react-bootstrap";
+import { useState, useEffect, useContext } from "react";
 import modelImage from "../assets/homepage_model.png";
 import "../styles/dashboard.css";
 import DownloadIcon from "../assets/icons/arrow-bar-down.svg?react";
+import PlusIcon from "../assets/icons/plus-lg.svg?react";
+import { KeycloakContext } from "../KeycloakContext";
+import { authenticatedFetch } from "../utils/tokenManager";
 
 export default function Marketplace() {
+    const { keycloak, authenticated } = useContext(KeycloakContext);
     const [entries, setEntries] = useState([]);
     const [tags, setTags] = useState([]);
     const [searchText, setSearchText] = useState("");
     const [selectedTag, setSelectedTag] = useState("");
     const [loading, setLoading] = useState(true);
     const [downloadFormats, setDownloadFormats] = useState({}); // { entryId: "AASX" | "JSON" }
+    const [toasts, setToasts] = useState([]);
+
+    const showToast = (title, message, isError = false) => {
+        const toast = {
+            id: Date.now(),
+            title,
+            message,
+            isError
+        };
+        setToasts(prev => [...prev, toast]);
+        setTimeout(() => {
+            setToasts(prev => prev.filter(t => t.id !== toast.id));
+        }, 5000);
+    };
 
     // 1. Alle Marketplace-Einträge & Tags laden
     useEffect(() => {
@@ -41,27 +59,59 @@ export default function Marketplace() {
     };
 
     // 3. Download-Funktion mit Formatwahl
-    const handleDownload = async (entryId) => {
+    const handleDownload = async (entryId, title) => {
         const format = downloadFormats[entryId] || "AASX";
-        const url = `http://localhost:9090/marketplace/${entryId}?format=${format.toLowerCase()}`;
-        const filename = `model-${entryId}`;
-
         try {
-            const res = await fetch(url);
-            const blob = await res.blob();
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = `${filename}.${format.toLowerCase()}`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(link.href);
+            const response = await authenticatedFetch(`http://localhost:9090/marketplace/${entryId}/download?format=${format}`, {
+                method: 'GET',
+            }, keycloak);
+
+            if (!response.ok) {
+                throw new Error('Download failed');
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `${title}.${format.toLowerCase()}`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            showToast("Download successful", `${title} downloaded successfully!`);
         } catch (error) {
-            alert("Download failed: " + error.message);
+            console.error('Error downloading model:', error);
+            showToast("Download failed", "Failed to download the model. Please try again.", true);
         }
     };
 
-    return (
+    const handleSave = async (entryId, title) => {
+        if (!authenticated) {
+            showToast("Authentication required", "Please log in to save models.", true);
+            return;
+        }
+
+        try {
+            const response = await authenticatedFetch(`http://localhost:9090/marketplace/${entryId}/add-to-user`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            }, keycloak);
+
+            if (!response.ok) {
+                throw new Error('Save failed');
+            }
+
+            showToast("Model saved", `${title} has been saved to your models!`);
+        } catch (error) {
+            console.error('Error saving model:', error);
+            showToast("Save failed", "Failed to save the model. Please try again.", true);
+        }
+    };    return (
         <div className="dashboard-container">
             <Container className="py-4">
                 <h2 className="text-white mb-3">Browse and download models for Digital Twins</h2>
@@ -126,27 +176,44 @@ export default function Marketplace() {
                                     </div>
 
                                     <div className="mt-auto d-flex flex-column gap-2">
-                                        <Form.Select
-                                            size="sm"
-                                            value={downloadFormats[entry.id] || "AASX"}
-                                            onChange={e =>
-                                                setDownloadFormats(prev => ({
-                                                    ...prev,
-                                                    [entry.id]: e.target.value
-                                                }))
-                                            }
-                                        >
-                                            <option value="AASX">AASX</option>
-                                            <option value="JSON">JSON</option>
-                                        </Form.Select>
-
-                                        <Button
-                                            size="sm"
-                                            variant="primary"
-                                            onClick={() => handleDownload(entry.id)}
-                                        >
-                                            <DownloadIcon /> Download
-                                        </Button>
+                                        <div className="d-flex gap-2">
+                                            <Dropdown>
+                                                <Dropdown.Toggle 
+                                                    variant="primary" 
+                                                    size="sm" 
+                                                    className="d-flex align-items-center"
+                                                >
+                                                    <DownloadIcon className="me-1" style={{ width: '16px', height: '16px' }} /> Download
+                                                </Dropdown.Toggle>
+                                                <Dropdown.Menu>
+                                                    <Dropdown.Item 
+                                                        onClick={() => {
+                                                            setDownloadFormats(prev => ({...prev, [entry.id]: "AASX"}));
+                                                            handleDownload(entry.id, entry.name);
+                                                        }}
+                                                    >
+                                                        Download as AASX
+                                                    </Dropdown.Item>
+                                                    <Dropdown.Item 
+                                                        onClick={() => {
+                                                            setDownloadFormats(prev => ({...prev, [entry.id]: "JSON"}));
+                                                            handleDownload(entry.id, entry.name);
+                                                        }}
+                                                    >
+                                                        Download as JSON
+                                                    </Dropdown.Item>
+                                                </Dropdown.Menu>
+                                            </Dropdown>
+                                            
+                                            <Button
+                                                size="sm"
+                                                variant="outline-success"
+                                                onClick={() => handleSave(entry.id, entry.name)}
+                                                className="d-flex align-items-center"
+                                            >
+                                                <PlusIcon className="me-1" style={{ width: '16px', height: '16px' }} /> Save
+                                            </Button>
+                                        </div>
                                     </div>
                                 </Card.Body>
                             </Card>
@@ -155,6 +222,17 @@ export default function Marketplace() {
                 </Row>
 
             </Container>
+            
+            <ToastContainer position="top-end" className="position-fixed" style={{ top: '20px', right: '20px', zIndex: 1050 }}>
+                {toasts.map(toast => (
+                    <Toast key={toast.id} bg={toast.isError ? 'danger' : 'success'} text="white">
+                        <Toast.Header>
+                            <strong className="me-auto">{toast.title}</strong>
+                        </Toast.Header>
+                        <Toast.Body>{toast.message}</Toast.Body>
+                    </Toast>
+                ))}
+            </ToastContainer>
         </div>
     );
 }

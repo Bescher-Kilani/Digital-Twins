@@ -10,6 +10,7 @@ import ImportIcon from "../assets/icons/arrow-bar-up.svg?react";
 import PlusIcon from "../assets/icons/plus-lg.svg?react";
 import TrashIcon from "../assets/icons/trash.svg?react";
 import PublishIcon from "../assets/icons/arrow-up-right-square-fill.svg?react";
+import GlobeIcon from "../assets/icons/globe.svg?react";
 import { KeycloakContext } from "../KeycloakContext";
 import { authenticatedFetch } from "../utils/tokenManager";
 
@@ -26,6 +27,11 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [modelToPublish, setModelToPublish] = useState(null);
+  const [publishForm, setPublishForm] = useState({ shortDescription: '', tagIds: [] });
+  const [availableTags, setAvailableTags] = useState([]);
+  const [loadingTags, setLoadingTags] = useState(false);
+  const [showUnpublishModal, setShowUnpublishModal] = useState(false);
+  const [modelToUnpublish, setModelToUnpublish] = useState(null);
   const navigate = useNavigate();
   const modelsPerPage = 4;
   
@@ -35,13 +41,6 @@ export default function Dashboard() {
       try {
         setLoading(true);
         setError(null);
-        
-        // Debug: Check what's in storage
-        console.log('Dashboard debug - authenticated:', authenticated);
-        console.log('Dashboard debug - keycloak:', keycloak);
-        console.log('Dashboard debug - sessionStorage access_token:', sessionStorage.getItem('access_token'));
-        console.log('Dashboard debug - sessionStorage refresh_token:', sessionStorage.getItem('refresh_token'));
-        console.log('Dashboard debug - all sessionStorage keys:', Object.keys(sessionStorage));
         
         let response;
         
@@ -68,6 +67,7 @@ export default function Dashboard() {
           id: model.id,
           title: model.aas?.displayName?.[0]?.text || model.aas?.idShort || t("dashboard.untitledModel"),
           description: model.aas?.description?.[0]?.text || t("dashboard.noDescription"),
+          published: model.published || false,
           lastEdit: model.updatedAt ? new Date(model.updatedAt).toLocaleDateString('en-US', {
             day: 'numeric',
             month: 'long',
@@ -87,7 +87,7 @@ export default function Dashboard() {
     };
 
     fetchModels();
-  }, [keycloak, authenticated]);
+  }, [keycloak, authenticated, t]);
 
   // Function to show toast notifications
   const showToast = (message, variant = 'danger') => {
@@ -227,7 +227,7 @@ export default function Dashboard() {
       if (response.ok) {
         // Remove the model from the local state
         setModels(prevModels => prevModels.filter(m => m.id !== model.id));
-        showToast(t("dashboard.deleteSuccess", { title: model.title }), 'success');
+        showToast(t("dashboard.deleteSuccess", { modelName: model.title }), 'success');
 
         // If we're on a page that no longer has models after filtering, go to page 1
         const remainingModels = models.filter(m => m.id !== model.id);
@@ -271,6 +271,176 @@ export default function Dashboard() {
   const cancelDelete = () => {
     setShowDeleteModal(false);
     setModelToDelete(null);
+  };
+
+  // Function to open publish modal
+  const openPublishModal = async (model) => {
+    setModelToPublish(model);
+    setPublishForm({ shortDescription: '', tagIds: [] });
+    
+    // Fetch available tags
+    setLoadingTags(true);
+    try {
+      const response = await authenticatedFetch('http://localhost:9090/marketplace/tags', {
+        method: 'GET'
+      }, keycloak);
+      
+      if (response.ok) {
+        const tags = await response.json();
+        setAvailableTags(tags);
+      } else {
+        console.error('Failed to fetch tags:', response.status);
+        showToast('Failed to load tags', 'warning');
+        setAvailableTags([]);
+      }
+    } catch (error) {
+      console.error('Error fetching tags:', error);
+      showToast('Error loading tags', 'danger');
+      setAvailableTags([]);
+    } finally {
+      setLoadingTags(false);
+    }
+    
+    setShowPublishModal(true);
+  };
+
+  // Function to close publish modal
+  const closePublishModal = () => {
+    setShowPublishModal(false);
+    setModelToPublish(null);
+    setPublishForm({ shortDescription: '', tagIds: [] });
+  };
+
+  // Function to handle form input changes
+  const handlePublishFormChange = (field, value) => {
+    setPublishForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Function to handle tag selection
+  const handleTagSelection = (tagId) => {
+    setPublishForm(prev => {
+      const isSelected = prev.tagIds.includes(tagId);
+      const newTagIds = isSelected 
+        ? prev.tagIds.filter(id => id !== tagId)
+        : [...prev.tagIds, tagId];
+      return { ...prev, tagIds: newTagIds };
+    });
+  };
+
+  // Function to publish the model
+  const handlePublish = async () => {
+    if (!modelToPublish || !publishForm.shortDescription.trim()) {
+      showToast('Please fill in the description field', 'warning');
+      return;
+    }
+
+    if (publishForm.tagIds.length === 0) {
+      showToast('Please select at least one tag', 'warning');
+      return;
+    }
+
+    try {
+      const publishData = {
+        author: keycloak?.tokenParsed?.preferred_username || keycloak?.tokenParsed?.name || 'Unknown Author',
+        shortDescription: publishForm.shortDescription.trim(),
+        tagIds: publishForm.tagIds
+      };
+
+      const response = await authenticatedFetch(`http://localhost:9090/models/${modelToPublish.id}/publish`, {
+        method: 'POST',
+        body: JSON.stringify(publishData)
+      }, keycloak);
+
+      if (response.ok) {
+        // Update the model's published status in local state
+        setModels(prevModels => 
+          prevModels.map(model => 
+            model.id === modelToPublish.id 
+              ? { ...model, published: true }
+              : model
+          )
+        );
+        
+        showToast(`Model "${modelToPublish.title}" published successfully!`, 'success');
+        closePublishModal();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || `Error: ${response.status} ${response.statusText}`;
+        console.error('Error publishing model:', errorMessage);
+        
+        if (response.status === 401) {
+          showToast('Authentication required. Please sign in and try again.', 'warning');
+        } else if (response.status === 403) {
+          showToast('Access denied. You do not have permission to publish this model.', 'danger');
+        } else if (response.status === 404) {
+          showToast('Model not found.', 'danger');
+        } else if (response.status === 409) {
+          showToast('Model is already published.', 'warning');
+        } else {
+          showToast(`Failed to publish model: ${errorMessage}`, 'danger');
+        }
+      }
+    } catch (error) {
+      console.error('Network error publishing model:', error);
+      showToast('Network error: Unable to publish model. Please check your connection and try again.', 'danger');
+    }
+  };
+
+  // Function to open unpublish modal
+  const openUnpublishModal = (model) => {
+    setModelToUnpublish(model);
+    setShowUnpublishModal(true);
+  };
+
+  // Function to close unpublish modal
+  const closeUnpublishModal = () => {
+    setShowUnpublishModal(false);
+    setModelToUnpublish(null);
+  };
+
+  // Function to confirm unpublish
+  const confirmUnpublish = async () => {
+    const model = modelToUnpublish;
+    setShowUnpublishModal(false);
+    setModelToUnpublish(null);
+
+    if (!model) return;
+
+    try {
+      const response = await authenticatedFetch(`http://localhost:9090/models/${model.id}/unpublish`, {
+        method: 'POST'
+      }, keycloak);
+
+      if (response.ok) {
+        // Update the model's published status in local state
+        setModels(prevModels => 
+          prevModels.map(m => 
+            m.id === model.id 
+              ? { ...m, published: false }
+              : m
+          )
+        );
+        
+        showToast(`Model "${model.title}" unpublished successfully!`, 'success');
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || `Error: ${response.status} ${response.statusText}`;
+        console.error('Error unpublishing model:', errorMessage);
+        
+        if (response.status === 401) {
+          showToast('Authentication required. Please sign in and try again.', 'warning');
+        } else if (response.status === 403) {
+          showToast('Access denied. You do not have permission to unpublish this model.', 'danger');
+        } else if (response.status === 404) {
+          showToast('Model not found.', 'danger');
+        } else {
+          showToast(`Failed to unpublish model: ${errorMessage}`, 'danger');
+        }
+      }
+    } catch (error) {
+      console.error('Network error unpublishing model:', error);
+      showToast('Network error: Unable to unpublish model. Please check your connection and try again.', 'danger');
+    }
   };
 
   // Filter models based on search term
@@ -409,11 +579,11 @@ export default function Dashboard() {
                 </Button>
                 <Button
                   size="sm"
-                  variant="success"
-                  onClick={() => openPublishModal(model)}
-                  title={t("dashboard.publish")}>
-                  <PublishIcon style={{ marginRight: "4px" }} />
-                  {t("dashboard.publish")}
+                  variant={model.published ? "warning" : "success"}
+                  onClick={() => model.published ? openUnpublishModal(model) : openPublishModal(model)}
+                  title={model.published ? t("dashboard.unpublish") : t("dashboard.publish")}>
+                  <GlobeIcon style={{ marginRight: "4px" }} />
+                  {model.published ? t("dashboard.unpublish") : t("dashboard.publish")}
                 </Button>
               </div>
             </Card.Body>
@@ -488,7 +658,7 @@ export default function Dashboard() {
           </p>
         )}
         <p className="text-warning mb-0">
-          <small>{t("dashboard.undo")}</small>
+          <small>{modelToDelete?.published ? t("dashboard.undoPublished") : t("dashboard.undo")}</small>
         </p>
       </Modal.Body>
       <Modal.Footer 
@@ -503,6 +673,167 @@ export default function Dashboard() {
         <Button variant="danger" onClick={confirmDelete}>
           <TrashIcon style={{ width: "16px", height: "16px", marginRight: "4px" }} />
           {t("dashboard.deleteModel")}
+        </Button>
+      </Modal.Footer>
+    </Modal>
+
+    {/* Publish Modal */}
+    <Modal show={showPublishModal} onHide={closePublishModal} centered data-bs-theme="dark" size="lg">
+      <Modal.Header 
+        closeButton 
+        style={{ 
+          background: 'linear-gradient(180deg, rgba(1, 47, 99, 1) 0%, rgba(10, 75, 127, 1) 100%)',
+          borderColor: '#0E4175' 
+        }}
+      >
+        <Modal.Title className="text-white">
+          <GlobeIcon style={{ width: "20px", height: "20px", marginRight: "8px" }} />
+          Publish Model to Marketplace
+        </Modal.Title>
+      </Modal.Header>
+      <Modal.Body 
+        style={{ 
+          background: 'linear-gradient(180deg, rgba(0, 55, 106, 1) 0%, rgba(1, 54, 106, 1) 100%)',
+          color: 'white' 
+        }}
+      >
+        {modelToPublish && (
+          <>
+            <div className="mb-3">
+              <h6>Model: <strong>{modelToPublish.title}</strong></h6>
+              <p className="text-muted small">{modelToPublish.description}</p>
+              <p className="text-muted small">
+                <strong>Author:</strong> {keycloak?.tokenParsed?.preferred_username || keycloak?.tokenParsed?.name || 'Unknown Author'}
+              </p>
+            </div>
+            
+            <Form>
+              <Form.Group className="mb-3">
+                <Form.Label>Short Description <span className="text-danger">*</span></Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  placeholder="Enter a short description for the marketplace..."
+                  value={publishForm.shortDescription}
+                  onChange={(e) => handlePublishFormChange('shortDescription', e.target.value)}
+                  style={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    borderColor: '#0E4175',
+                    color: 'white'
+                  }}
+                />
+              </Form.Group>
+              
+              <Form.Group className="mb-3">
+                <Form.Label>Tags <span className="text-danger">*</span></Form.Label>
+                {loadingTags ? (
+                  <div className="text-center py-3">
+                    <div className="spinner-border spinner-border-sm text-primary" role="status">
+                      <span className="visually-hidden">Loading tags...</span>
+                    </div>
+                    <div className="mt-2 small">Loading available tags...</div>
+                  </div>
+                ) : (
+                  <div className="mt-2">
+                    {availableTags.length === 0 ? (
+                      <p className="text-muted small">No tags available</p>
+                    ) : (
+                      <div className="d-flex flex-wrap gap-2">
+                        {availableTags.map((tag) => (
+                          <Form.Check
+                            key={tag.id}
+                            type="checkbox"
+                            id={`tag-${tag.id}`}
+                            label={tag.name}
+                            checked={publishForm.tagIds.includes(tag.id)}
+                            onChange={() => handleTagSelection(tag.id)}
+                            className="mb-2"
+                            style={{ color: 'white' }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </Form.Group>
+              
+              <div className="text-muted small">
+                <p className="mb-1">
+                  <strong>Note:</strong> Once published, your model will be available in the marketplace for other users to discover and download.
+                </p>
+                <p className="mb-0">
+                  Both description and at least one tag are required.
+                </p>
+              </div>
+            </Form>
+          </>
+        )}
+      </Modal.Body>
+      <Modal.Footer 
+        style={{ 
+          background: 'linear-gradient(180deg, rgba(0, 55, 106, 1) 0%, rgba(1, 54, 106, 1) 100%)',
+          borderColor: '#0E4175' 
+        }}
+      >
+        <Button variant="secondary" onClick={closePublishModal}>
+          Cancel
+        </Button>
+        <Button 
+          variant="success" 
+          onClick={handlePublish}
+          disabled={!publishForm.shortDescription.trim() || publishForm.tagIds.length === 0}
+        >
+          <GlobeIcon style={{ width: "16px", height: "16px", marginRight: "4px" }} />
+          Publish to Marketplace
+        </Button>
+      </Modal.Footer>
+    </Modal>
+
+    {/* Unpublish Confirmation Modal */}
+    <Modal show={showUnpublishModal} onHide={closeUnpublishModal} centered data-bs-theme="dark">
+      <Modal.Header 
+        closeButton 
+        style={{ 
+          background: 'linear-gradient(180deg, rgba(1, 47, 99, 1) 0%, rgba(10, 75, 127, 1) 100%)',
+          borderColor: '#0E4175' 
+        }}
+      >
+        <Modal.Title className="text-white">
+          <GlobeIcon style={{ width: "20px", height: "20px", marginRight: "8px" }} />
+          Confirm Unpublish
+        </Modal.Title>
+      </Modal.Header>
+      <Modal.Body 
+        style={{ 
+          background: 'linear-gradient(180deg, rgba(0, 55, 106, 1) 0%, rgba(1, 54, 106, 1) 100%)',
+          color: 'white' 
+        }}
+      >
+        {modelToUnpublish && (
+          <>
+            <p>
+              Are you sure you want to unpublish the model <strong>"{modelToUnpublish.title}"</strong> from the marketplace?
+            </p>
+            <p className="text-warning mb-0">
+              <small>
+                <strong>Note:</strong> This will remove your model from the marketplace and make it unavailable for other users to discover and download.
+              </small>
+            </p>
+          </>
+        )}
+      </Modal.Body>
+      <Modal.Footer 
+        style={{ 
+          background: 'linear-gradient(180deg, rgba(0, 55, 106, 1) 0%, rgba(1, 54, 106, 1) 100%)',
+          borderColor: '#0E4175' 
+        }}
+      >
+        <Button variant="secondary" onClick={closeUnpublishModal}>
+          Cancel
+        </Button>
+        <Button variant="warning" onClick={confirmUnpublish}>
+          <GlobeIcon style={{ width: "16px", height: "16px", marginRight: "4px" }} />
+          Unpublish from Marketplace
         </Button>
       </Modal.Footer>
     </Modal>

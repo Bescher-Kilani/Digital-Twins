@@ -67,6 +67,7 @@
     "cancel": "Abbrechen",
     "deleteModel": "Modell löschen",
     "undo": "Diese Aktion kann nicht rückgängig gemacht werden.",
+    "undoPublished": "Durch diese Aktion wird Ihr Modell ebenfalls nicht mehr veröffentlicht. Diese Aktion kann nicht rückgängig gemacht werden.",
     "errorLoading": "Fehler beim Laden der Modelle:",
     "loading": "Modelle werden geladen...",
     "noModels": "Es wurden noch keine Modelle erstellt.",
@@ -90,7 +91,8 @@
     "accesDeniedDelete": "Zugriff verweigert. Sie haben keine Berechtigung, dieses Modell zu löschen.",
     "modelNotFound": "Modell nicht gefunden. Es wurde möglicherweise bereits gelöscht.",
     "deleteError": "Das Modell konnte nicht gelöscht werden.: {{errorMessage}}",
-    "networkErrorDelete": "Netzwerkfehler: Das Modell kann nicht gelöscht werden. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut."
+    "networkErrorDelete": "Netzwerkfehler: Das Modell kann nicht gelöscht werden. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+    "unpublish": "Unveröffentlichen"
   },
   "create": {
     "buttons": {

@@ -5,6 +5,7 @@ import "../styles/createComplete.css";
 import ChevronLeftIcon from "../assets/icons/chevron-left.svg?react";
 import DownloadIcon from "../assets/icons/arrow-bar-down.svg?react";
 import { KeycloakContext } from "../KeycloakContext";
+import { authenticatedFetch } from "../utils/tokenManager";
 
 export default function CreateComplete() {
   const location = useLocation();
@@ -46,29 +47,26 @@ export default function CreateComplete() {
     }
 
     try {
-      // Prepare headers
-      const headers = {};
-      
-      // Add Authorization header if user is logged in
-      let token = null;
-      
-      // Try multiple sources for the token
-      token = sessionStorage.getItem('access_token') || 
-              localStorage.getItem('authToken') || 
-              (keycloak && keycloak.token) ||
-              null;
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
+      let response;
+      let url;
 
-      const url = `http://localhost:9090/guest/models/${modelId}/${modelIdShort}/export/${format}`;
-      console.log('Downloading file from:', url);
-      
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: headers
-      });
+      if (authenticated) {
+        // User is authenticated - use authenticated endpoint with authenticatedFetch
+        url = `http://localhost:9090/models/${modelId}/${modelIdShort}/export/${format}`;
+        console.log('Downloading file from authenticated endpoint:', url);
+        
+        response = await authenticatedFetch(url, {
+          method: 'GET'
+        }, keycloak);
+      } else {
+        // User is not authenticated - use guest endpoint with regular fetch
+        url = `http://localhost:9090/guest/models/${modelId}/${modelIdShort}/export/${format}`;
+        console.log('Downloading file from guest endpoint:', url);
+        
+        response = await fetch(url, {
+          method: 'GET'
+        });
+      }
 
       if (response.ok) {
         // Get the file blob
