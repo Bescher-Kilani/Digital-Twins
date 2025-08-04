@@ -116,6 +116,7 @@
     },
     "generalInfo": "Allgemeine Informationen",
     "name": "Name",
+    "value": "Wert",
     "description": "Beschreibung",
     "aasIdentification": "AAS Identifikation",
     "id": "Id",
