@@ -363,6 +363,7 @@ public class AASModelService {
                 .createdAt(now)
                 .updatedAt(now)
                 .published(false)
+                .submodels(new ArrayList<>())
                 .aas(shell)
                 .build();
     }
