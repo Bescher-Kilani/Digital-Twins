@@ -2,6 +2,7 @@ package org.DigiTwinStudio.DigiTwin_Backend.services;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.NotFoundException;
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.TemplateMapper;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.Template;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.TemplateDto;
@@ -97,4 +98,30 @@ public class TemplateService {
         log.info("Kept {} old templates in database.", oldCount);
         log.info("Database holds {} templates", this.templateRepository.count());
    }
+
+    /**
+     * Loads a single template by its ID and returns it as a DTO, including the embedded JSON definition.
+     *
+     * @param id the template ID
+     * @return the TemplateDto
+     * @throws NotFoundException if no template with the given ID exists
+     */
+    public TemplateDto getTemplateById(String id) {
+        Template tpl = templateRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Template not found: " + id));
+        return templateMapper.toDto(tpl);
+    }
+
+    /**
+     * Resolves a domain Template by ID for reuse in Submodel instantiation.
+     * Returns the Template entity (including its raw JSON) so that the AAS4J adapter can parse it into a Submodel.
+     *
+     * @param templateId the ID of the template to resolve
+     * @return the Template entity
+     * @throws NotFoundException if no template with the given ID exists
+     */
+    public Template resolveTemplate(String templateId) {
+        return templateRepository.findById(templateId)
+                .orElseThrow(() -> new NotFoundException("Template not found: " + templateId));
+    }
 }
