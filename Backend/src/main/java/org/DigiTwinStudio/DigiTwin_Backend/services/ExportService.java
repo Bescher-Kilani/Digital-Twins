@@ -7,11 +7,15 @@ import org.DigiTwinStudio.DigiTwin_Backend.adapter.AAS4jAdapter;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.AASModel;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.ExportedFile;
 import org.DigiTwinStudio.DigiTwin_Backend.domain.ExportFormat;
+import org.DigiTwinStudio.DigiTwin_Backend.domain.MarketplaceEntry;
+import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ExportException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ForbiddenException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.NotFoundException;
+import org.DigiTwinStudio.DigiTwin_Backend.mapper.AASModelMapper;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.AASModelRepository;
 
+import org.DigiTwinStudio.DigiTwin_Backend.repositories.MarketPlaceEntryRepository;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultEnvironment;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.aasx.InMemoryFile;
@@ -29,9 +33,12 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class ExportService {
+
+    private final AASModelMapper aasModelMapper;
     private final AAS4jAdapter aas4jAdapter;
     private final FileStorageService fileStorageService;
     private final AASModelRepository aasModelRepository;
+    private final MarketPlaceEntryRepository marketPlaceEntryRepository;
 
     /**
      * Exports given model to a JSON file
@@ -122,4 +129,36 @@ public class ExportService {
         String filename = name + "." + fileExtension;
         return new ExportedFile(content, filename, contentType);
     }
+
+    /**
+     * Export a model that has been edited by a Guest and therefore is not saved in the repository.
+     * @param dto temporary modelDTO
+     * @param format JSON or AASX
+     * @return content of an exported file as byte[]
+     */
+    public byte[] exportTransientModel(AASModelDto dto, ExportFormat format) {
+        // ToDo: Maybe use different owner Id than "GUEST"
+        AASModel model = this.aasModelMapper.fromDto(dto, "GUEST");
+        return switch (format) {
+            case JSON -> exportAsJson(model);
+            case AASX -> exportAsAasx(model);
+        };
+    }
+
+    /**
+     * Export a model referenced by a marketplace-entry
+     * @param entryId marketplace-entry-id
+     * @param format JSON or AASX
+     * @return content of an exported file as byte[]
+     */
+    public byte[] exportMarketplaceModel(String entryId, ExportFormat format) {
+        MarketplaceEntry marketplaceEntry = this.marketPlaceEntryRepository.findById(entryId).orElseThrow(() -> new NotFoundException("Could not find entry with given Id"));
+        AASModel model = this.aasModelRepository.findById(marketplaceEntry.getId()).orElseThrow(()  -> new NotFoundException("Could not find model with given Id"));
+        return switch (format) {
+            case JSON -> exportAsJson(model);
+            case AASX -> exportAsAasx(model);
+        };
+
+    }
+
 }

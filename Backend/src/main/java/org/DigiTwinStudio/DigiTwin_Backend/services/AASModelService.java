@@ -22,6 +22,7 @@ import org.DigiTwinStudio.DigiTwin_Backend.validation.FileUploadValidator;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.File;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultAssetAdministrationShell;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
 
 import org.springframework.stereotype.Service;
@@ -96,6 +97,20 @@ public class AASModelService {
         aasModelValidator.validate(existingModel);
 
         return aasModelMapper.toDto(aasModelRepository.save(existingModel));
+    }
+
+    /**
+     * Creates a new empty AAS model for a user.
+     *
+     * @param userId user ID
+     * @return the created {@link AASModelDto}
+     */
+    public AASModelDto createEmptyModel(String userId) {
+        AASModel model = buildEmptyModel(userId);
+        validateModelWithFiles(model);
+        aasModelValidator.validate(model);
+
+        return aasModelMapper.toDto(aasModelRepository.save(model));
     }
 
     /**
@@ -336,6 +351,19 @@ public class AASModelService {
                 .published(false)
                 .aas(dto.getAas())
                 .submodels(dto.getSubmodels())
+                .build();
+    }
+
+    private AASModel buildEmptyModel(String userId) {
+        LocalDateTime now = LocalDateTime.now();
+        DefaultAssetAdministrationShell shell = new DefaultAssetAdministrationShell();
+        shell.setSubmodels(new ArrayList<>());
+        return AASModel.builder()
+                .ownerId(userId)
+                .createdAt(now)
+                .updatedAt(now)
+                .published(false)
+                .aas(shell)
                 .build();
     }
 

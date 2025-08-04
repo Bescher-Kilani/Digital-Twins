@@ -13,6 +13,8 @@ import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException;
 import org.DigiTwinStudio.DigiTwin_Backend.mapper.SubmodelMapper;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.AASModelRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.TemplateRepository;
+import org.DigiTwinStudio.DigiTwin_Backend.repositories.UploadedFileRepository;
+import org.DigiTwinStudio.DigiTwin_Backend.validation.SubmodelValidator;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonDeserializer;
@@ -26,6 +28,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class SubmodelService {
 
+    private final SubmodelValidator submodelValidator;
+    private final UploadedFileRepository uploadedFileRepository;
     private final SubmodelMapper submodelMapper;
     private final TemplateRepository templateRepository;
     private final AASModelRepository aasModelRepository;
@@ -71,5 +75,30 @@ public class SubmodelService {
                 .findFirst()
                 .map(submodelMapper::toDto)
                 .orElseThrow(() -> new NotFoundException("Submodel not found: " + submodelId));
+    }
+
+    /**
+     * Validates a submodel DTO using AAS4J structural rules.
+     *
+     * @param submodelDto the submodel to validate
+     * @throws ValidationException if the submodel is invalid
+     */
+    public void validate(SubmodelDto submodelDto) {
+        DefaultSubmodel submodel = submodelMapper.fromDto(submodelDto);
+        try {
+            submodelValidator.validate(submodel);
+        } catch (Exception e) {
+            throw new BadRequestException("Submodel validation failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Checks if a file with the given ID exists.
+     *
+     * @param fileId the file ID to check
+     * @return true if the file exists, false otherwise
+     */
+    public boolean isFileReferenceValid(String fileId) {
+        return uploadedFileRepository.findById(fileId).isPresent();
     }
 }
