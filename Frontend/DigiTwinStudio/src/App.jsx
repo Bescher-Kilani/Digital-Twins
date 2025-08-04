@@ -18,7 +18,11 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="signin" element={<Signin />} />
-          <Route path="modelhub" element={<Marketplace />} />
+          <Route path="modelhub" element={
+            <ProtectedRoute>
+              <Marketplace />
+            </ProtectedRoute>
+          } />
           <Route path="create" element={<CreatePage />} />
           <Route path="create/complete" element={<CreateComplete />} />
           <Route path="templates" element={<SubmodelTemplateSelection />} />
