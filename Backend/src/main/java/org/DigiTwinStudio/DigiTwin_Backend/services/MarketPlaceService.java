@@ -223,7 +223,7 @@ public class MarketPlaceService {
         } else {    // no text, but time and tag queries
             Query query = new Query();
 
-            if (hasTags) {
+            if (hasDate) {
                 query.addCriteria(Criteria.where("publishedAt").gt(req.getPublishedAfter()));
             }
             if (hasTags) {
