@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Container, Row, Col, Button, Form, Card, OverlayTrigger, Tooltip, Alert } from "react-bootstrap";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import AddressInformation from "../components/form_inputs/AddressInformation";
 import Prop from "../components/form_inputs/Prop";
 import MLP from "../components/form_inputs/MLP";
@@ -438,6 +439,7 @@ const getTemplateConfig = (selectedTemplate) => {
 };
 
 export default function CreateTemplate() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -1105,9 +1107,9 @@ export default function CreateTemplate() {
       <Container className="py-4">
         {/* Progress bar */}
         <div className="d-flex mb-1">
-          <div className="text-white step-progress-item step-progress-left">Select a Template</div>
-          <div className="text-warning step-progress-item step-progress-center">Fill the details</div>
-          <div className="text-white step-progress-item step-progress-right">All done</div>
+          <div className="text-white step-progress-item step-progress-left">{t("templateSelection.select")}</div>
+          <div className="text-warning step-progress-item step-progress-center">{t("create.progress.details")}</div>
+          <div className="text-white step-progress-item step-progress-right">{t("create.progress.allDone")}</div>
         </div>
 
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -1234,7 +1236,7 @@ export default function CreateTemplate() {
           }}
         >
           <ChevronLeftIcon style={{ fill: "white", width: "16px", height: "16px" }} />
-          Back
+          {t("create.buttons.back")}
         </Button>
         <Button 
           variant="primary"
@@ -1246,7 +1248,7 @@ export default function CreateTemplate() {
           }}
         >
           <FloppyFillIcon style={{ fill: "white", width: "16px", height: "16px" }} />
-          Save
+          {t("create.buttons.save")}
         </Button>
       </div>
     </Container>

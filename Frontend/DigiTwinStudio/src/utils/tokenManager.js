@@ -37,7 +37,6 @@ export const isTokenExpired = (token) => {
 export const getAccessToken = (keycloakInstance = null) => {
   // First check sessionStorage (Safari and manual storage)
   const sessionToken = sessionStorage.getItem('access_token');
-  console.log('getAccessToken debug - sessionToken:', sessionToken ? 'EXISTS' : 'NULL');
   
   if (sessionToken) {
     return sessionToken;
@@ -45,19 +44,16 @@ export const getAccessToken = (keycloakInstance = null) => {
   
   // Check if Keycloak instance has token (non-Safari browsers)
   if (keycloakInstance && keycloakInstance.token) {
-    console.log('getAccessToken debug - keycloak.token:', 'EXISTS');
     return keycloakInstance.token;
   }
   
   // Fallback to localStorage if needed (legacy support)
   const localToken = localStorage.getItem('authToken');
-  console.log('getAccessToken debug - localToken:', localToken ? 'EXISTS' : 'NULL');
   
   if (localToken) {
     return localToken;
   }
   
-  console.log('getAccessToken debug - NO TOKEN FOUND');
   return null;
 };
 

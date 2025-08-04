@@ -52,6 +52,30 @@
   z-index: 10 !important;
 }
 
+/* Firefox */
+.template-form-card input[type="date"]::-moz-calendar-picker-indicator {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 0 !important;
+  cursor: pointer !important;
+  z-index: 10 !important;
+}
+
+/* Internet Explorer/Legacy Edge */
+.template-form-card input[type="date"]::-ms-calendar-picker-indicator {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 0 !important;
+  cursor: pointer !important;
+  z-index: 10 !important;
+}
+
 .template-form-card input[type="date"]::-webkit-inner-spin-button,
 .template-form-card input[type="date"]::-webkit-clear-button {
   filter: invert(1) !important;

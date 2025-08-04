@@ -563,14 +563,14 @@ function CreatePage() {
       <Card className="text-white mb-3 form-card">
         <Card.Body>
           <Card.Title className="mb-4">
-            General Information
+            {t("create.generalInfo")}
           </Card.Title>
 
           <Row>
             <Col sm={6}>
               <div className="mb-3">
                 <label className="form-label text-white" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  name
+                  {t("create.name")}
                   {t("create.tooltips.name") && (
                     <OverlayTrigger
                       placement="top"
@@ -608,7 +608,7 @@ function CreatePage() {
                 <div key={`description-${index}`} className="mb-3">
                   {index === 0 && (
                     <label className="form-label text-white" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      description
+                      {t("create.description")}
                       {t("create.tooltips.description") && (
                         <OverlayTrigger
                           placement="top"
@@ -679,7 +679,7 @@ function CreatePage() {
                             fontSize: "14px"
                           }}
                         >
-                          + Add
+                          + {t("create.buttons.add")}
                         </Button>
                       )}
                       {index > 0 && (
@@ -692,7 +692,7 @@ function CreatePage() {
                             fontSize: "14px"
                           }}
                         >
-                          Remove
+                          {t("create.buttons.remove")}
                         </Button>
                       )}
                     </div>
@@ -708,14 +708,14 @@ function CreatePage() {
       <Card className="text-white mb-3 form-card">
         <Card.Body>
             <Card.Title className="mb-4">
-              AAS Identification
+              {t("create.aasIdentification")}
             </Card.Title>
 
             <Row>
               <Col sm={6}>
                 <Prop
                   key="general-id"
-                  label="id"
+                  label={t("create.id")}
                   placeholder="ex. urn:aas:example:aas:123456"
                   helpText={t("create.tooltips.id")}
                   type="text"
@@ -727,7 +727,7 @@ function CreatePage() {
               <Col sm={6}>
                 <AssetKind
                   key="general-assetKind"
-                  label="assetKind"
+                  label={t("create.assetKind")}
                   helpText={t("create.tooltips.assetKind")}
                   showLabel={true}
                   value={formData.assetInformation.assetKind}
@@ -745,14 +745,14 @@ function CreatePage() {
       <Card className="text-white mb-3 form-card">
         <Card.Body>
             <Card.Title className="mb-4">
-              Asset Identification
+              {t("create.assetIdentification")}
             </Card.Title>
 
             <Row>
               <Col sm={6}>
                 <Prop
                   key="general-globalAssetId"
-                  label="globalAssetId"
+                  label={t("create.globalAssetId")}
                   placeholder="ex. urn:aas:example:aas:123456"
                   helpText={t("create.tooltips.globalAssetId")}
                   type="text"
@@ -768,9 +768,9 @@ function CreatePage() {
                 {formData.assetInformation.specificAssetIds.map((item, index) => (
                   <SpecificAssetId
                     key={`specificAssetId-${index}`}
-                    label={index === 0 ? "specificAssetId" : ""}
-                    placeholder1="Name"
-                    placeholder2="Value"
+                    label={index === 0 ? t("create.specificAssetId") : ""}
+                    placeholder1={t("create.name")}
+                    placeholder2={t("create.value")}
                     helpText={t("create.tooltips.specificAssetId")}
                     value1={item.name}
                     value2={item.value}
@@ -793,7 +793,7 @@ function CreatePage() {
       <Card className="text-white mb-5 form-card">
         <Card.Body>
           <Card.Title className="mb-2">
-              Submodel Templates
+              {t("create.submodelTemplates")}
             </Card.Title>
         <div className="field-block">
           <div className="d-flex flex-wrap gap-3">
@@ -821,7 +821,7 @@ function CreatePage() {
                     +
                   </div>
                   <Card.Text style={{ fontSize: "0.875rem", lineHeight: "1.2" }}>
-                    Add Submodel
+                    {t("create.addSubmodel")}
                   </Card.Text>
                 </Card.Body>
               </Card>

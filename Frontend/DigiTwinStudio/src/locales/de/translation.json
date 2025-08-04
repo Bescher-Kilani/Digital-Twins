@@ -113,6 +113,32 @@
     "progress": {
       "details": "Details ausfüllen",
       "allDone": "Alles erledigt"
-    }
+    },
+    "generalInfo": "Allgemeine Informationen",
+    "name": "Name",
+    "description": "Beschreibung",
+    "aasIdentification": "AAS Identifikation",
+    "id": "Id",
+    "assetKind": "Asset Kind",
+    "assetIdentification": "Asset Identifikation",
+    "globalAssetId": "Global Asset Id",
+    "specificAssetId": "Specific Asset Id",
+    "submodelTemplates": "Teilmodell Vorlagen",
+    "addSubmodel": "Teilmodell hinzufügen"
+  },
+  "templateSelection": {
+    "title": "Vorlage auswählen",
+    "noDescription": "Keine Beschreibung verfügbar",
+    "loadFailed": "Vorlagen konnten nicht geladen werden:",
+    "select": "Vorlage auswählen",
+    "selectModel": "Wählen Sie eine Teilmodellvorlage aus.",
+    "searchPlaceholder": "Vorlagen nach Name oder Beschreibung suchen...",
+    "showing": "{{count}} Vorlagen werden angezeigt",
+    "loading": "Vorlagen werden geladen...",
+    "retry": "Erneut versuchen",
+    "noTemplates": "Keine Vorlagen gefunden",
+    "noTemplatesSearch": "Es wurden keine Vorlagen gefunden, die Ihren Suchkriterien \"{{searchTerm}}\" entsprechen. Versuchen Sie es mit einem anderen Suchbegriff.",
+    "noTemplatesAvailable": "Derzeit sind keine Vorlagen verfügbar.",
+    "clearSearch": "Suche löschen"
   }
 }

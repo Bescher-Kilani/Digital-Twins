@@ -113,16 +113,32 @@
     "progress": {
       "details": "Fill the Details",
       "allDone": "All done"
-    }
+    },
+    "generalInfo": "General Information",
+    "name": "Name",
+    "description": "Description",
+    "aasIdentification": "AAS Identification",
+    "id": "Id",
+    "assetKind": "Asset Kind",
+    "assetIdentification": "Asset Identification",
+    "globalAssetId": "Global Asset Id",
+    "specificAssetId": "Specific Asset Id",
+    "submodelTemplates": "Submodel Templates",
+    "addSubmodel": "Add Submodel"
   },
-  "marketplace": {
-    "ourModels": "Explore the published models",
-    "search": "Search",
-    "newModel": "or create a new model!",
-    "publishedAt": "published at: ",
-    "save": "Save",
-    "download":"Download",
-    "publishedBy": "published by: ",
-    "title": "Title: "
+  "templateSelection": {
+    "title": "Select a Template",
+    "noDescription": "No description available",
+    "loadFailed": "Failed to load templates:",
+    "select": "Select a template",
+    "selectModel": "Select a Submodel Template",
+    "searchPlaceholder": "Search templates by name or description...",
+    "showing": "Showing {{count}} templates",
+    "loading": "Loading templates...",
+    "retry": "Retry",
+    "noTemplates": "No templates found",
+    "noTemplatesSearch": "No templates match your search criteria \"{{searchTerm}}\". Try a different search term.",
+    "noTemplatesAvailable": "No templates are available at the moment.",
+    "clearSearch": "Clear search"
   }
 }

@@ -6,9 +6,10 @@ import searchIcon from "../assets/icons/search.svg";
 import "../styles/submodelTemplateSelection.css";
 
 export default function SubmodelTemplateSelection() {
+  
   const navigate = useNavigate();
   const location = useLocation();
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const [currentPage, setCurrentPage] = useState(1);
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,10 +22,10 @@ export default function SubmodelTemplateSelection() {
   // Helper function to get description in user's preferred language
   const getLocalizedDescription = (descriptions) => {
     if (!descriptions || typeof descriptions !== 'object') {
-      return 'No description available';
+      return t("templateSelection.noDescription");
     }
     
-    const currentLanguage = i18n.language; // Current user language (e.g., 'en', 'de')
+    const currentLanguage = i18n.language;
     
     // Try current language first
     if (descriptions[currentLanguage]) {
@@ -42,7 +43,7 @@ export default function SubmodelTemplateSelection() {
       return descriptions[availableLanguages[0]];
     }
     
-    return 'No description available';
+    return t("templateSelection.noDescription");
   };
 
   // Fetch templates from backend API
@@ -61,7 +62,7 @@ export default function SubmodelTemplateSelection() {
         setError(null);
       } catch (err) {
         console.error('Error fetching templates:', err);
-        setError(`Failed to load templates: ${err.message}`);
+        setError(`${t("templateSelection.loadFailed")} ${err.message}`);
       } finally {
         setLoading(false);
       }
@@ -72,7 +73,6 @@ export default function SubmodelTemplateSelection() {
   
   // Handle template selection
   const handleTemplateSelect = (template) => {
-    // Get description in user's preferred language
     const description = getLocalizedDescription(template.descriptions);
     
     navigate('/templates/create', {
@@ -118,7 +118,6 @@ export default function SubmodelTemplateSelection() {
     navigate('/create', {
       state: {
         restoredFormData: originalFormData
-        // Don't pass restoredSubmodelTemplates here since they're preserved in sessionStorage
       }
     });
   };
@@ -130,14 +129,14 @@ export default function SubmodelTemplateSelection() {
           onClick={handleBackToCreate}
           className="mb-3 back-button"
         >
-          ← Back
+          ← {t("create.buttons.back")}
         </Button>
 
       {/* Step progress */}
       <div className="d-flex mb-4">
-        <div className="text-warning step-progress-item step-progress-left">Select a Template</div>
-        <div className="text-white step-progress-item step-progress-center">Fill the details</div>
-        <div className="text-white step-progress-item step-progress-right">All done</div>
+        <div className="text-warning step-progress-item step-progress-left">{t("templateSelection.select")}</div>
+        <div className="text-white step-progress-item step-progress-center">{t("create.progress.details")}</div>
+        <div className="text-white step-progress-item step-progress-right">{t("create.progress.allDone")}</div>
       </div>
 
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -172,7 +171,7 @@ export default function SubmodelTemplateSelection() {
       </div>
 
       {/* Heading */}
-      <h1 className="text-white mb-4">Select a Submodel</h1>
+      <h1 className="text-white mb-4">{t("templateSelection.selectModel")}</h1>
 
       {/* Search Bar */}
       <Row className="mb-4">
@@ -180,7 +179,7 @@ export default function SubmodelTemplateSelection() {
           <InputGroup>
             <Form.Control
               type="text"
-              placeholder="Search templates by name or description..."
+              placeholder={t("templateSelection.searchPlaceholder")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
@@ -201,7 +200,7 @@ export default function SubmodelTemplateSelection() {
               {searchTerm && ` matching "${searchTerm}"`}
             </small>
           ) : (
-            <small>Showing all {templates.length} templates</small>
+            <small>{t("templateSelection.showing", { count: templates.length })}</small>
           )}
         </div>
       )}
@@ -210,7 +209,7 @@ export default function SubmodelTemplateSelection() {
       {loading && (
         <div className="text-center py-5">
           <Spinner animation="border" variant="light" />
-          <p className="text-white mt-3">Loading templates...</p>
+          <p className="text-white mt-3">{t("templateSelection.loading")}</p>
         </div>
       )}
 
@@ -224,7 +223,7 @@ export default function SubmodelTemplateSelection() {
             className="ms-3"
             onClick={() => window.location.reload()}
           >
-            Retry
+            {t("templateSelection.retry")}
           </Button>
         </Alert>
       )}
@@ -235,11 +234,11 @@ export default function SubmodelTemplateSelection() {
           {filteredTemplates.length === 0 ? (
             <div className="text-center py-5">
               <div className="text-white">
-                <h4>No templates found</h4>
+                <h4>{t("templateSelection.noTemplates")}</h4>
                 <p>
                   {searchTerm 
-                    ? `No templates match your search "${searchTerm}". Try different keywords.`
-                    : "No templates are available at the moment."
+                    ? t("templateSelection.noTemplatesSearch", { searchTerm })
+                    : t("templateSelection.noTemplatesAvailable")
                   }
                 </p>
                 {searchTerm && (
@@ -248,7 +247,7 @@ export default function SubmodelTemplateSelection() {
                     onClick={() => setSearchTerm("")}
                     className="mt-2"
                   >
-                    Clear Search
+                    {t("templateSelection.clearSearch")}
                   </Button>
                 )}
               </div>
