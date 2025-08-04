@@ -74,6 +74,18 @@ public class MarketPlaceService {
         });
         tagRepository.saveAll(tagsToUpdate);
 
+        // create public marketPlaceEntry
+        this.marketPlaceEntryRepository.save(
+                MarketplaceEntry.builder()
+                .publishedAt(now)
+                .author(request.getAuthor())
+                .id(model.getId())
+                .name(model.getAas().getIdShort())
+                .downloadCount(0)
+                .shortDescription(request.getShortDescription())
+                .tagIds(request.getTagIds())
+                .build()
+                );
     }
 
     /**
