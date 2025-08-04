@@ -1,4 +1,4 @@
-import { Container, Row, Col, Button, Form, Card, Dropdown, Toast, ToastContainer } from "react-bootstrap";
+import { Container, Row, Col, Button, Form, Card, Dropdown, Toast, ToastContainer, Pagination } from "react-bootstrap";
 import { useState, useEffect, useContext } from "react";
 import modelImage from "../assets/homepage_model.png";
 import "../styles/dashboard.css";
@@ -17,6 +17,8 @@ export default function Marketplace() {
     const [loading, setLoading] = useState(true);
     const [downloadFormats, setDownloadFormats] = useState({}); // { entryId: "AASX" | "JSON" }
     const [toasts, setToasts] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const entriesPerPage = 9;
 
     const showToast = (title, message, isError = false) => {
         const toast = {
@@ -38,7 +40,8 @@ export default function Marketplace() {
                 ? prev.filter(id => id !== tagId)  // Remove tag if already selected
                 : [...prev, tagId];                // Add tag if not selected
             
-            // Trigger search automatically after state update
+            // Reset to page 1 and trigger search automatically after state update
+            setCurrentPage(1);
             setTimeout(() => {
                 performSearch(searchText, newSelectedTags);
             }, 0);
@@ -50,6 +53,7 @@ export default function Marketplace() {
     // Clear all selected tags
     const clearAllTags = () => {
         setSelectedTags([]);
+        setCurrentPage(1);
         // Trigger search automatically
         setTimeout(() => {
             performSearch(searchText, []);
@@ -132,6 +136,7 @@ export default function Marketplace() {
 
     // 2. Suchfunktion – sendet `MarketplaceSearchRequest` an Backend
     const handleSearch = async () => {
+        setCurrentPage(1);
         await performSearch(searchText, selectedTags);
     };
 
@@ -199,6 +204,28 @@ export default function Marketplace() {
                     background-color: rgba(255, 255, 255, 0.15) !important;
                     border-color: #0D598B !important;
                     box-shadow: 0 0 0 0.2rem rgba(13, 89, 139, 0.25) !important;
+                }
+                .pagination .page-item .page-link {
+                    background-color: rgba(255, 255, 255, 0.1) !important;
+                    border: 2px solid #0E4175 !important;
+                    color: white !important;
+                    margin: 0 2px;
+                    border-radius: 6px !important;
+                }
+                .pagination .page-item .page-link:hover {
+                    background-color: rgba(255, 255, 255, 0.15) !important;
+                    border-color: #0D598B !important;
+                    color: white !important;
+                }
+                .pagination .page-item.active .page-link {
+                    background-color: #004277 !important;
+                    border-color: #0D598B !important;
+                    color: white !important;
+                }
+                .pagination .page-item.disabled .page-link {
+                    background-color: rgba(255, 255, 255, 0.05) !important;
+                    border-color: #0E4175 !important;
+                    color: rgba(255, 255, 255, 0.5) !important;
                 }
             `}</style>
             <Container className="py-4">
@@ -326,9 +353,23 @@ export default function Marketplace() {
                 {/* Ladeanzeige / Keine Ergebnisse */}
                 {loading && <div className="text-white">Loading...</div>}
                 {!loading && entries.length === 0 && <div className="text-white">No entries found.</div>}
+                
+                {/* Results count */}
+                {!loading && entries.length > 0 && (
+                    <Row className="mb-3">
+                        <Col>
+                            <small className="text-white">
+                                Showing {((currentPage - 1) * entriesPerPage) + 1}-{Math.min(currentPage * entriesPerPage, entries.length)} of {entries.length} entries
+                            </small>
+                        </Col>
+                    </Row>
+                )}
+
                 {/* Ergebnisliste */}
                 <Row className="g-3">
-                    {entries.map(entry => (
+                    {entries
+                        .slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage)
+                        .map(entry => (
                         <Col key={entry.id} md={4}>
                             <Card className="text-white model-container h-100">
                                 <Card.Body className="d-flex flex-column">
@@ -393,6 +434,80 @@ export default function Marketplace() {
                         </Col>
                     ))}
                 </Row>
+
+                {/* Pagination */}
+                {!loading && entries.length > entriesPerPage && (
+                    <Row className="mt-4">
+                        <Col className="d-flex justify-content-center">
+                            <Pagination>
+                                <Pagination.First 
+                                    onClick={() => setCurrentPage(1)}
+                                    disabled={currentPage === 1}
+                                />
+                                <Pagination.Prev 
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={currentPage === 1}
+                                />
+                                
+                                {/* Page numbers */}
+                                {(() => {
+                                    const totalPages = Math.ceil(entries.length / entriesPerPage);
+                                    const pages = [];
+                                    const startPage = Math.max(1, currentPage - 2);
+                                    const endPage = Math.min(totalPages, currentPage + 2);
+                                    
+                                    // Add first page if not in range
+                                    if (startPage > 1) {
+                                        pages.push(
+                                            <Pagination.Item key={1} onClick={() => setCurrentPage(1)}>
+                                                1
+                                            </Pagination.Item>
+                                        );
+                                        if (startPage > 2) {
+                                            pages.push(<Pagination.Ellipsis key="start-ellipsis" />);
+                                        }
+                                    }
+                                    
+                                    // Add page numbers in range
+                                    for (let page = startPage; page <= endPage; page++) {
+                                        pages.push(
+                                            <Pagination.Item
+                                                key={page}
+                                                active={page === currentPage}
+                                                onClick={() => setCurrentPage(page)}
+                                            >
+                                                {page}
+                                            </Pagination.Item>
+                                        );
+                                    }
+                                    
+                                    // Add last page if not in range
+                                    if (endPage < totalPages) {
+                                        if (endPage < totalPages - 1) {
+                                            pages.push(<Pagination.Ellipsis key="end-ellipsis" />);
+                                        }
+                                        pages.push(
+                                            <Pagination.Item key={totalPages} onClick={() => setCurrentPage(totalPages)}>
+                                                {totalPages}
+                                            </Pagination.Item>
+                                        );
+                                    }
+                                    
+                                    return pages;
+                                })()}
+                                
+                                <Pagination.Next 
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(entries.length / entriesPerPage)))}
+                                    disabled={currentPage === Math.ceil(entries.length / entriesPerPage)}
+                                />
+                                <Pagination.Last 
+                                    onClick={() => setCurrentPage(Math.ceil(entries.length / entriesPerPage))}
+                                    disabled={currentPage === Math.ceil(entries.length / entriesPerPage)}
+                                />
+                            </Pagination>
+                        </Col>
+                    </Row>
+                )}
 
             </Container>
             
