@@ -2,19 +2,24 @@ package org.DigiTwinStudio.DigiTwin_Backend.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.DigiTwinStudio.DigiTwin_Backend.domain.Template;
 import org.DigiTwinStudio.DigiTwin_Backend.utils.DateTimeUtil;
+
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
-
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Client for fetching and processing templates from the external SMT repository.
+ */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -22,8 +27,9 @@ public class SMTRepoClient {
     private final WebClient webClient; // Gets injected. See config "WebClientConfig"
 
     /**
-     * Pulls all templates from the submodel-repo
-     * @return List of all Templates
+     * Fetches all templates from the SMT repository API.
+     *
+     * @return list of templates
      */
     public List<Template> fetchTemplates() {
         log.info("fetchTemplates");
@@ -99,14 +105,9 @@ public class SMTRepoClient {
     }
 
     /**
-     * Recursively traverses the given JsonNode tree and ensures that every ObjectNode
-     * containing a "valueType" field also contains a "value" field.
-     * If an ObjectNode has "valueType" but lacks "value", this method adds
-     * a "value" field with an empty string ("") as its value.
+     * Ensures each object node with a valueType field also has a value field.
      *
-     * The traversal covers all nested objects and arrays within the JSON structure.
-     *
-     * @param node the root JsonNode to process; can be an ObjectNode, ArrayNode, or any JsonNode
+     * @param node the root JsonNode to process
      */
     private void ensureValueFields(JsonNode node) {
         if (node == null) return;

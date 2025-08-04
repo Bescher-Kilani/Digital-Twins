@@ -1,10 +1,13 @@
 package org.DigiTwinStudio.DigiTwin_Backend.init;
 
+import com.mongodb.lang.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.DigiTwinStudio.DigiTwin_Backend.domain.Tag;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.TagRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.services.TemplateService;
+
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.core.io.ClassPathResource;
@@ -15,6 +18,9 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 
+/**
+ * Runs template and tag initialization when the application starts.
+ */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -24,26 +30,12 @@ public class StartUp implements ApplicationListener<ApplicationReadyEvent> {
     private final TagRepository tagRepository;
 
     /**
-     * Handles the {@link ApplicationReadyEvent}, which is triggered when the Spring Boot application has fully started.
-     * <p>
-     * This method is used to perform application-level startup tasks such as initializing templates and tags.
-     * <p>
-     * The current steps include:
-     * <ul>
-     *     <li>Syncing templates from a remote or local repository via {@code templateService.syncTemplatesFromRepo()}</li>
-     *     <li>Initializing tags from a predefined file using {@code initializeTags()}</li>
-     * </ul>
+     * Called when the application is ready; initializes templates and tags.
      *
-     * <p>
-     * Optional database reset logic is included but commented out, intended for development or temporary fixes.
-     *
-     * <p>
-     * Logging is used to trace the execution and state at each step.
-     *
-     * @param event the Spring {@link ApplicationReadyEvent} signaling the application is fully initialized
+     * @param event the ready event
      */
     @Override
-    public void onApplicationEvent(ApplicationReadyEvent event) {
+    public void onApplicationEvent(@NonNull ApplicationReadyEvent event) {
         log.info("Application is ready – initiate StartUp.");
 
         // TEMPORARY SOLUTION TO RESET TEMPLATE AND TAG DATABASE
@@ -63,28 +55,8 @@ public class StartUp implements ApplicationListener<ApplicationReadyEvent> {
     }
 
     /**
-     * Initializes the MongoDB 'tags' collection with entries from the {@code tags.txt} file located in the classpath.
-     * <p>
-     * Each non-empty line in the file must follow the format: {@code TagName:Category}.
-     * If a tag with the same name (case-insensitive) does not already exist in the database,
-     * it will be created and saved with:
-     * <ul>
-     *     <li>{@code name} from the left side of the line</li>
-     *     <li>{@code category} from the right side of the line</li>
-     *     <li>{@code usageCount} set to {@code 0}</li>
-     * </ul>
-     * <p>
-     * The method logs the number of tags added during initialization and handles errors gracefully
-     * by logging them without crashing the application.
-     * <p>
-     * Example content of {@code tags.txt}:
-     * <pre>
-     *     Digital Twin:Technology
-     *     Predictive Maintenance:Use Case
-     *     SCADA:System
-     * </pre>
-     *
-     * <p><b>Note:</b> Existing tags in the database will not be modified or duplicated.
+     * Loads tags from the tags.txt resource file and saves new tags to the database.
+     * Existing tags are not modified.
      */
     private void initializeTags() {
         try {
