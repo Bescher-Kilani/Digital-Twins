@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Client for fetching and processing templates from the external SMT repository.
+ * Client for fetching and processing templates from the external SMT (Sub-Model-Template) repository.
  */
 @Component
 @RequiredArgsConstructor

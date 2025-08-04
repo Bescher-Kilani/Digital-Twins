@@ -217,11 +217,15 @@ public class AASModelService {
      * @throws BadRequestException if the published model does not exist
      */
     public void addEntryModelToUser(String entryId, String userId)  throws BadRequestException {
-        String newModelId = this.createEmptyModel(userId).getId();
-        // get modelFromEntry and set published to false
-        AASModelDto entryModel = this.marketPlaceService.getPublishedModel(entryId);
-        entryModel.setPublished(false);
-        AASModelDto modelDto = this.saveModel(newModelId, userId, entryModel);
+        AASModel newModel = buildModelFromDto(userId, this.marketPlaceService.getPublishedModel(entryId));
+        // remove publish data
+        newModel.setPublished(false);
+        LocalDateTime now = LocalDateTime.now();
+        newModel.setUpdatedAt(now);
+        newModel.setCreatedAt(now);
+        newModel.setPublishMetadata(null);
+
+        this.aasModelRepository.save(newModel);
         this.marketPlaceService.incrementDownloadCount(entryId);
     }
 
