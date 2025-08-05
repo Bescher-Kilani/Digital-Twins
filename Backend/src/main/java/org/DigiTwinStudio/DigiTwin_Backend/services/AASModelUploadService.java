@@ -99,10 +99,8 @@ public class AASModelUploadService {
     }
 
     //Parses the MultipartFile into an AAS Environment (JSON format).
-    private Environment parseEnvironment(MultipartFile file) throws IOException, DeserializationException {
+    protected Environment parseEnvironment(MultipartFile file) throws IOException, DeserializationException {
         JsonDeserializer deserializer = new JsonDeserializer();
         return deserializer.read(file.getInputStream(), Environment.class);
     }
-
-
 }

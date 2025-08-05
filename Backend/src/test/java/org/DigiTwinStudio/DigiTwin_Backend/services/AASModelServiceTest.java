@@ -150,6 +150,26 @@ public class AASModelServiceTest {
         verify(aasModelRepository, never()).save(any());
     }
 
+    @Test
+    void saveModel_throwsException_whenInvalidFileIsReferenced() {
+        DefaultFile fileElem = new DefaultFile();
+        fileElem.setValue("invalid-file-id");
+
+        DefaultSubmodel sub = copySubmodel("sub-1");
+        sub.setSubmodelElements(List.of(fileElem));
+
+        AASModel model = baseModel(modelId, userId, false, List.of(sub), new DefaultAssetAdministrationShell());
+        when(aasModelRepository.findById(modelId)).thenReturn(Optional.of(model));
+        UploadedFile uploadedFile = new UploadedFile(); // could be incomplete or mock
+        when(uploadedFileRepository.findById("invalid-file-id")).thenReturn(Optional.of(uploadedFile));
+        doThrow(new BadRequestException("Invalid file")).when(fileUploadValidator).validate(any());
+
+        AASModelDto dto = new AASModelDto();
+        dto.setAas(new DefaultAssetAdministrationShell());
+
+        assertThrows(BadRequestException.class, () -> service.saveModel(modelId, userId, dto));
+    }
+
     // testing createModel function
     @Test
     void createModel_buildsFromDto_validatesAndSaves() {
@@ -164,6 +184,25 @@ public class AASModelServiceTest {
         assertSame(existingDto, result);
         verify(aasModelValidator).validate(any(AASModel.class));
         verify(aasModelRepository).save(any(AASModel.class));
+    }
+
+    @Test
+    void createModel_throwsException_whenInvalidFileIsReferenced() {
+        DefaultFile fileElem = new DefaultFile();
+        fileElem.setValue("bad-file-id");
+
+        DefaultSubmodel sub = copySubmodel("sub-x");
+        sub.setSubmodelElements(List.of(fileElem));
+
+        AASModelDto dto = new AASModelDto();
+        dto.setAas(new DefaultAssetAdministrationShell());
+        dto.setSubmodels(List.of(sub));
+
+        UploadedFile uploadedFile = new UploadedFile();
+        when(uploadedFileRepository.findById("bad-file-id")).thenReturn(Optional.of(uploadedFile));
+        doThrow(new BadRequestException("File validation failed")).when(fileUploadValidator).validate(any());
+
+        assertThrows(BadRequestException.class, () -> service.createModel(userId, dto));
     }
 
     // testing publishModel function
@@ -196,6 +235,22 @@ public class AASModelServiceTest {
         verify(marketPlaceService, never()).publish(any(), any());
     }
 
+    @Test
+    void publishModel_throwsException_whenInvalidFileIsReferenced() {
+        DefaultFile fileElem = new DefaultFile();
+        fileElem.setValue("bad-file-id");
+
+        DefaultSubmodel sub = copySubmodel("sub-pub");
+        sub.setSubmodelElements(List.of(fileElem));
+
+        AASModel model = baseModel(modelId, userId, false, List.of(sub), new DefaultAssetAdministrationShell());
+        when(aasModelRepository.findById(modelId)).thenReturn(Optional.of(model));
+        when(uploadedFileRepository.findById("bad-file-id")).thenReturn(Optional.of(new UploadedFile()));
+        doThrow(new BadRequestException("Invalid file")).when(fileUploadValidator).validate(any());
+
+        assertThrows(BadRequestException.class, () -> service.publishModel(modelId, userId, new PublishRequestDto()));
+    }
+
     // testing unpublishModel function
     @Test
     void unpublishModel_callsService_whenPublished() throws Exception {
@@ -221,6 +276,22 @@ public class AASModelServiceTest {
 
         assertThrows(ForbiddenException.class, () -> service.unpublishModel(modelId, userId));
         verify(marketPlaceService, never()).unpublish(anyString(), any());
+    }
+
+    @Test
+    void unpublishModel_throwsException_whenInvalidFileIsReferenced() {
+        DefaultFile fileElem = new DefaultFile();
+        fileElem.setValue("bad-file-id");
+
+        DefaultSubmodel sub = copySubmodel("sub-unpub");
+        sub.setSubmodelElements(List.of(fileElem));
+
+        AASModel model = baseModel(modelId, userId, true, List.of(sub), new DefaultAssetAdministrationShell());
+        when(aasModelRepository.findById(modelId)).thenReturn(Optional.of(model));
+        when(uploadedFileRepository.findById("bad-file-id")).thenReturn(Optional.of(new UploadedFile()));
+        doThrow(new BadRequestException("Invalid file")).when(fileUploadValidator).validate(any());
+
+        assertThrows(BadRequestException.class, () -> service.unpublishModel(modelId, userId));
     }
 
     // testing addEntryModelToUser function
@@ -399,36 +470,6 @@ public class AASModelServiceTest {
         verify(aasModelRepository, never()).deleteById(anyString());
         verify(marketPlaceEntryRepository, never()).deleteById(anyString());
         verify(uploadedFileRepository, never()).deleteById(anyString());
-    }
-
-    // testing validateModelWithFiles function
-    @Test
-    void validateModelWithFiles_throwsNotFound_whenFileMissing() {
-        DefaultFile missingFileElem = new DefaultFile();
-        missingFileElem.setValue("missing-file");
-        DefaultSubmodel sub = copySubmodel("s");
-        sub.setSubmodelElements(new ArrayList<>(List.of(missingFileElem)));
-
-        AASModel model = baseModel(modelId, userId, false, new ArrayList<>(List.of(sub)), new DefaultAssetAdministrationShell());
-        when(uploadedFileRepository.findById("missing-file")).thenReturn(Optional.empty());
-
-        assertThrows(NotFoundException.class, () -> service.validateModelWithFiles(model));
-        verify(fileUploadValidator, never()).validate(any());
-    }
-
-    @Test
-    void validateModelWithFiles_callsValidator_whenFilePresent() {
-        DefaultFile fileElem = new DefaultFile();
-        fileElem.setValue("file-ok");
-        DefaultSubmodel sub = copySubmodel("s");
-        sub.setSubmodelElements(new ArrayList<>(List.of(fileElem)));
-
-        AASModel model = baseModel(modelId, userId, false, new ArrayList<>(List.of(sub)), new DefaultAssetAdministrationShell());
-        when(uploadedFileRepository.findById("file-ok")).thenReturn(Optional.of(new UploadedFile()));
-
-        service.validateModelWithFiles(model);
-
-        verify(fileUploadValidator).validate(any());
     }
 
     private static AASModel baseModel(String id, String owner, boolean published, List<DefaultSubmodel> subs, DefaultAssetAdministrationShell shell) {

@@ -274,6 +274,7 @@ public class AASModelService {
         replaceSubmodel(model, submodelId, dto);
 
         model.setUpdatedAt(LocalDateTime.now());
+
         aasModelValidator.validate(model);
 
         return aasModelMapper.toDto(aasModelRepository.save(model));
@@ -320,14 +321,7 @@ public class AASModelService {
         return aasModelMapper.toDto(aasModelRepository.save(model));
     }
 
-    /**
-     * Validates that all file references in the submodels of the given model exist and are valid.
-     *
-     * @param model the AAS model to validate
-     * @throws NotFoundException if a referenced file does not exist
-     * @throws BadRequestException if a referenced file is invalid
-     */
-    public void validateModelWithFiles(AASModel model) {
+    private void validateModelWithFiles(AASModel model) {
         if (model.getSubmodels() != null && !model.getSubmodels().isEmpty()) {
             for (DefaultSubmodel submodel : model.getSubmodels()) {
                 for (String fileId : findFileIdsInSubmodel(submodel)) {
@@ -385,12 +379,6 @@ public class AASModelService {
         return fileIds;
     }
 
-    private void validateOwnership(AASModel model, String userId) {
-        if (!model.getOwnerId().equals(userId)) {
-            throw new ForbiddenException("Access denied: model does not belong to user.");
-        }
-    }
-
     private void doesSubmodelExist(AASModel model, DefaultSubmodel submodel) {
         boolean exists = model.getSubmodels().stream()
                 .anyMatch(existing -> existing.getId().equals(submodel.getId()));
@@ -423,5 +411,11 @@ public class AASModelService {
                 .orElseThrow(() -> new NotFoundException("Model with ID '" + id + "' not found."));
         validateOwnership(model, userId);
         return model;
+    }
+
+    private void validateOwnership(AASModel model, String userId) {
+        if (!model.getOwnerId().equals(userId)) {
+            throw new ForbiddenException("Access denied: model does not belong to user.");
+        }
     }
 }
