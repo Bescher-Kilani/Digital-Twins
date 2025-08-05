@@ -16,11 +16,13 @@ import org.DigiTwinStudio.DigiTwin_Backend.validation.SubmodelValidator;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
@@ -50,10 +52,22 @@ public class SubmodelServiceTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+        service = new SubmodelService(
+                submodelValidator,
+                uploadedFileRepository,
+                submodelMapper,
+                templateRepository,
+                aasModelRepository
+        );
+    }
+
     // testing createEmptySubmodelFromTemplate function
     @Test
     void createEmptySubmodelFromTemplate_parsesTemplate_andReturnsDto() throws Exception {
-        String templateId = "tpl-1";
+        String templateId = "template-123";
 
         // Valid DefaultSubmodel JSON (AAS4J), idShort included
         JsonNode json = objectMapper.readTree("""
@@ -80,7 +94,7 @@ public class SubmodelServiceTest {
 
     @Test
     void createEmptySubmodelFromTemplate_wrapsParseErrors_asBadRequest() throws Exception {
-        String templateId = "bad";
+        String templateId = "badTemplate";
 
         // malformed JSON to force parse failure
         JsonNode badJson = objectMapper.readTree("{\"notSubmodel\": true}");
@@ -98,15 +112,15 @@ public class SubmodelServiceTest {
     // testing getSubmodel function
     @Test
     void getSubmodel_returnsDto_whenFoundByIdShort() {
-        String modelId = "m1";
-        String idShort = "s1";
+        String modelId = "model-1";
+        String idShort = "testModel";
 
         DefaultSubmodel sm = new DefaultSubmodel();
         sm.setIdShort(idShort);
 
         AASModel model = AASModel.builder()
                 .id(modelId)
-                .ownerId("u1")
+                .ownerId("testUser1")
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .published(false)
@@ -132,10 +146,10 @@ public class SubmodelServiceTest {
 
     @Test
     void getSubmodel_throwsNotFound_whenSubmodelMissing() {
-        String modelId = "m1";
+        String modelId = "model-1";
         AASModel model = AASModel.builder()
                 .id(modelId)
-                .ownerId("u1")
+                .ownerId("testUser1")
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .published(false)
