@@ -101,6 +101,9 @@ public class MarketPlaceService {
         if (!Objects.equals(userId, model.getOwnerId())) {
             throw new ForbiddenException("Current user does not have permission to unpublish model.");
         }
+        if (!model.isPublished()) {
+            throw new BadRequestException("Model is not published.");
+        }
 
         // Decrement usage count for each tag (if any)
         if (model.getPublishMetadata() != null && model.getPublishMetadata().getTagIds() != null) {
@@ -143,7 +146,11 @@ public class MarketPlaceService {
      * @throws BadRequestException if no model exists for the given ID
      */
     public AASModelDto getPublishedModel(String entryId) throws BadRequestException {
-        return this.aasModelMapper.toDto(this.aasModelRepository.findById(entryId).orElseThrow(() -> new BadRequestException("No entry found for id: " + entryId)));
+        AASModel model = this.aasModelRepository.findById(entryId).orElseThrow(() -> new BadRequestException("No entry found for id: " + entryId));
+        if (!model.isPublished()) {
+            throw new BadRequestException("Model is not published.");
+        }
+        return this.aasModelMapper.toDto(model);
     }
 
     /**

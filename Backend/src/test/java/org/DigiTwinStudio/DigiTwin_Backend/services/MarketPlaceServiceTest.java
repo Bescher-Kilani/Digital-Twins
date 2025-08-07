@@ -115,6 +115,18 @@ class MarketPlaceServiceTest {
         assertTrue(ex.getMessage().contains("Invalid tag IDs"));
     }
 
+    @Test
+    void publish_shouldThrowIfModelAlreadyPublished() {
+        // --- Arrange ---
+        model.setPublished(true); // Simulate that the model is already published
+
+        // --- Act & Assert ---
+        // Expect a BadRequestException because publishing an already published model is not allowed
+        assertThrows(BadRequestException.class, () ->
+                service.publish(publishRequest, model)
+        );
+    }
+
     // --- Unpublish ---
     @Test
     void unpublish_shouldResetMetadataAndDeleteEntry() {
@@ -164,6 +176,19 @@ class MarketPlaceServiceTest {
     }
 
     @Test
+    void unpublish_shouldThrowIfModelNotPublished() {
+        // --- Arrange ---
+        model.setPublished(false); // Model is not published
+        model.setOwnerId(userId);  // User is the rightful owner
+
+        // --- Act & Assert ---
+        // Expect a BadRequestException because the model is not currently published
+        assertThrows(BadRequestException.class, () ->
+                service.unpublish(userId, model)
+        );
+    }
+
+    @Test
     void unpublish_shouldThrowWhenUserIsNotOwner() {
         // --- Arrange ---
 
@@ -195,6 +220,35 @@ class MarketPlaceServiceTest {
         assertThrows(NotFoundException.class, () ->
                 service.unpublish(userId, model)
         );
+    }
+
+    @Test
+    void unpublish_shouldNotDecrementUsageBelowZero() {
+        // --- Arrange ---
+        model.setPublished(true);
+        model.setOwnerId(userId);
+        model.setPublishMetadata(PublishMetadata.builder()
+                .tagIds(List.of(tagId))
+                .author("author")
+                .shortDescription("desc")
+                .publishedAt(LocalDateTime.now())
+                .build());
+
+        tag.setUsageCount(0); // Already at 0
+        when(tagRepo.findByIdIn(List.of(tagId))).thenReturn(List.of(tag));
+
+        MarketplaceEntry entry = MarketplaceEntry.builder().id(modelId).build();
+        when(entryRepo.findById(modelId)).thenReturn(Optional.of(entry));
+
+        // --- Act ---
+        service.unpublish(userId, model);
+
+        // --- Assert ---
+        verify(tagRepo).saveAll(argThat(tags -> {
+            List<Tag> tagList = new ArrayList<>();
+            tags.forEach(tagList::add);
+            return tagList.size() == 1 && tagList.getFirst().getUsageCount() == 0;
+        }));
     }
 
     // --- List All Entries ---
@@ -231,6 +285,7 @@ class MarketPlaceServiceTest {
         // --- Arrange ---
 
         // Simulate the repository returning a model for the given ID
+        model.setPublished(true);
         when(modelRepo.findById("entryId")).thenReturn(Optional.of(model));
 
         // Simulate the mapping of the model to its corresponding DTO
@@ -257,6 +312,19 @@ class MarketPlaceServiceTest {
         // --- Act & Assert ---
 
         // Expect a BadRequestException when the model is not found
+        assertThrows(BadRequestException.class, () ->
+                service.getPublishedModel("entryId")
+        );
+    }
+
+    @Test
+    void getPublishedModel_shouldThrowIfModelNotPublished() {
+        // --- Arrange ---
+        model.setPublished(false); // Model exists but is not published
+        when(modelRepo.findById("entryId")).thenReturn(Optional.of(model));
+
+        // --- Act & Assert ---
+        // Expect a BadRequestException because only published models are allowed
         assertThrows(BadRequestException.class, () ->
                 service.getPublishedModel("entryId")
         );
@@ -325,7 +393,7 @@ class MarketPlaceServiceTest {
         assertEquals(tags, result);
     }
 
-    // --- Search (Basic Test Only) ---
+    // --- Search  ---
     @Test
     void search_withoutText_shouldUseBasicQuery() {
         // --- Arrange ---
@@ -347,6 +415,27 @@ class MarketPlaceServiceTest {
 
         // The Result should be an empty list since no entries matched
         assertTrue(results.isEmpty());
+    }
+
+    @Test
+    void search_withText_shouldUseTextSearchQuery() {
+        // --- Arrange ---
+        MarketplaceSearchRequest req = new MarketplaceSearchRequest();
+        req.setSearchText("test-model");
+
+        MarketplaceEntry entry = MarketplaceEntry.builder().id("e1").build();
+        MarketplaceEntryDto dto = new MarketplaceEntryDto();
+
+        when(mongoTemplate.find(any(Query.class), eq(MarketplaceEntry.class)))
+                .thenReturn(List.of(entry));
+        when(marketplaceMapper.toDto(entry)).thenReturn(dto);
+
+        // --- Act ---
+        List<MarketplaceEntryDto> results = service.search(req);
+
+        // --- Assert ---
+        assertEquals(1, results.size()); // Expect a result due to matching text
+        verify(marketplaceMapper).toDto(entry); // Ensure mapper is called
     }
 }
 
