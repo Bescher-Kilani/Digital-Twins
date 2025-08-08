@@ -76,9 +76,14 @@ public class SMTRepoClient {
             }
 
             // Version.Revision from administration
+            // Check if the administration field exists and has both version and revision
+            JsonNode admin = item.path("administration");
+            if (!admin.hasNonNull("version") || !admin.hasNonNull("revision")) {
+                log.info("Skipping template '{}' because it lacks complete administration (version/revision)", name);
+                continue;
+            }
             String version = "";
             String revision = "";
-            JsonNode admin = item.path("administration");
             if (admin.hasNonNull("version") && admin.hasNonNull("revision")) {
                 version = admin.path("version").asText();
                 revision = admin.path("revision").asText();
