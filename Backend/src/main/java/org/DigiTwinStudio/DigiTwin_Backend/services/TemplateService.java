@@ -52,6 +52,10 @@ public class TemplateService {
     public void syncTemplatesFromRepo() {
         log.info("syncTemplatesFromRepo");
         List<Template> fetchedTemplates = smtRepoClient.fetchTemplates();
+        if (fetchedTemplates.isEmpty()) {
+            log.error("No templates fetched from repository");
+            return;
+        }
         log.info("Fetched {} templates.", fetchedTemplates.size());
 
         int newCount = 0;
