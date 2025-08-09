@@ -137,7 +137,6 @@ public class ExportService {
      * @return content of an exported file as byte[]
      */
     public byte[] exportTransientModel(AASModelDto dto, ExportFormat format) {
-        // ToDo: Maybe use different owner Id than "GUEST"
         AASModel model = this.aasModelMapper.fromDto(dto, "GUEST");
         return switch (format) {
             case JSON -> exportAsJson(model);
