@@ -46,11 +46,20 @@ public class StartUp implements ApplicationListener<ApplicationReadyEvent> {
 
         // INITIALIZATION
         log.info("Initialize templates.");
-        templateService.syncTemplatesFromRepo();
+        try {
+            templateService.syncTemplatesFromRepo();
+        } catch (RuntimeException e) {
+            log.error("Template sync failed", e);
+            log.warn("Templates may be out of date or not initialized!");
+        }
 
         log.info("Initialize tags.");
-        initializeTags();
-
+        try {
+            initializeTags(new ClassPathResource("tags.txt"));
+        } catch (RuntimeException e) {
+            log.error("Tag initialization failed", e);
+            log.warn("Tags may be out of date or not initialized!");
+        }
         log.info("StartUp completed.");
     }
 
@@ -58,10 +67,10 @@ public class StartUp implements ApplicationListener<ApplicationReadyEvent> {
      * Loads tags from the tags.txt resource file and saves new tags to the database.
      * Existing tags are not modified.
      */
-    private void initializeTags() {
+    void initializeTags(ClassPathResource resource) {
         try {
-            log.info("Initializing Tags from tags.txt");
-            BufferedReader reader = new BufferedReader(new InputStreamReader(new ClassPathResource("tags.txt").getInputStream(), StandardCharsets.UTF_8));
+            log.info("Initializing Tags from {}", resource.getFilename());
+            BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8));
 
             Stream<String> tagStream = reader.lines()
                     .map(String::trim)
