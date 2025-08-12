@@ -5,6 +5,7 @@ import org.DigiTwinStudio.DigiTwin_Backend.domain.Tag;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.AASModelDto;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.MarketplaceEntryDto;
 import org.DigiTwinStudio.DigiTwin_Backend.dtos.MarketplaceSearchRequest;
+import org.DigiTwinStudio.DigiTwin_Backend.exceptions.NotFoundException;
 import org.DigiTwinStudio.DigiTwin_Backend.services.AASModelService;
 import org.DigiTwinStudio.DigiTwin_Backend.services.MarketPlaceService;
 import org.junit.jupiter.api.Test;
@@ -14,25 +15,26 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
 
-import java.util.stream.IntStream;
-import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.IntStream;
+import java.util.stream.Collectors;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -45,8 +47,13 @@ class MarketplaceControllerTest {
     static class TestSecurityConfig {
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-            http.authorizeHttpRequests(authz -> authz.anyRequest().permitAll())
-                    .csrf(AbstractHttpConfigurer::disable);
+            http
+                    .csrf(AbstractHttpConfigurer::disable)
+                    .authorizeHttpRequests(a -> a
+                            .requestMatchers("/marketplace/**").authenticated()
+                            .anyRequest().permitAll()
+                    )
+                    .oauth2ResourceServer(o -> o.jwt(Customizer.withDefaults()));
             return http.build();
         }
     }
@@ -63,9 +70,11 @@ class MarketplaceControllerTest {
     @MockitoBean
     private AASModelService aasModelService;
 
+    // -------- GET /marketplace (auth required)
     @Test
-    void listAllEntries_ReturnsEntries() throws Exception {
-        // Given
+    void listAllEntries_WithAuth_ReturnsEntries() throws Exception {
+        // Arrange
+        String userId = "user-1";
         MarketplaceEntryDto entry = MarketplaceEntryDto.builder()
                 .id("entry-1")
                 .name("Test Model")
@@ -75,12 +84,12 @@ class MarketplaceControllerTest {
                 .publishedAt(LocalDateTime.now())
                 .downloadCount(10)
                 .build();
-
         List<MarketplaceEntryDto> entries = Collections.singletonList(entry);
         when(marketPlaceService.listAllEntries()).thenReturn(entries);
 
-        // When & Then
-        mockMvc.perform(get("/marketplace"))
+        // Act & Assert
+        mockMvc.perform(get("/marketplace")
+                        .with(jwt().jwt(j -> j.subject(userId))))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$[0].id").value("entry-1"))
@@ -90,15 +99,67 @@ class MarketplaceControllerTest {
     }
 
     @Test
-    void getModelByEntryId_ReturnsModel() throws Exception {
-        // Given
+    void listAllEntries_WithoutAuth_Returns401() throws Exception {
+        // Act & Assert
+        mockMvc.perform(get("/marketplace"))
+                .andExpect(status().isUnauthorized());
+
+        verify(marketPlaceService, never()).listAllEntries();
+    }
+
+    @Test
+    void listAllEntries_WhenEmpty_ReturnsEmptyList() throws Exception {
+        // Arrange
+        String userId = "user-1";
+        when(marketPlaceService.listAllEntries()).thenReturn(Collections.emptyList());
+
+        // Act & Assert
+        mockMvc.perform(get("/marketplace")
+                        .with(jwt().jwt(j -> j.subject(userId))))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$").isEmpty());
+
+        verify(marketPlaceService).listAllEntries();
+    }
+
+    @Test
+    void listAllEntries_WithLargeDataset_PerformsWell() throws Exception {
+        // Arrange
+        String userId = "user-1";
+        List<MarketplaceEntryDto> largeList = IntStream.range(0, 1000)
+                .mapToObj(i -> MarketplaceEntryDto.builder()
+                        .id("entry-" + i)
+                        .name("Model " + i)
+                        .build())
+                .collect(Collectors.toList());
+        when(marketPlaceService.listAllEntries()).thenReturn(largeList);
+
+        // Act
+        long startTime = System.currentTimeMillis();
+        mockMvc.perform(get("/marketplace")
+                        .with(jwt().jwt(j -> j.subject(userId))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1000));
+        long duration = System.currentTimeMillis() - startTime;
+
+        // Assert
+        assertTrue(duration < 5000, "Response took too long: " + duration + "ms");
+    }
+
+    // -------- GET /marketplace/{entryId} (auth required)
+    @Test
+    void getModelByEntryId_WithAuth_ReturnsModel() throws Exception {
+        // Arrange
+        String userId = "user-1";
         AASModelDto model = AASModelDto.builder()
                 .id("model-1")
                 .build();
         when(marketPlaceService.getPublishedModel("entry-1")).thenReturn(model);
 
-        // When & Then
-        mockMvc.perform(get("/marketplace/entry-1"))
+        // Act & Assert
+        mockMvc.perform(get("/marketplace/entry-1")
+                        .with(jwt().jwt(j -> j.subject(userId))))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value("model-1"));
@@ -107,20 +168,46 @@ class MarketplaceControllerTest {
     }
 
     @Test
+    void getModelByEntryId_WithoutAuth_Returns401() throws Exception {
+        // Act & Assert
+        mockMvc.perform(get("/marketplace/entry-1"))
+                .andExpect(status().isUnauthorized());
+
+        verify(marketPlaceService, never()).getPublishedModel(anyString());
+    }
+
+    @Test
+    void getModelByEntryId_NotFound_Returns404() throws Exception {
+        // Arrange
+        String userId = "user-1";
+        when(marketPlaceService.getPublishedModel("non-existent"))
+                .thenThrow(new NotFoundException("Entry not found"));
+
+        // Act & Assert
+        mockMvc.perform(get("/marketplace/non-existent")
+                        .with(jwt().jwt(j -> j.subject(userId))))
+                .andExpect(status().isNotFound());
+
+        verify(marketPlaceService).getPublishedModel("non-existent");
+    }
+
+    // -------- GET /marketplace/tags (auth required)
+    @Test
     void getAllTags_ReturnsTags() throws Exception {
-        // Given
+        // Arrange
+        String userId = "user-1";
         Tag tag = Tag.builder()
                 .id("tag-1")
                 .name("Industrial")
                 .category("Domain")
                 .usageCount(5)
                 .build();
-
         List<Tag> tags = Collections.singletonList(tag);
         when(marketPlaceService.getAllTags()).thenReturn(tags);
 
-        // When & Then
-        mockMvc.perform(get("/marketplace/tags"))
+        // Act & Assert
+        mockMvc.perform(get("/marketplace/tags")
+                        .with(jwt().jwt(j -> j.subject(userId))))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$[0].id").value("tag-1"))
@@ -130,22 +217,39 @@ class MarketplaceControllerTest {
     }
 
     @Test
+    void getAllTags_WhenEmpty_ReturnsEmptyList() throws Exception {
+        // Arrange
+        String userId = "user-1";
+        when(marketPlaceService.getAllTags()).thenReturn(Collections.emptyList());
+
+        // Act & Assert
+        mockMvc.perform(get("/marketplace/tags")
+                        .with(jwt().jwt(j -> j.subject(userId))))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$").isEmpty());
+
+        verify(marketPlaceService).getAllTags();
+    }
+
+    // -------- POST /marketplace/search (auth required)
+    @Test
     void search_WithValidRequest_ReturnsResults() throws Exception {
-        // Given
+        // Arrange
+        String userId = "user-1";
         MarketplaceSearchRequest request = MarketplaceSearchRequest.builder()
                 .searchText("test")
                 .build();
-
         MarketplaceEntryDto entry = MarketplaceEntryDto.builder()
                 .id("entry-1")
                 .name("Test Model")
                 .build();
-
         List<MarketplaceEntryDto> results = Collections.singletonList(entry);
         when(marketPlaceService.search(any(MarketplaceSearchRequest.class))).thenReturn(results);
 
-        // When & Then
+        // Act & Assert
         mockMvc.perform(post("/marketplace/search")
+                        .with(jwt().jwt(j -> j.subject(userId)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -156,76 +260,16 @@ class MarketplaceControllerTest {
     }
 
     @Test
-    void addEntryToUser_WithValidEntryId_ReturnsOk() throws Exception {
-        // Given
-        String entryId = "entry-1";
-        String userId = "user-123";
-
-        // Create a mock JWT
-        Jwt mockJwt = mock(Jwt.class);
-        when(mockJwt.getSubject()).thenReturn(userId);
-
-        doNothing().when(aasModelService).addEntryModelToUser(entryId, userId);
-
-        // When & Then
-        mockMvc.perform(post("/marketplace/{entryId}/add-to-user", entryId)
-                        .with(jwt().jwt(mockJwt)))
-                .andExpect(status().isOk());
-
-        verify(aasModelService).addEntryModelToUser(entryId, userId);
-    }
-
-    @Test
-    void listAllEntries_WhenEmpty_ReturnsEmptyList() throws Exception {
-        // Given
-        when(marketPlaceService.listAllEntries()).thenReturn(Collections.emptyList());
-
-        // When & Then
-        mockMvc.perform(get("/marketplace"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$").isEmpty());
-
-        verify(marketPlaceService).listAllEntries();
-    }
-
-    @Test
-    void getModelByEntryId_WithNonExistentId_ThrowsException() throws Exception {
-        // Given
-        when(marketPlaceService.getPublishedModel("non-existent"))
-                .thenThrow(new RuntimeException("Entry not found"));
-
-        // When & Then
-        mockMvc.perform(get("/marketplace/non-existent"))
-                .andExpect(status().isInternalServerError());
-
-        verify(marketPlaceService).getPublishedModel("non-existent");
-    }
-
-    @Test
-    void getAllTags_WhenEmpty_ReturnsEmptyList() throws Exception {
-        // Given
-        when(marketPlaceService.getAllTags()).thenReturn(Collections.emptyList());
-
-        // When & Then
-        mockMvc.perform(get("/marketplace/tags"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$").isEmpty());
-
-        verify(marketPlaceService).getAllTags();
-    }
-
-    @Test
     void search_WithEmptyRequest_ReturnsResults() throws Exception {
-        // Given
+        // Arrange
+        String userId = "user-1";
         MarketplaceSearchRequest request = MarketplaceSearchRequest.builder().build();
-
         List<MarketplaceEntryDto> results = Collections.emptyList();
         when(marketPlaceService.search(any(MarketplaceSearchRequest.class))).thenReturn(results);
 
-        // When & Then
+        // Act & Assert
         mockMvc.perform(post("/marketplace/search")
+                        .with(jwt().jwt(j -> j.subject(userId)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -236,23 +280,23 @@ class MarketplaceControllerTest {
 
     @Test
     void search_WithComplexSearchRequest_ReturnsResults() throws Exception {
-        // Given
+        // Arrange
+        String userId = "user-1";
         MarketplaceSearchRequest request = MarketplaceSearchRequest.builder()
                 .searchText("complex search")
                 .tagIds(Arrays.asList("tag1", "tag2"))
                 .publishedAfter(LocalDateTime.now().minusDays(7))
                 .build();
-
         MarketplaceEntryDto entry = MarketplaceEntryDto.builder()
                 .id("entry-1")
                 .name("Complex Model")
                 .build();
-
         when(marketPlaceService.search(any(MarketplaceSearchRequest.class)))
                 .thenReturn(Collections.singletonList(entry));
 
-        // When & Then
+        // Act & Assert
         mockMvc.perform(post("/marketplace/search")
+                        .with(jwt().jwt(j -> j.subject(userId)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -261,48 +305,47 @@ class MarketplaceControllerTest {
         verify(marketPlaceService).search(any(MarketplaceSearchRequest.class));
     }
 
+    // -------- POST /marketplace/{entryId}/add-to-user (auth required)
     @Test
-    void addEntryToUser_WhenServiceThrowsException_ReturnsError() throws Exception {
-        // Given
+    void addEntryToUser_WithAuth_ReturnsOk() throws Exception {
+        // Arrange
         String entryId = "entry-1";
         String userId = "user-123";
+        doNothing().when(aasModelService).addEntryModelToUser(entryId, userId);
 
-        Jwt mockJwt = mock(Jwt.class);
-        when(mockJwt.getSubject()).thenReturn(userId);
-
-        doThrow(new RuntimeException("Service error"))
-                .when(aasModelService).addEntryModelToUser(entryId, userId);
-
-        // When & Then
+        // Act & Assert
         mockMvc.perform(post("/marketplace/{entryId}/add-to-user", entryId)
-                        .with(jwt().jwt(mockJwt)))
-                .andExpect(status().isInternalServerError());
+                        .with(jwt().jwt(j -> j.subject(userId))))
+                .andExpect(status().isOk());
 
         verify(aasModelService).addEntryModelToUser(entryId, userId);
     }
 
-    // Performance/Load testing considerations
     @Test
-    void listAllEntries_WithLargeDataset_PerformsWell() throws Exception {
-        // Given - simulate large dataset
-        List<MarketplaceEntryDto> largeList = IntStream.range(0, 1000)
-                .mapToObj(i -> MarketplaceEntryDto.builder()
-                        .id("entry-" + i)
-                        .name("Model " + i)
-                        .build())
-                .collect(Collectors.toList());
+    void addEntryToUser_WithoutAuth_Returns401() throws Exception {
+        // Arrange
+        String entryId = "entry-1";
 
-        when(marketPlaceService.listAllEntries()).thenReturn(largeList);
+        // Act & Assert
+        mockMvc.perform(post("/marketplace/{entryId}/add-to-user", entryId))
+                .andExpect(status().isUnauthorized());
 
-        // When & Then
-        long startTime = System.currentTimeMillis();
+        verify(aasModelService, never()).addEntryModelToUser(anyString(), anyString());
+    }
 
-        mockMvc.perform(get("/marketplace"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1000));
+    @Test
+    void addEntryToUser_WhenServiceThrowsException_ReturnsError() throws Exception {
+        // Arrange
+        String entryId = "entry-1";
+        String userId = "user-123";
+        doThrow(new RuntimeException("Service error"))
+                .when(aasModelService).addEntryModelToUser(entryId, userId);
 
-        long duration = System.currentTimeMillis() - startTime;
-        // Assert reasonable response time (adjust the threshold as needed)
-        assertTrue(duration < 5000, "Response took too long: " + duration + "ms");
+        // Act & Assert
+        mockMvc.perform(post("/marketplace/{entryId}/add-to-user", entryId)
+                        .with(jwt().jwt(j -> j.subject(userId))))
+                .andExpect(status().isInternalServerError());
+
+        verify(aasModelService).addEntryModelToUser(entryId, userId);
     }
 }
