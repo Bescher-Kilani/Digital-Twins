@@ -42,6 +42,12 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    /**
+     *  Handles Exception when Strings cant be matched to their enum type.
+     *  In this case, e.g., if a bad user sends an export request with a format other than "JSON" or "AASX"
+     * @param ex the thrown MMethodArgumentTypeMismatchException
+     * @return 400 Bad Request with error message and timestamp
+     */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<Object> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException ex) {
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
@@ -100,7 +106,7 @@ public class GlobalExceptionHandler {
      * Logs the full stack trace for internal investigation while returning a safe generic message to the client.
      *
      * @param ex the thrown unexpected exception
-     * @return 500 Internal Server Error with generic message
+     * @return 500 Internal Server Error with a generic message
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleGeneralException(Exception ex) {
