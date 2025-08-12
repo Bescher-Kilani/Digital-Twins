@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -37,8 +38,13 @@ class UploadControllerTest {
     static class TestSecurityConfig {
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-            http.authorizeHttpRequests(authz -> authz.anyRequest().permitAll())
-                    .csrf(AbstractHttpConfigurer::disable);
+            http
+                    .csrf(AbstractHttpConfigurer::disable)
+                    .authorizeHttpRequests(a -> a
+                            .requestMatchers("/api/upload/**").authenticated()
+                            .anyRequest().permitAll()
+                    )
+                    .oauth2ResourceServer(o -> o.jwt(Customizer.withDefaults()));
             return http.build();
         }
     }
@@ -52,9 +58,10 @@ class UploadControllerTest {
     @MockitoBean
     private PropertyFileUploadService propertyFileUploadService;
 
+    // -------- POST /api/upload/model (auth required)
     @Test
     void uploadModelFile_WithValidJsonFile_ReturnsCreated() throws Exception {
-        // Given
+        // Arrange
         String userId = "user-123";
         String jsonContent = "{\"assetAdministrationShells\": [], \"submodels\": []}";
         MockMultipartFile file = new MockMultipartFile(
@@ -63,17 +70,14 @@ class UploadControllerTest {
                 MediaType.APPLICATION_JSON_VALUE,
                 jsonContent.getBytes()
         );
-
         AASModelDto expectedDto = AASModelDto.builder()
                 .id("model-1")
                 .published(false)
                 .createdAt(LocalDateTime.now())
                 .build();
+        when(aasModelUploadService.uploadAASModel(any(), eq(userId))).thenReturn(expectedDto);
 
-        when(aasModelUploadService.uploadAASModel(any(), eq(userId)))
-                .thenReturn(expectedDto);
-
-        // When & Then
+        // Act & Assert
         mockMvc.perform(multipart("/api/upload/model")
                         .file(file)
                         .with(jwt().jwt(builder -> builder.subject(userId))))
@@ -87,7 +91,7 @@ class UploadControllerTest {
 
     @Test
     void uploadModelFile_WithoutAuthentication_ReturnsUnauthorized() throws Exception {
-        // Given
+        // Arrange
         MockMultipartFile file = new MockMultipartFile(
                 "file",
                 "test.json",
@@ -95,7 +99,7 @@ class UploadControllerTest {
                 "{}".getBytes()
         );
 
-        // When & Then
+        // Act & Assert
         mockMvc.perform(multipart("/api/upload/model").file(file))
                 .andExpect(status().isUnauthorized());
 
@@ -104,7 +108,7 @@ class UploadControllerTest {
 
     @Test
     void uploadModelFile_WithInvalidFile_ReturnsBadRequest() throws Exception {
-        // Given
+        // Arrange
         String userId = "user-123";
         MockMultipartFile file = new MockMultipartFile(
                 "file",
@@ -112,11 +116,10 @@ class UploadControllerTest {
                 MediaType.APPLICATION_JSON_VALUE,
                 "invalid json".getBytes()
         );
-
         when(aasModelUploadService.uploadAASModel(any(), eq(userId)))
                 .thenThrow(new UploadException("Invalid file format"));
 
-        // When & Then
+        // Act & Assert
         mockMvc.perform(multipart("/api/upload/model")
                         .file(file)
                         .with(jwt().jwt(builder -> builder.subject(userId))))
@@ -126,8 +129,31 @@ class UploadControllerTest {
     }
 
     @Test
+    void uploadModelFile_WithEmptyFile_ReturnsBadRequest() throws Exception {
+        // Arrange
+        String userId = "user-123";
+        MockMultipartFile emptyFile = new MockMultipartFile(
+                "file",
+                "empty.json",
+                MediaType.APPLICATION_JSON_VALUE,
+                new byte[0]
+        );
+        when(aasModelUploadService.uploadAASModel(any(), eq(userId)))
+                .thenThrow(new UploadException("File is empty"));
+
+        // Act & Assert
+        mockMvc.perform(multipart("/api/upload/model")
+                        .file(emptyFile)
+                        .with(jwt().jwt(builder -> builder.subject(userId))))
+                .andExpect(status().isBadRequest());
+
+        verify(aasModelUploadService).uploadAASModel(any(), eq(userId));
+    }
+
+    // -------- POST /api/upload/property (auth required)
+    @Test
     void uploadPropertyFile_WithValidFile_ReturnsOk() throws Exception {
-        // Given
+        // Arrange
         String userId = "user-123";
         String modelId = "model-456";
         MockMultipartFile file = new MockMultipartFile(
@@ -136,7 +162,6 @@ class UploadControllerTest {
                 MediaType.APPLICATION_PDF_VALUE,
                 "PDF content".getBytes()
         );
-
         UploadResponseDto expectedResponse = UploadResponseDto.builder()
                 .fileId("file-789")
                 .filename("document.pdf")
@@ -144,11 +169,10 @@ class UploadControllerTest {
                 .size(11L)
                 .uploadedAt(LocalDateTime.now())
                 .build();
-
         when(propertyFileUploadService.uploadFile(any(), eq(modelId), eq(userId)))
                 .thenReturn(expectedResponse);
 
-        // When & Then
+        // Act & Assert
         mockMvc.perform(multipart("/api/upload/property")
                         .file(file)
                         .param("modelId", modelId)
@@ -164,28 +188,8 @@ class UploadControllerTest {
     }
 
     @Test
-    void uploadPropertyFile_WithoutModelId_ReturnsBadRequest() throws Exception {
-        // Given
-        String userId = "user-123";
-        MockMultipartFile file = new MockMultipartFile(
-                "file",
-                "document.pdf",
-                MediaType.APPLICATION_PDF_VALUE,
-                "PDF content".getBytes()
-        );
-
-        // When & Then
-        mockMvc.perform(multipart("/api/upload/property")
-                        .file(file)
-                        .with(jwt().jwt(builder -> builder.subject(userId))))
-                .andExpect(status().isBadRequest());
-
-        verify(propertyFileUploadService, never()).uploadFile(any(), anyString(), anyString());
-    }
-
-    @Test
     void uploadPropertyFile_WithoutAuthentication_ReturnsUnauthorized() throws Exception {
-        // Given
+        // Arrange
         MockMultipartFile file = new MockMultipartFile(
                 "file",
                 "document.pdf",
@@ -193,7 +197,7 @@ class UploadControllerTest {
                 "PDF content".getBytes()
         );
 
-        // When & Then
+        // Act & Assert
         mockMvc.perform(multipart("/api/upload/property")
                         .file(file)
                         .param("modelId", "model-123"))
@@ -203,8 +207,29 @@ class UploadControllerTest {
     }
 
     @Test
+    void uploadPropertyFile_WithoutModelId_ReturnsBadRequest() throws Exception {
+        // Arrange
+        String userId = "user-123";
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "document.pdf",
+                MediaType.APPLICATION_PDF_VALUE,
+                "PDF content".getBytes()
+        );
+
+        // Act & Assert
+        mockMvc.perform(multipart("/api/upload/property")
+                        .file(file)
+                        .with(jwt().jwt(builder -> builder.subject(userId))))
+                .andExpect(status().isBadRequest());
+
+        verify(propertyFileUploadService, never()).uploadFile(any(), anyString(), anyString());
+    }
+
+
+    @Test
     void uploadPropertyFile_WithInvalidFile_ReturnsBadRequest() throws Exception {
-        // Given
+        // Arrange
         String userId = "user-123";
         String modelId = "model-456";
         MockMultipartFile file = new MockMultipartFile(
@@ -213,11 +238,10 @@ class UploadControllerTest {
                 "application/octet-stream",
                 "executable content".getBytes()
         );
-
         when(propertyFileUploadService.uploadFile(any(), eq(modelId), eq(userId)))
                 .thenThrow(new UploadException("Invalid file type"));
 
-        // When & Then
+        // Act & Assert
         mockMvc.perform(multipart("/api/upload/property")
                         .file(file)
                         .param("modelId", modelId)
@@ -228,14 +252,46 @@ class UploadControllerTest {
     }
 
     @Test
+    void uploadPropertyFile_WithImageFile_ReturnsOk() throws Exception {
+        // Arrange
+        String userId = "user-123";
+        String modelId = "model-456";
+        MockMultipartFile imageFile = new MockMultipartFile(
+                "file",
+                "image.png",
+                MediaType.IMAGE_PNG_VALUE,
+                "PNG image data".getBytes()
+        );
+        UploadResponseDto expectedResponse = UploadResponseDto.builder()
+                .fileId("image-789")
+                .filename("image.png")
+                .contentType(MediaType.IMAGE_PNG_VALUE)
+                .size(15L)
+                .uploadedAt(LocalDateTime.now())
+                .build();
+        when(propertyFileUploadService.uploadFile(any(), eq(modelId), eq(userId)))
+                .thenReturn(expectedResponse);
+
+        // Act & Assert
+        mockMvc.perform(multipart("/api/upload/property")
+                        .file(imageFile)
+                        .param("modelId", modelId)
+                        .with(jwt().jwt(builder -> builder.subject(userId))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.contentType").value(MediaType.IMAGE_PNG_VALUE));
+
+        verify(propertyFileUploadService).uploadFile(any(), eq(modelId), eq(userId));
+    }
+
+    // -------- DELETE /api/upload/{fileId} (auth required)
+    @Test
     void deleteFile_WithValidFileId_ReturnsNoContent() throws Exception {
-        // Given
+        // Arrange
         String userId = "user-123";
         String fileId = "file-789";
-
         doNothing().when(propertyFileUploadService).deleteFile(fileId, userId);
 
-        // When & Then
+        // Act & Assert
         mockMvc.perform(delete("/api/upload/{fileId}", fileId)
                         .with(jwt().jwt(builder -> builder.subject(userId))))
                 .andExpect(status().isNoContent());
@@ -245,8 +301,11 @@ class UploadControllerTest {
 
     @Test
     void deleteFile_WithoutAuthentication_ReturnsUnauthorized() throws Exception {
-        // When & Then
-        mockMvc.perform(delete("/api/upload/file-123"))
+        // Arrange
+        String fileId = "file-123";
+
+        // Act & Assert
+        mockMvc.perform(delete("/api/upload/{fileId}", fileId))
                 .andExpect(status().isUnauthorized());
 
         verify(propertyFileUploadService, never()).deleteFile(anyString(), anyString());
@@ -267,62 +326,5 @@ class UploadControllerTest {
                 .andExpect(status().isInternalServerError());
 
         verify(propertyFileUploadService).deleteFile(fileId, userId);
-    }
-
-    @Test
-    void uploadModelFile_WithEmptyFile_ReturnsBadRequest() throws Exception {
-        // Given
-        String userId = "user-123";
-        MockMultipartFile emptyFile = new MockMultipartFile(
-                "file",
-                "empty.json",
-                MediaType.APPLICATION_JSON_VALUE,
-                new byte[0]
-        );
-
-        when(aasModelUploadService.uploadAASModel(any(), eq(userId)))
-                .thenThrow(new UploadException("File is empty"));
-
-        // When & Then
-        mockMvc.perform(multipart("/api/upload/model")
-                        .file(emptyFile)
-                        .with(jwt().jwt(builder -> builder.subject(userId))))
-                .andExpect(status().isBadRequest());
-
-        verify(aasModelUploadService).uploadAASModel(any(), eq(userId));
-    }
-
-    @Test
-    void uploadPropertyFile_WithImageFile_ReturnsOk() throws Exception {
-        // Given
-        String userId = "user-123";
-        String modelId = "model-456";
-        MockMultipartFile imageFile = new MockMultipartFile(
-                "file",
-                "image.png",
-                MediaType.IMAGE_PNG_VALUE,
-                "PNG image data".getBytes()
-        );
-
-        UploadResponseDto expectedResponse = UploadResponseDto.builder()
-                .fileId("image-789")
-                .filename("image.png")
-                .contentType(MediaType.IMAGE_PNG_VALUE)
-                .size(15L)
-                .uploadedAt(LocalDateTime.now())
-                .build();
-
-        when(propertyFileUploadService.uploadFile(any(), eq(modelId), eq(userId)))
-                .thenReturn(expectedResponse);
-
-        // When & Then
-        mockMvc.perform(multipart("/api/upload/property")
-                        .file(imageFile)
-                        .param("modelId", modelId)
-                        .with(jwt().jwt(builder -> builder.subject(userId))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.contentType").value(MediaType.IMAGE_PNG_VALUE));
-
-        verify(propertyFileUploadService).uploadFile(any(), eq(modelId), eq(userId));
     }
 }

@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -31,9 +32,19 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     *  Handles request-parameter-related exception caused by supplying fewer parameters in HTTP request than necessary
+     * @param ex the thrown MissingRequestParameterException
+     * @return 400 Bad Request with error message and timestamp
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<Object> handleMissingServletRequestParameterException(MissingServletRequestParameterException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    /**
      * Handles cases where a requested resource (e.g., model, template) is not found.
      *
-     * @param ex the thrown NotFoundException
+     * @param ex the thrown-NotFoundException
      * @return 404 Not Found with error message and timestamp
      */
     @ExceptionHandler(NotFoundException.class)
