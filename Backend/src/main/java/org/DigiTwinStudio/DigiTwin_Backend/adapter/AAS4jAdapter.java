@@ -44,6 +44,9 @@ public class AAS4jAdapter {
      * @throws SerializationException if serialization fails
      */
     public String serializeToJsonString(Object aasObject) throws SerializationException {
+        if (aasObject == null) {
+            throw new SerializationException("AAS object is null");
+        }
         return this.jsonSerializer.write(aasObject);
     }
 
@@ -75,9 +78,10 @@ public class AAS4jAdapter {
         // add AssetAdministrationShell
         environment.setAssetAdministrationShells(List.of(model.getAas()));
 
-        if (model.getSubmodels() != null && !model.getSubmodels().isEmpty()) {
+        List<DefaultSubmodel> defaultSubmodels = model.getSubmodels();
+        if (defaultSubmodels != null && !defaultSubmodels.isEmpty()) {
             // convert DefaultSubmodels to Submodels and add to Environment
-            List<Submodel> submodels = model.getSubmodels().stream()
+            List<Submodel> submodels = defaultSubmodels.stream()
                     .map(defaultSubmodel -> (Submodel) defaultSubmodel)
                     .collect(Collectors.toList());
             environment.setSubmodels(submodels);
@@ -122,6 +126,9 @@ public class AAS4jAdapter {
      * @throws ExportException if serialization fails
      */
     public JsonNode serializeToJson(Object aasObject) {
+        if  (aasObject == null) {
+            throw new ExportException("AAS object is null");
+        }
         try {
             return jsonSerializer.toNode(aasObject);
 
