@@ -12,8 +12,8 @@ import org.DigiTwinStudio.DigiTwin_Backend.mapper.SubmodelMapper;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.AASModelRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.TemplateRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.UploadedFileRepository;
-import org.DigiTwinStudio.DigiTwin_Backend.validation.SubmodelValidator;
 
+import org.DigiTwinStudio.DigiTwin_Backend.validation.SubmodelValidator;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
 
 import org.junit.jupiter.api.BeforeEach;

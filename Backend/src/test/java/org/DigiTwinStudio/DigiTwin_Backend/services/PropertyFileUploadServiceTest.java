@@ -5,8 +5,8 @@ import org.DigiTwinStudio.DigiTwin_Backend.dtos.UploadResponseDto;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.BadRequestException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.FileStorageException;
 import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException;
-import org.DigiTwinStudio.DigiTwin_Backend.validation.FileUploadValidator;
 
+import org.DigiTwinStudio.DigiTwin_Backend.validation.FileUploadValidator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
