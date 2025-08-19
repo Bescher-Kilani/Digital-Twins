@@ -34,31 +34,6 @@ public class AASModelValidatorTest {
     @Mock
     private SubmodelValidator submodelValidator;
 
-    private static AASModel createBaseModel(boolean published) {
-        return AASModel.builder()
-                .id("model-1")
-                .ownerId("user-1")
-                .published(published)
-                .aas(new DefaultAssetAdministrationShell.Builder().idShort("TestAAS").build())
-                .submodels(new ArrayList<>())
-                .build();
-    }
-
-    private static PublishMetadata createValidPublishMetadata() {
-        return PublishMetadata.builder()
-                .author("Test Author")
-                .shortDescription("Test Description")
-                .tagIds(List.of("tag1", "tag2"))
-                .build();
-    }
-
-    private static DefaultSubmodel createSubmodel(String id) {
-        DefaultSubmodel submodel = new DefaultSubmodel();
-        submodel.setId(id);
-        submodel.setIdShort("TestSubmodel" + id);
-        return submodel;
-    }
-
     // testing validate() function for AAS structure
     @Test
     void validate_succeeds_withValidUnpublishedModel() {
@@ -359,5 +334,30 @@ public class AASModelValidatorTest {
             // Submodel validation should not be called when AAS validation fails
             verify(submodelValidator, never()).validate(any());
         }
+    }
+
+    private static AASModel createBaseModel(boolean published) {
+        return AASModel.builder()
+                .id("model-1")
+                .ownerId("user-1")
+                .published(published)
+                .aas(new DefaultAssetAdministrationShell.Builder().idShort("TestAAS").build())
+                .submodels(new ArrayList<>())
+                .build();
+    }
+
+    private static PublishMetadata createValidPublishMetadata() {
+        return PublishMetadata.builder()
+                .author("Test Author")
+                .shortDescription("Test Description")
+                .tagIds(List.of("tag1", "tag2"))
+                .build();
+    }
+
+    private static DefaultSubmodel createSubmodel(String id) {
+        DefaultSubmodel submodel = new DefaultSubmodel();
+        submodel.setId(id);
+        submodel.setIdShort("TestSubmodel" + id);
+        return submodel;
     }
 }

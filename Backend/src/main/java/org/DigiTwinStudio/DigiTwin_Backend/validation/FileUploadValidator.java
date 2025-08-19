@@ -36,8 +36,9 @@ public class FileUploadValidator {
             throw new BadRequestException("Uploaded file must not be empty");
         }
         // 2. Check size
-        if (file.getSize() > MAX_FILE_SIZE) {
-            double sizeMb = file.getSize() / 1024.0 / 1024.0;
+        long size = file.getSize();
+        if (size > MAX_FILE_SIZE) {
+            double sizeMb = size / 1024.0 / 1024.0;
             double maxMb  = MAX_FILE_SIZE / 1024.0 / 1024.0;
             throw new BadRequestException(
                     String.format("File size (%.2f MB) exceeds maximum of %.2f MB", sizeMb, maxMb)
@@ -53,6 +54,7 @@ public class FileUploadValidator {
         if (filename == null || filename.isBlank() || !filename.contains(".")) {
             throw new BadRequestException("Original filename must not be blank and must contain an extension");
         }
+
         String ext = filename.substring(filename.lastIndexOf('.') + 1).toLowerCase();
 
         // 5. Look up the allowed MIME type for this extension
