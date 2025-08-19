@@ -59,7 +59,7 @@ public class SubmodelValidator {
         // For File elements, enforce allowed MIME types
         if (element instanceof File) {
             String mime = ((File) element).getContentType();
-            if (!ALLOWED_MIME_TYPES.contains(mime)) {
+            if (mime == null || mime.isBlank() || !ALLOWED_MIME_TYPES.contains(mime)) {
                 throw new BadRequestException("Unsupported MIME type: " + mime);
             }
         }
