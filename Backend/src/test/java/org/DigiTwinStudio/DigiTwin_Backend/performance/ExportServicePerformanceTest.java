@@ -49,7 +49,7 @@ public class ExportServicePerformanceTest {
     @Mock
     private AASModelMapper aasModelMapper;
 
-    // Performance thresholds based on non-functional requirements
+    // NFR thresholds
     private static final Duration FAST_RESPONSE_THRESHOLD = Duration.ofSeconds(3);  // WK60
     private static final Duration MAX_EXPORT_TIME = Duration.ofSeconds(15);         // WK80
     private static final Duration JSON_FAST_THRESHOLD = Duration.ofMillis(500);
