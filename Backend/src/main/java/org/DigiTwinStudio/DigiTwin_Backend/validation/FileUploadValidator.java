@@ -7,6 +7,8 @@ import org.DigiTwinStudio.DigiTwin_Backend.exceptions.ValidationException;
 
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
+import java.util.Locale;
+
 
 /**
  * Component responsible for validating uploaded files
@@ -41,7 +43,7 @@ public class FileUploadValidator {
             double sizeMb = size / 1024.0 / 1024.0;
             double maxMb  = MAX_FILE_SIZE / 1024.0 / 1024.0;
             throw new BadRequestException(
-                    String.format("File size (%.2f MB) exceeds maximum of %.2f MB", sizeMb, maxMb)
+                    String.format(Locale.US,"File size (%.2f MB) exceeds maximum of %.2f MB", sizeMb, maxMb)
             );
         }
         // 3. Determine MIME type
