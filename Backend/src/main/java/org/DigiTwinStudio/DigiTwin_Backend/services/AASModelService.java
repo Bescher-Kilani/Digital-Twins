@@ -88,15 +88,18 @@ public class AASModelService {
      * @throws BadRequestException if the model is invalid
      */
     public AASModelDto saveModel(String id, String userId, AASModelDto aasModelDto) {
-        AASModel existingModel = getModelOrThrow(id, userId);
-
-        existingModel.setAas(aasModelDto.getAas());
-        existingModel.setUpdatedAt(LocalDateTime.now());
-
-        validateModelWithFiles(existingModel);
-        aasModelValidator.validate(existingModel);
-
-        return aasModelMapper.toDto(aasModelRepository.save(existingModel));
+        AASModel modelToSave = buildModelFromDto(userId, aasModelDto);
+        // validate
+        aasModelValidator.validate(modelToSave);
+        validateModelWithFiles(modelToSave);
+        // check if model exists and delete adn save new
+        if (aasModelRepository.existsById(id)) {
+            aasModelRepository.save(modelToSave);
+            aasModelRepository.deleteById(id);
+            return aasModelMapper.toDto(modelToSave);
+        } else {
+            throw new NotFoundException("Model with id " + id + " not found");
+        }
     }
 
     /**
