@@ -273,6 +273,17 @@ export default function Dashboard() {
     setModelToDelete(null);
   };
 
+  // Function to handle opening/editing a model
+  const handleOpen = (model) => {
+    if (!model.id) {
+      showToast(t("dashboard.missingInfo"), 'danger');
+      return;
+    }
+
+    // Navigate to the create page with the model ID
+    navigate(`/create/${model.id}`);
+  };
+
   // Function to open publish modal
   const openPublishModal = async (model) => {
     setModelToPublish(model);
@@ -553,7 +564,12 @@ export default function Dashboard() {
                 <small>{t("dashboard.lastEdit")}: {model.lastEdit}</small>
               </div>
               <div className="d-flex flex-column gap-2">
-                <Button size="sm" variant="primary">
+                <Button 
+                  size="sm" 
+                  variant="primary" 
+                  onClick={() => handleOpen(model)}
+                  title={t("dashboard.open")}
+                >
                   <OpenIcon></OpenIcon> {t("dashboard.open")}
                 </Button>
                 <Dropdown>

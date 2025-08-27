@@ -24,6 +24,7 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="create" element={<CreatePage />} />
+          <Route path="create/:modelId" element={<CreatePage />} />
           <Route path="create/complete" element={<CreateComplete />} />
           <Route path="templates" element={<SubmodelTemplateSelection />} />
           <Route path="templates/create" element={<CreateTemplate />} />

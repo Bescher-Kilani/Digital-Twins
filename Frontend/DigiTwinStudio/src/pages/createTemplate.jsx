@@ -217,9 +217,13 @@ const parseSubmodelElements = (submodelElements) => {
   const fields = [];
   
   if (!submodelElements || !Array.isArray(submodelElements)) {
+    console.log('No submodel elements or not array:', submodelElements);
     return fields;
   }
   
+  console.log('=== PARSING SUBMODEL ELEMENTS ===');
+  console.log('Number of elements to parse:', submodelElements.length);
+
   // Recursive function to traverse nested structures
   const traverseElements = (elements, parentPath = "") => {
     if (!elements || !Array.isArray(elements)) {
@@ -229,14 +233,18 @@ const parseSubmodelElements = (submodelElements) => {
     elements.forEach(element => {
       // Skip elements without proper idShort
       if (!element.idShort) {
+        console.log('Skipping element without idShort:', element);
         return;
       }
+      
+      console.log(`🔍 Parsing element: ${element.idShort}, modelType: ${element.modelType}, value:`, element.value);
       
       const cardinality = getFieldClassification(element);
       const fullPath = parentPath ? `${parentPath}.${element.idShort}` : element.idShort;
       
       switch (element.modelType) {
         case "Property":
+          console.log(`  ✅ Adding Property field: ${element.idShort}`);
           fields.push({
             name: fullPath,
             type: "prop",
@@ -254,6 +262,7 @@ const parseSubmodelElements = (submodelElements) => {
           break;
           
         case "MultiLanguageProperty":
+          console.log(`  ✅ Adding MultiLanguageProperty field: ${element.idShort}`);
           fields.push({
             name: fullPath,
             type: "multiLanguage",
@@ -343,9 +352,20 @@ const parseSubmodelElements = (submodelElements) => {
           });
           break;
           
-        case "SubmodelElementCollection":
-          // Handle special case for AddressInformation
-          if (element.idShort === "AddressInformation" && (!element.value || element.value.length === 0)) {
+        case "SubmodelElementCollection": {
+          // Handle special case for AddressInformation - use the same logic as our data extraction
+          const isAddressInfo = element.idShort && (
+            element.idShort.toLowerCase().includes('address') ||
+            element.idShort === 'AddressInformation' ||
+            (element.value && Array.isArray(element.value) && 
+             element.value.some(child => 
+               child.idShort && (child.idShort === 'Street' || child.idShort === 'CityTown' || 
+                               child.idShort === 'HouseNumber' || child.idShort === 'NationalCode')
+             ))
+          );
+          
+          if (isAddressInfo) {
+            console.log(`  ✅ Adding Address field: ${element.idShort}`);
             fields.push({
               name: fullPath,
               type: "address",
@@ -359,6 +379,7 @@ const parseSubmodelElements = (submodelElements) => {
               originalElement: element
             });
           } else {
+            console.log(`  ✅ Adding Collection field: ${element.idShort}`);
             // Treat as a collection component
             fields.push({
               name: fullPath,
@@ -375,8 +396,10 @@ const parseSubmodelElements = (submodelElements) => {
             });
           }
           break;
+        }
           
         default:
+          console.log(`  ⚠️  Adding Unknown element as prop: ${element.idShort}, modelType: ${element.modelType}`);
           // Handle unknown types as properties
           fields.push({
             name: fullPath,
@@ -393,6 +416,12 @@ const parseSubmodelElements = (submodelElements) => {
   
   // Start the traversal from the root elements
   traverseElements(submodelElements);
+  
+  console.log('=== PARSING COMPLETE ===');
+  console.log(`Total fields parsed: ${fields.length}`);
+  fields.forEach(field => {
+    console.log(`  - ${field.name}: type=${field.type}, cardinality=${field.cardinality}`);
+  });
   
   return fields;
 };
@@ -584,7 +613,17 @@ export default function CreateTemplate() {
       // fetchTemplateFields();
       
       // For now, use parsed data from selected template
+      console.log('=== TEMPLATE CONFIG DEBUG ===');
+      console.log('selectedTemplate for getTemplateConfig:', selectedTemplate);
+      console.log('selectedTemplate.templateData:', selectedTemplate?.templateData);
+      console.log('selectedTemplate.templateData.json:', selectedTemplate?.templateData?.json);
+      console.log('selectedTemplate.templateData.json.submodelElements:', selectedTemplate?.templateData?.json?.submodelElements);
+      
       const templateConfig = getTemplateConfig(selectedTemplate);
+      console.log('Parsed template config:', templateConfig);
+      console.log('Template config requiredFields:', templateConfig.requiredFields);
+      console.log('Template config advancedFields:', templateConfig.advancedFields);
+      
       setFormConfig(templateConfig);
       console.log('Selected template:', selectedTemplate);
     }
@@ -599,15 +638,29 @@ export default function CreateTemplate() {
 
   // Initialize form data based on API configuration
   useEffect(() => {
+    console.log('=== FORM INITIALIZATION USEEFFECT TRIGGERED ===');
+    console.log('formConfig.requiredFields.length:', formConfig.requiredFields.length);
+    console.log('formConfig.advancedFields.length:', formConfig.advancedFields.length);
+    console.log('editingTemplate:', editingTemplate);
+    
     const initializeFormData = () => {
       const initialData = {};
+      
+      console.log('=== FORM INITIALIZATION DEBUG ===');
+      console.log('editingTemplate in initialization:', editingTemplate);
+      console.log('editingTemplate?.data?.data:', editingTemplate?.data?.data);
       
       // Initialize both required and advanced fields
       const allFields = [...formConfig.requiredFields, ...formConfig.advancedFields];
       
+      console.log('All fields to initialize:', allFields.map(f => ({ name: f.name, type: f.type })));
+      
       allFields.forEach(field => {
         // Handle both nested field names (with dots) and regular field names
         const fieldName = field.name;
+        const existingValue = editingTemplate?.data?.data?.[fieldName];
+        
+        console.log(`Initializing field "${fieldName}" (type: ${field.type}), existing value:`, existingValue);
         
         switch (field.type) {
           case "prop": {
@@ -669,6 +722,7 @@ export default function CreateTemplate() {
         }
       });
       
+      console.log('Final initialData before setFormData:', initialData);
       setFormData(initialData);
     };
 
@@ -679,7 +733,12 @@ export default function CreateTemplate() {
 
   // Generic field update function with validation
   const updateField = (fieldName, value) => {
-    setFormData(prev => ({ ...prev, [fieldName]: value }));
+    console.log(`🔄 Updating field "${fieldName}" with value:`, value);
+    setFormData(prev => {
+      const updated = { ...prev, [fieldName]: value };
+      console.log(`📝 FormData after updating ${fieldName}:`, updated);
+      return updated;
+    });
     
     // Find field configuration for validation
     const fieldConfig = [...formConfig.requiredFields, ...formConfig.advancedFields]
@@ -766,10 +825,19 @@ export default function CreateTemplate() {
     setValidationErrors({});
     setShowValidationErrors(false);
     
+    console.log('=== SAVE TEMPLATE DEBUG ===');
+    console.log('Current formData when saving:', formData);
+    console.log('formData keys:', Object.keys(formData));
+    console.log('ManufacturerProductType value:', formData.ManufacturerProductType);
+    console.log('ManufacturerProductRoot value:', formData.ManufacturerProductRoot);
+    console.log('==========================');
+    
     const templateData = {
       title: formConfig.title,
-      selectedTemplate: selectedTemplate,
+      selectedTemplate: selectedTemplate, // This contains the clean template structure
+      templateData: selectedTemplate, // Also preserve it here for consistency with existing structure
       data: formData,
+      id: selectedTemplate?.templateData?.json?.id || formConfig.originalTemplate?.id,
       savedAt: new Date().toISOString()
     };
 
@@ -779,7 +847,8 @@ export default function CreateTemplate() {
     // If editing, include the template index to update
     const stateData = { 
       templateData: templateData,
-      originalFormData: originalFormData
+      originalFormData: originalFormData,
+      preserveModelId: location.state?.preserveModelId // Preserve the modelId for editing operations
     };
 
     // If editing an existing template, pass the index
@@ -797,6 +866,7 @@ export default function CreateTemplate() {
   const handleBackNavigation = () => {
     const originalFormData = location.state?.originalFormData || location.state?.formData;
     const currentSubmodelTemplates = location.state?.currentSubmodelTemplates || [];
+    const preserveModelId = location.state?.preserveModelId; // Preserve modelId
     
     if (editingTemplate) {
       // If editing, go back to create page with preserved form data and templates
@@ -804,7 +874,8 @@ export default function CreateTemplate() {
       navigate('/create', {
         state: {
           restoredFormData: originalFormData,
-          restoredSubmodelTemplates: currentSubmodelTemplates
+          restoredSubmodelTemplates: currentSubmodelTemplates,
+          preserveModelId: preserveModelId // Preserve modelId for editing operations
         }
       });
     } else {
@@ -813,7 +884,8 @@ export default function CreateTemplate() {
       navigate('/templates', {
         state: {
           formData: originalFormData,
-          currentSubmodelTemplates: currentSubmodelTemplates
+          currentSubmodelTemplates: currentSubmodelTemplates,
+          preserveModelId: preserveModelId // Preserve modelId even for new templates
         }
       });
     }

@@ -172,5 +172,12 @@
         "notification": "Notification"
       }
     }
+  },
+  "createPage": {
+    "modelLoaded": "Model loaded successfully!",
+    "loadModelError": "Failed to load model",
+    "modelUpdated": "Model updated successfully!",
+    "modelSaved": "Model saved successfully!",
+    "loadingModel": "Loading existing model..."
   }
 }
