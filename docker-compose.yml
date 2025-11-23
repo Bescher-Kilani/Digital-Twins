@@ -71,7 +71,7 @@ services:
   # Frontend Service
   frontend:
     build:
-      context: ./Frontend/DigiTwinStudio
+      context: ./Frontend
       dockerfile: Dockerfile
     container_name: digitwin-frontend
     ports:
