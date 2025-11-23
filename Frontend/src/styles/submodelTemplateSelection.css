@@ -1,0 +1,92 @@
+.step-active {
+  color: gold;
+  font-weight: bold;
+}
+.step-line-active {
+  background-color: gold;
+}
+.step-line {
+  background-color: #ccc;
+}
+
+.step-progress-item {
+  flex: 1 1 0;
+}
+
+.step-progress-left {
+  text-align: left;
+}
+
+.step-progress-center {
+  text-align: center;
+}
+
+.step-progress-right {
+  text-align: right;
+}
+
+.template-card {
+  background: #00376A;
+  background: linear-gradient(180deg, rgba(0, 55, 106, 1) 0%, rgba(1, 54, 106, 1) 50%, rgba(1, 54, 106, 1) 100%);
+  border: 3px solid #0E4175 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.submodel-template-container {
+  background: #012F63;
+  background: linear-gradient(180deg, rgba(1, 47, 99, 1) 0%, rgba(10, 75, 127, 1) 100%);
+  flex: 1;
+}
+
+.back-button {
+  background-color: #004277 !important;
+  border-color: #0D598B !important;
+  border-width: 2px !important;
+  color: white !important;
+}
+
+.back-button:hover {
+  background-color: #0D598B !important;
+  border-color: #004277 !important;
+  color: white !important;
+}
+
+.back-button:focus,
+.back-button:active {
+  background-color: #004277 !important;
+  border-color: #0D598B !important;
+  color: white !important;
+  box-shadow: 0 0 0 0.2rem rgba(13, 89, 139, 0.25) !important;
+}
+
+/* Search bar styling */
+.search-input {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border: 2px solid #0E4175 !important;
+  color: white !important;
+  border-radius: 8px 0 0 8px !important;
+}
+
+.search-input::placeholder {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.search-input:focus {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  border-color: #0D598B !important;
+  color: white !important;
+  box-shadow: 0 0 0 0.2rem rgba(13, 89, 139, 0.25) !important;
+}
+
+.search-icon {
+  background-color: #004277 !important;
+  border: 2px solid #0E4175 !important;
+  border-left: none !important;
+  color: white !important;
+  border-radius: 0 8px 8px 0 !important;
+}
+
+.search-icon-img {
+  filter: brightness(0) invert(1);
+}
