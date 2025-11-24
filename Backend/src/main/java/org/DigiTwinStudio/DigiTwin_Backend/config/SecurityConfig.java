@@ -88,18 +88,22 @@ public class SecurityConfig {
     }
 
     /**
-     * CORS configuration for local and Docker frontend origins.
+     * CORS configuration for local, Docker, and Railway frontend origins.
      *
      * @return the configured CORS configuration source
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:5173",  // Development frontend
-                "http://localhost:3000",  // Docker frontend
-                "http://frontend:80"      // Internal Docker network
+
+        // Use patterns to match Railway's dynamic URLs
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+                "http://localhost:*",              // Local development
+                "http://frontend:*",               // Docker internal
+                "https://*.railway.app",           // Railway deployment
+                "https://*.up.railway.app"         // Railway custom domains
         ));
+
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);

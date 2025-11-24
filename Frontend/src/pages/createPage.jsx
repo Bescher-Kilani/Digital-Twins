@@ -1114,7 +1114,8 @@ function CreatePage() {
         // User is authenticated - use authenticated endpoint ONLY
         if (effectiveModelId) {
           // Update existing model
-          response = await authenticatedFetch(`http://localhost:9090/models/${effectiveModelId}/save`, {
+          const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:9090';
+          response = await authenticatedFetch(`${API_URL}/models/${effectiveModelId}/save`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json'

@@ -1,29 +1,33 @@
-# Use OpenJDK 21 as base image
-FROM eclipse-temurin:21-jdk-alpine
-
-# Set working directory
+# Multi-stage build für Spring Boot Backend
+# Build Stage
+FROM maven:3.9.11-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 
-# Copy Maven wrapper and pom.xml
-COPY mvnw .
-COPY mvnw.cmd .
-COPY pom.xml .
-COPY .mvn .mvn
+# Copy Maven files FROM ROOT
+COPY Backend/pom.xml .
+COPY Backend/src ./src
 
-# Make Maven wrapper executable
-RUN chmod +x ./mvnw
+# Download dependencies
+RUN mvn dependency:go-offline -B
 
-# Download dependencies (this layer will be cached unless pom.xml changes)
-RUN ./mvnw dependency:go-offline -B
+# Build application
+RUN mvn clean package -DskipTests
 
-# Copy source code
-COPY src ./src
+# Runtime Stage
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
 
-# Build the application
-RUN ./mvnw clean package -DskipTests
+# Add non-root user for security
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
 
-# Expose port
-EXPOSE 9090
+# Copy built jar from build stage
+COPY --from=build /app/target/*.jar app.jar
 
-# Run the application
-CMD ["java", "-jar", "target/DigiTwin-Backend-0.0.1-SNAPSHOT.jar"]
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+
+ENTRYPOINT ["java", "-jar", "app.jar"]

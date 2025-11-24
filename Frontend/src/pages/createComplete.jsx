@@ -54,7 +54,8 @@ export default function CreateComplete() {
 
       if (authenticated) {
         // User is authenticated - use authenticated endpoint with authenticatedFetch
-        url = `http://localhost:9090/models/${modelId}/${modelIdShort}/export/${format}`;
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:9090';
+        url = `${API_URL}/models/${modelId}/${modelIdShort}/export/${format}`;
         console.log('Downloading file from authenticated endpoint:', url);
         
         response = await authenticatedFetch(url, {

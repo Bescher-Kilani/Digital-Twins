@@ -47,7 +47,8 @@ export default function Dashboard() {
         if (authenticated) {
           // User is authenticated - use authenticated endpoint ONLY
           console.log('User is authenticated, using authenticated endpoint for models');
-          response = await authenticatedFetch('http://localhost:9090/models', {
+          const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:9090';
+          response = await authenticatedFetch(`${API_URL}/models`, {
             method: 'GET'
           }, keycloak);
         } else {

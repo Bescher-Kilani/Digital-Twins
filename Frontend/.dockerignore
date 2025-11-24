@@ -5,7 +5,7 @@ yarn-error.log*
 .git
 .gitignore
 README.md
-Dockerfile
+Dockerfile.local
 .dockerignore
 dist
 .env.local
