@@ -20,6 +20,7 @@ function CreatePage() {
   const location = useLocation();
   const { modelId } = useParams();
   const { keycloak, authenticated } = useContext(KeycloakContext);
+  const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:9090';
 
   // State to store the effective modelId (from URL params or preserved from navigation)
   const [effectiveModelId, setEffectiveModelId] = useState(() => {
@@ -112,7 +113,7 @@ function CreatePage() {
     
     try {
       setLoadingModel(true);
-      const response = await authenticatedFetch(`http://localhost:9090/models/${id}`, {
+      const response = await authenticatedFetch(`${API_URL}/models/${id}`, {
         method: 'GET'
       }, keycloak);
 
@@ -1094,8 +1095,8 @@ function CreatePage() {
       // Log the HTTP request details for debugging
       console.log('=== HTTP REQUEST DEBUG ===');
       console.log('Request URL:', effectiveModelId 
-        ? `http://localhost:9090/models/${effectiveModelId}/save` 
-        : 'http://localhost:9090/models/new');
+        ? `${API_URL}/models/${effectiveModelId}/save`
+        : `${API_URL}/models/new`);
       console.log('Request Method:', effectiveModelId ? 'PUT' : 'POST');
       console.log('Request Body - ManufacturerProductType value:', 
         finalData.submodels?.[0]?.submodelElements?.find(e => e.idShort === 'ManufacturerProductType')?.value);
@@ -1114,7 +1115,6 @@ function CreatePage() {
         // User is authenticated - use authenticated endpoint ONLY
         if (effectiveModelId) {
           // Update existing model
-          const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:9090';
           response = await authenticatedFetch(`${API_URL}/models/${effectiveModelId}/save`, {
             method: 'PUT',
             headers: {
@@ -1124,7 +1124,7 @@ function CreatePage() {
           }, keycloak);
         } else {
           // Create new model
-          response = await authenticatedFetch('http://localhost:9090/models/new', {
+          response = await authenticatedFetch(`${API_URL}/models/new`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -1146,7 +1146,7 @@ function CreatePage() {
       } else {
         // User is not authenticated - use guest endpoint ONLY
         console.log('User is not authenticated, using guest endpoint');
-        response = await fetch('http://localhost:9090/guest/models/new', {
+        response = await fetch(`${API_URL}/guest/models/new`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

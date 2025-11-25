@@ -1,5 +1,6 @@
 // Token management utilities
 const KEYCLOAK_BASE_URL = 'http://localhost:8080/realms/DigiTwinStudio/protocol/openid-connect';
+const KEYCLOAK_URL =  import.meta.env.VITE_KEYCLOAK_URL || KEYCLOAK_BASE_URL
 const CLIENT_ID = 'digitwin-auth';
 
 // Helper function to decode base64url (JWT tokens use this instead of standard base64)
@@ -84,7 +85,7 @@ export const refreshAccessToken = async (keycloakInstance = null) => {
   try {
     console.log('Attempting to refresh access token...');
     
-    const response = await fetch(`${KEYCLOAK_BASE_URL}/token`, {
+    const response = await fetch(`${KEYCLOAK_URL}/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',

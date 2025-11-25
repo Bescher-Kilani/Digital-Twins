@@ -15,7 +15,10 @@ export default function SubmodelTemplateSelection() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  
+  const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:9090';
+
+
+
   // Get the original form data passed from /create
   const originalFormData = location.state?.formData;
 
@@ -51,7 +54,7 @@ export default function SubmodelTemplateSelection() {
     const fetchTemplates = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:9090/submodels/templates');
+        const response = await fetch(`${API_URL}/submodels/templates`);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

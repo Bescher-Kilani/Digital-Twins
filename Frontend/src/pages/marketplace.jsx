@@ -17,6 +17,8 @@ export default function Marketplace() {
     const [toasts, setToasts] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const entriesPerPage = 9;
+    const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:9090';
+
 
     const showToast = (title, message, isError = false) => {
         const toast = {
@@ -69,7 +71,7 @@ export default function Marketplace() {
         setLoading(true);
         try {
             console.log('Performing search with:', { searchText, tagIds });
-            const response = await authenticatedFetch("http://localhost:9090/marketplace/search", {
+            const response = await authenticatedFetch(`${API_URL}/marketplace/search`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -103,7 +105,7 @@ export default function Marketplace() {
 
             try {
                 // Load marketplace entries
-                const entriesResponse = await authenticatedFetch("http://localhost:9090/marketplace", {
+                const entriesResponse = await authenticatedFetch(`${API_URL}/marketplace`, {
                     method: "GET"
                 }, keycloak);
                 
@@ -113,7 +115,7 @@ export default function Marketplace() {
                 }
 
                 // Load tags
-                const tagsResponse = await authenticatedFetch("http://localhost:9090/marketplace/tags", {
+                const tagsResponse = await authenticatedFetch(`${API_URL}/marketplace/tags`, {
                     method: "GET"
                 }, keycloak);
                 
@@ -145,7 +147,7 @@ export default function Marketplace() {
         }
 
         try {
-            const response = await authenticatedFetch(`http://localhost:9090/marketplace/${entryId}/add-to-user`, {
+            const response = await authenticatedFetch(`${API_URL}/marketplace/${entryId}/add-to-user`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

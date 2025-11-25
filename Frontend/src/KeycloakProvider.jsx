@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { KeycloakContext } from "./KeycloakContext";
 import { startTokenRefreshInterval, stopTokenRefreshInterval } from "./utils/tokenManager";
 
+const KEYCLOAK_URL =  import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8080';
+
 // PKCE helper functions
 const generateCodeVerifier = () => {
   const array = new Uint8Array(32);
@@ -47,7 +49,7 @@ const initiateLogin = () => {
   
   // Generate code challenge
   generateCodeChallenge(codeVerifier).then(codeChallenge => {
-    const authUrl = new URL('http://localhost:8080/realms/DigiTwinStudio/protocol/openid-connect/auth');
+    const authUrl = new URL(`${KEYCLOAK_URL}/realms/DigiTwinStudio/protocol/openid-connect/auth`);
     authUrl.searchParams.set('client_id', 'digitwin-auth');
     authUrl.searchParams.set('redirect_uri', window.location.origin);
     authUrl.searchParams.set('response_type', 'code');
@@ -70,7 +72,8 @@ const logoutUser = () => {
   stopTokenRefreshInterval();
   
   // Build logout URL with id_token_hint if available
-  let logoutUrl = "http://localhost:8080/realms/DigiTwinStudio/protocol/openid-connect/logout?post_logout_redirect_uri=" + encodeURIComponent(window.location.origin);
+  let logoutUrl = `${KEYCLOAK_URL}/realms/DigiTwinStudio/protocol/openid-connect/logout?
+    post_logout_redirect_uri=` + encodeURIComponent(window.location.origin);
   if (idToken) {
     logoutUrl += "&id_token_hint=" + encodeURIComponent(idToken);
   }
@@ -85,7 +88,7 @@ const checkSilentSSO = () => {
   // Try to get tokens silently using a hidden iframe approach
   const iframe = document.createElement('iframe');
   iframe.style.display = 'none';
-  iframe.src = 'http://localhost:8080/realms/DigiTwinStudio/protocol/openid-connect/auth?' + 
+  iframe.src = `${KEYCLOAK_URL}/realms/DigiTwinStudio/protocol/openid-connect/auth?` +
     'client_id=digitwin-auth&' +
     'redirect_uri=' + encodeURIComponent(window.location.origin + '/silent-check-sso.html') + '&' +
     'response_type=code&' +
@@ -138,7 +141,7 @@ const checkSilentSSO = () => {
 
 // Helper to exchange code for tokens
 const exchangeCodeForTokens = (code) => {
-  fetch('http://localhost:8080/realms/DigiTwinStudio/protocol/openid-connect/token', {
+  fetch(`${KEYCLOAK_URL}/realms/DigiTwinStudio/protocol/openid-connect/token`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -262,7 +265,7 @@ export default function KeycloakProvider({ children }) {
         console.log("Safari: Processing login callback");
         
         // Exchange authorization code for tokens
-        fetch('http://localhost:8080/realms/DigiTwinStudio/protocol/openid-connect/token', {
+        fetch(`${KEYCLOAK_URL}/realms/DigiTwinStudio/protocol/openid-connect/token`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -358,7 +361,7 @@ export default function KeycloakProvider({ children }) {
       // Normal Keycloak initialization for other browsers
       import("keycloak-js").then(({ default: Keycloak }) => {
         const kc = new Keycloak({
-          url: "http://localhost:8080",
+          url: `${KEYCLOAK_URL}`,
           realm: "DigiTwinStudio",
           clientId: "digitwin-auth",
         });

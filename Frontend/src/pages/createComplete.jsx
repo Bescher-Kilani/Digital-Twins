@@ -15,6 +15,7 @@ export default function CreateComplete() {
   const modelName = location.state?.modelName || "Untitled Model";
   const modelId = location.state?.modelId;
   const modelIdShort = location.state?.modelIdShort;
+  const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:9090';
 
   // State for toast notifications
   const [toasts, setToasts] = React.useState([]);
@@ -54,7 +55,6 @@ export default function CreateComplete() {
 
       if (authenticated) {
         // User is authenticated - use authenticated endpoint with authenticatedFetch
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:9090';
         url = `${API_URL}/models/${modelId}/${modelIdShort}/export/${format}`;
         console.log('Downloading file from authenticated endpoint:', url);
         
@@ -63,7 +63,7 @@ export default function CreateComplete() {
         }, keycloak);
       } else {
         // User is not authenticated - use guest endpoint with regular fetch
-        url = `http://localhost:9090/guest/models/${modelId}/${modelIdShort}/export/${format}`;
+        url = `${API_URL}/guest/models/${modelId}/${modelIdShort}/export/${format}`;
         console.log('Downloading file from guest endpoint:', url);
         
         response = await fetch(url, {

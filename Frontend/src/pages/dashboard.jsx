@@ -34,6 +34,7 @@ export default function Dashboard() {
   const [modelToUnpublish, setModelToUnpublish] = useState(null);
   const navigate = useNavigate();
   const modelsPerPage = 4;
+  const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:9090';
   
   // Fetch models from API
   useEffect(() => {
@@ -47,7 +48,6 @@ export default function Dashboard() {
         if (authenticated) {
           // User is authenticated - use authenticated endpoint ONLY
           console.log('User is authenticated, using authenticated endpoint for models');
-          const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:9090';
           response = await authenticatedFetch(`${API_URL}/models`, {
             method: 'GET'
           }, keycloak);
@@ -121,7 +121,7 @@ export default function Dashboard() {
 
     try {
       // Use the model ID for both modelId and modelIdShort since we don't have separate values
-      const url = `http://localhost:9090/models/${model.id}/${model.title}/export/${format}`;
+      const url = `${API_URL}/models/${model.id}/${model.title}/export/${format}`;
       console.log('Downloading file from:', url);
       
       let response;
@@ -209,7 +209,7 @@ export default function Dashboard() {
     if (!model) return;
 
     try {
-      const url = `http://localhost:9090/models/${model.id}/delete`;
+      const url = `${API_URL}/models/${model.id}/delete`;
       console.log('Deleting model from:', url);
       
       let response;
@@ -293,7 +293,7 @@ export default function Dashboard() {
     // Fetch available tags
     setLoadingTags(true);
     try {
-      const response = await authenticatedFetch('http://localhost:9090/marketplace/tags', {
+      const response = await authenticatedFetch(`${API_URL}/marketplace/tags`, {
         method: 'GET'
       }, keycloak);
       
@@ -358,7 +358,7 @@ export default function Dashboard() {
         tagIds: publishForm.tagIds
       };
 
-      const response = await authenticatedFetch(`http://localhost:9090/models/${modelToPublish.id}/publish`, {
+      const response = await authenticatedFetch(`${API_URL}/models/${modelToPublish.id}/publish`, {
         method: 'POST',
         body: JSON.stringify(publishData)
       }, keycloak);
@@ -419,7 +419,7 @@ export default function Dashboard() {
     if (!model) return;
 
     try {
-      const response = await authenticatedFetch(`http://localhost:9090/models/${model.id}/unpublish`, {
+      const response = await authenticatedFetch(`${API_URL}/models/${model.id}/unpublish`, {
         method: 'POST'
       }, keycloak);
 

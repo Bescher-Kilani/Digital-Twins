@@ -8,6 +8,7 @@ export default function KeycloakProvider({ children }) {
   const [keycloak, setKeycloak] = useState(null);
   const [initError, setInitError] = useState(null);
   const initRef = useRef(false);
+  const KEYCLOAK_URL =  import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8080';
 
   useEffect(() => {
     // Prevent multiple initializations
@@ -18,7 +19,7 @@ export default function KeycloakProvider({ children }) {
 
     // Create a fresh Keycloak instance
     const kc = new Keycloak({
-        url: "http://localhost:8080",
+        url: `${KEYCLOAK_URL}`,
         realm: "DigiTwinStudio",
         clientId: "digitwin-auth",
     });

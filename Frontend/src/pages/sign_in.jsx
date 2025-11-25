@@ -10,6 +10,7 @@ function Signin() {
   const { t } = useTranslation();
   const { keycloak, ready } = useContext(KeycloakContext);
   const navigate = useNavigate();
+  const KEYCLOAK_URL =  import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8080';
 
   const handleLogin = () => {
     if (keycloak) {
@@ -21,7 +22,7 @@ function Signin() {
     if (keycloak) {
       // Use a simpler approach - direct URL to registration
       window.location.href =
-        "http://localhost:8080/realms/DigiTwinStudio/protocol/openid-connect/registrations?client_id=digitwin-auth&response_type=code&scope=openid%20profile%20email%20custom-profile&redirect_uri=" +
+          `${KEYCLOAK_URL}/realms/DigiTwinStudio/protocol/openid-connect/registrations?client_id=digitwin-auth&response_type=code&scope=openid%20profile%20email%20custom-profile&redirect_uri=` +
         encodeURIComponent(window.location.origin);
     }
   };
