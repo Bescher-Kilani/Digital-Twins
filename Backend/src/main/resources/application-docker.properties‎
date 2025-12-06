@@ -2,7 +2,7 @@ spring.data.mongodb.database=${MONGODB_DATABASE}
 spring.data.mongodb.uri=${MONGODB_URI}
 
 # Update Keycloak issuer URI for Docker environment
-spring.security.oauth2.resourceserver.jwt.issuer-uri=http://keycloak:8080/realms/DigiTwinStudio
+spring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:8080/realms/DigiTwinStudio
 logging.level.org.springframework.security=DEBUG
 
 # Health check endpoint
