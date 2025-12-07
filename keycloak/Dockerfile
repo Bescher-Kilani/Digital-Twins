@@ -31,4 +31,11 @@ WORKDIR /opt/keycloak
 EXPOSE 8080
 
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
-CMD ["start", "--optimized", "--http-enabled=true", "--proxy=edge"]
+
+
+CMD ["start-dev", \
+     "--import-realm", \
+     "--http-enabled=true", \
+     "--hostname-strict=false", \
+     "--hostname-strict-https=false", \
+     "--proxy=edge"]
