@@ -705,7 +705,7 @@ export default function Dashboard() {
       >
         <Modal.Title className="text-white">
           <GlobeIcon style={{ width: "20px", height: "20px", marginRight: "8px" }} />
-          Publish Model to Marketplace
+          Publish Model to ModelHub
         </Modal.Title>
       </Modal.Header>
       <Modal.Body 
@@ -730,7 +730,7 @@ export default function Dashboard() {
                 <Form.Control
                   as="textarea"
                   rows={3}
-                  placeholder="Enter a short description for the marketplace..."
+                  placeholder="Enter a short description for the ModelHub..."
                   value={publishForm.shortDescription}
                   onChange={(e) => handlePublishFormChange('shortDescription', e.target.value)}
                   style={{ 
@@ -776,7 +776,7 @@ export default function Dashboard() {
               
               <div className="text-muted small">
                 <p className="mb-1">
-                  <strong>Note:</strong> Once published, your model will be available in the marketplace for other users to discover and download.
+                  <strong>Note:</strong> Once published, your model will be available in the ModelHub for other users to discover and download.
                 </p>
                 <p className="mb-0">
                   Both description and at least one tag are required.
@@ -801,7 +801,7 @@ export default function Dashboard() {
           disabled={!publishForm.shortDescription.trim() || publishForm.tagIds.length === 0}
         >
           <GlobeIcon style={{ width: "16px", height: "16px", marginRight: "4px" }} />
-          Publish to Marketplace
+          Publish to ModelHub
         </Button>
       </Modal.Footer>
     </Modal>
@@ -833,7 +833,7 @@ export default function Dashboard() {
             </p>
             <p className="text-warning mb-0">
               <small>
-                <strong>Note:</strong> This will remove your model from the marketplace and make it unavailable for other users to discover and download.
+                <strong>Note:</strong> This will remove your model from the ModelHub and make it unavailable for other users to discover and download.
               </small>
             </p>
           </>
