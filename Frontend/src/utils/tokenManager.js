@@ -85,7 +85,7 @@ export const refreshAccessToken = async (keycloakInstance = null) => {
   try {
     console.log('Attempting to refresh access token...');
     
-    const response = await fetch(`${KEYCLOAK_URL}/token`, {
+    const response = await fetch(`${KEYCLOAK_URL}/realms/DigiTwinStudio/protocol/openid-connect/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
