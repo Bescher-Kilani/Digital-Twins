@@ -4,7 +4,7 @@ FROM quay.io/keycloak/keycloak:24.0.2 AS builder
 ENV KC_HEALTH_ENABLED=true
 ENV KC_METRICS_ENABLED=true
 
-# Configure database vendor for PostgreSQL
+# Configure database vendor
 ENV KC_DB=postgres
 
 # Performance optimizations
@@ -12,15 +12,15 @@ ENV JAVA_OPTS_APPEND="-Xms256m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSi
 
 WORKDIR /opt/keycloak
 
-# Copy realm configuration for import
+# Copy realm configuration
 COPY keycloak-import/ /opt/keycloak/data/import/
 
-# Build Keycloak with PostgreSQL support
+# Build Keycloak
 RUN /opt/keycloak/bin/kc.sh build
 
 FROM quay.io/keycloak/keycloak:24.0.2
 
-# Copy built artifacts from builder stage
+# Copy built artifacts
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
 
 # Set memory limits
@@ -28,15 +28,12 @@ ENV JAVA_OPTS_APPEND="-Xms256m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSi
 
 WORKDIR /opt/keycloak
 
-# Expose Keycloak port
 EXPOSE 8080
 
-# Use the Keycloak start script
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
 
-# Start in production mode with realm import
-# The database configuration will come from environment variables
-CMD ["start", \
+
+CMD ["start-dev", \
      "--import-realm", \
      "--http-enabled=true", \
      "--hostname-strict=false", \
