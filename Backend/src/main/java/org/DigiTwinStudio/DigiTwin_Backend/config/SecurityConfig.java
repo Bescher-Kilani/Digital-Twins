@@ -53,27 +53,51 @@ public class SecurityConfig {
     }
 
     /**
-     * Custom JWT decoder that accepts multiple issuer URIs for Docker compatibility.
+     * Custom JWT decoder that accepts multiple issuer URIs for different environments.
+     * Supports localhost (dev), Docker internal networking, and Railway production URLs.
      *
      * @return configured JwtDecoder
      */
     @Bean
     public JwtDecoder jwtDecoder() {
+        // Determine the JWK Set URI based on environment
+        String jwkSetUri;
 
-        String jwkSetUri = issuerUri.replace("localhost", "keycloak") + "/protocol/openid-connect/certs";
+        if (issuerUri.contains("railway.app")) {
+            // Railway production - use the public Keycloak URL
+            jwkSetUri = issuerUri + "/protocol/openid-connect/certs";
+        } else if (issuerUri.contains("localhost")) {
+            // Docker environment - use internal service name
+            jwkSetUri = issuerUri.replace("localhost", "keycloak") + "/protocol/openid-connect/certs";
+        } else {
+            // Default - use issuer URI as-is
+            jwkSetUri = issuerUri + "/protocol/openid-connect/certs";
+        }
+
+        System.out.println("🔑 Configuring JWT decoder with JWK Set URI: " + jwkSetUri);
         NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
 
         OAuth2TokenValidator<Jwt> issuerValidator = new OAuth2TokenValidator<Jwt>() {
             @Override
             public OAuth2TokenValidatorResult validate(Jwt jwt) {
                 String issuer = jwt.getClaimAsString(JwtClaimNames.ISS);
+
+                // Build list of valid issuers dynamically based on environment
                 List<String> validIssuers = Arrays.asList(
-                        "http://localhost:8080/realms/DigiTwinStudio",  // Frontend perspective
-                        "http://keycloak:8080/realms/DigiTwinStudio"    // Backend Docker perspective
+                        "http://localhost:8080/realms/DigiTwinStudio",              // Local development
+                        "http://keycloak:8080/realms/DigiTwinStudio",               // Docker internal
+                        issuerUri                                                    // Configured issuer (Railway/production)
                 );
+
+                System.out.println("🔍 Validating JWT issuer: " + issuer);
+                System.out.println("✅ Valid issuers: " + validIssuers);
+
                 if (validIssuers.contains(issuer)) {
+                    System.out.println("✅ JWT issuer is valid");
                     return OAuth2TokenValidatorResult.success();
                 }
+
+                System.out.println("❌ JWT issuer is NOT valid");
                 OAuth2Error error = new OAuth2Error("invalid_issuer", "The iss claim is not valid", null);
                 return OAuth2TokenValidatorResult.failure(error);
             }
