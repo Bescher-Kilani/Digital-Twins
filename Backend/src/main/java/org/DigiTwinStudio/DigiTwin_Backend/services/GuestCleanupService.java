@@ -9,6 +9,7 @@ import org.DigiTwinStudio.DigiTwin_Backend.repositories.UploadedFileRepository;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -30,7 +31,8 @@ public class GuestCleanupService {
      * Scheduled cleanup of guest models older than 2 hours.
      * Hard deletes the models and all referenced files.
      */
-    @Scheduled(fixedRate = 120 * 60 * 1000) // Every 30 minutes
+    @Scheduled(fixedRate = 120 * 60 * 1000)// Every 120 minutes
+    @ConditionalOnProperty(name = "scheduling.enabled", havingValue = "true", matchIfMissing = true)
     public void deleteExpiredGuestModels() {
         LocalDateTime twoHoursAgo = LocalDateTime.now().minusHours(2);
 

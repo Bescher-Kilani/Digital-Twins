@@ -9,6 +9,7 @@ import org.DigiTwinStudio.DigiTwin_Backend.dtos.TemplateDto;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.TemplateRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.integration.SMTRepoClient;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -49,6 +50,7 @@ public class TemplateService {
      * @throws RuntimeException if fetching or mapping fails
      */
     @Scheduled(cron = "0 0 0 * * *", zone = "Europe/Berlin") // Every day at 00:00
+    @ConditionalOnProperty(name = "scheduling.enabled", havingValue = "true", matchIfMissing = true)
     public void syncTemplatesFromRepo() {
         log.info("syncTemplatesFromRepo");
         List<Template> fetchedTemplates = smtRepoClient.fetchTemplates();
