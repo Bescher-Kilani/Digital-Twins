@@ -653,7 +653,7 @@ docker-compose logs -f backend | grep JWT
 **Bescher Kilani**
 - 🌐 GitHub: [@Bescher-Kilani](https://github.com/Bescher-Kilani)
 - 📧 Email: bescherkilani@gmail.com
-- 💼 LinkedIn: [Bescher Kilani](www.linkedin.com/in/bescher-kilani-34726a361)
+- 💼 LinkedIn: [Bescher Kilani](https://linkedin.com/in/bescher-kilani-34726a361)
 
 **Project Links**
 - 🔗 Repository: [https://github.com/Bescher-Kilani/DigiTwin-Studio](https://github.com/Bescher-Kilani/Digital-Twins)

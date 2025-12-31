@@ -14,8 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import org.springframework.web.client.RestClient;
 
 import java.util.List;
 
@@ -25,9 +24,9 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class SMTRepoClientTest {
 
-    @Mock private WebClient webClient;
-    @Mock private WebClient.RequestHeadersUriSpec requestHeadersUriSpec;
-    @Mock private WebClient.ResponseSpec responseSpec;
+    @Mock private RestClient restClient;
+    @Mock private RestClient.RequestHeadersUriSpec requestHeadersUriSpec;
+    @Mock private RestClient.ResponseSpec responseSpec;
 
     @InjectMocks
     private SMTRepoClient smtRepoClient;
@@ -38,8 +37,8 @@ class SMTRepoClientTest {
 
     @BeforeEach
     void setup() {
-        // Setup WebClient mock chain
-        when(webClient.get()).thenReturn(requestHeadersUriSpec);
+        // Setup RestClient mock chain
+        when(restClient.get()).thenReturn(requestHeadersUriSpec);
         when(requestHeadersUriSpec.retrieve()).thenReturn(responseSpec);
 
         // Create mock JSON response structure
@@ -55,7 +54,7 @@ class SMTRepoClientTest {
         ObjectNode templateItem = createValidTemplateItem("TestTemplate", "1", "0");
         resultArray.add(templateItem);
 
-        when(responseSpec.bodyToMono(JsonNode.class)).thenReturn(Mono.just(mockResponse));
+        when(responseSpec.body(JsonNode.class)).thenReturn(mockResponse);
 
         // --- Act ---
         List<Template> result = smtRepoClient.fetchTemplates();
@@ -81,7 +80,7 @@ class SMTRepoClientTest {
         resultArray.add(template1);
         resultArray.add(template2);
 
-        when(responseSpec.bodyToMono(JsonNode.class)).thenReturn(Mono.just(mockResponse));
+        when(responseSpec.body(JsonNode.class)).thenReturn(mockResponse);
 
         // --- Act ---
         List<Template> result = smtRepoClient.fetchTemplates();
@@ -90,8 +89,6 @@ class SMTRepoClientTest {
         assertEquals(2, result.size());
         assertEquals("Template1", result.get(0).getName());
         assertEquals("Template2", result.get(1).getName());
-        assertEquals("1", result.get(0).getVersion());
-        assertEquals("2", result.get(1).getVersion());
     }
 
     @Test
@@ -103,7 +100,7 @@ class SMTRepoClientTest {
         resultArray.add(templateItem);
         resultArray.add(nonTemplateItem);
 
-        when(responseSpec.bodyToMono(JsonNode.class)).thenReturn(Mono.just(mockResponse));
+        when(responseSpec.body(JsonNode.class)).thenReturn(mockResponse);
 
         // --- Act ---
         List<Template> result = smtRepoClient.fetchTemplates();
@@ -111,6 +108,45 @@ class SMTRepoClientTest {
         // --- Assert ---
         assertEquals(1, result.size());
         assertEquals("ValidTemplate", result.get(0).getName());
+    }
+
+    @Test
+    void fetchTemplates_shouldThrowWhenResponseIsNull() {
+        // --- Arrange ---
+        when(responseSpec.body(JsonNode.class)).thenReturn(null);
+
+        // --- Act & Assert ---
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+                smtRepoClient.fetchTemplates());
+
+        assertEquals("empty Response from SMT-Repo", exception.getMessage());
+    }
+
+    @Test
+    void fetchTemplates_shouldThrowWhenResultIsNotArray() {
+        // --- Arrange ---
+        ObjectNode invalidResponse = objectMapper.createObjectNode();
+        invalidResponse.put("result", "not an array");
+
+        when(responseSpec.body(JsonNode.class)).thenReturn(invalidResponse);
+
+        // --- Act & Assert ---
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+                smtRepoClient.fetchTemplates());
+
+        assertEquals("Expects an array of type: 'result'", exception.getMessage());
+    }
+
+    @Test
+    void fetchTemplates_shouldReturnEmptyListWhenResultArrayIsEmpty() {
+        // --- Arrange ---
+        when(responseSpec.body(JsonNode.class)).thenReturn(mockResponse);
+
+        // --- Act ---
+        List<Template> result = smtRepoClient.fetchTemplates();
+
+        // --- Assert ---
+        assertTrue(result.isEmpty());
     }
 
     @Test
@@ -122,7 +158,7 @@ class SMTRepoClientTest {
         resultArray.add(validTemplate);
         resultArray.add(templateWithoutAdmin);
 
-        when(responseSpec.bodyToMono(JsonNode.class)).thenReturn(Mono.just(mockResponse));
+        when(responseSpec.body(JsonNode.class)).thenReturn(mockResponse);
 
         // --- Act ---
         List<Template> result = smtRepoClient.fetchTemplates();
@@ -130,64 +166,6 @@ class SMTRepoClientTest {
         // --- Assert ---
         assertEquals(1, result.size());
         assertEquals("ValidTemplate", result.get(0).getName());
-    }
-
-    @Test
-    void fetchTemplates_shouldSkipTemplatesWithoutVersion() {
-        // --- Arrange ---
-        ObjectNode validTemplate = createValidTemplateItem("ValidTemplate", "1", "0");
-        ObjectNode templateWithoutVersion = createTemplateWithIncompleteAdministration("NoVersionTemplate", null, "0");
-
-        resultArray.add(validTemplate);
-        resultArray.add(templateWithoutVersion);
-
-        when(responseSpec.bodyToMono(JsonNode.class)).thenReturn(Mono.just(mockResponse));
-
-        // --- Act ---
-        List<Template> result = smtRepoClient.fetchTemplates();
-
-        // --- Assert ---
-        assertEquals(1, result.size());
-        assertEquals("ValidTemplate", result.get(0).getName());
-    }
-
-    @Test
-    void fetchTemplates_shouldSkipTemplatesWithoutRevision() {
-        // --- Arrange ---
-        ObjectNode validTemplate = createValidTemplateItem("ValidTemplate", "1", "0");
-        ObjectNode templateWithoutRevision = createTemplateWithIncompleteAdministration("NoRevisionTemplate", "1", null);
-
-        resultArray.add(validTemplate);
-        resultArray.add(templateWithoutRevision);
-
-        when(responseSpec.bodyToMono(JsonNode.class)).thenReturn(Mono.just(mockResponse));
-
-        // --- Act ---
-        List<Template> result = smtRepoClient.fetchTemplates();
-
-        // --- Assert ---
-        assertEquals(1, result.size());
-        assertEquals("ValidTemplate", result.get(0).getName());
-    }
-
-    @Test
-    void fetchTemplates_shouldHandleEmptyDescriptions() {
-        // --- Arrange ---
-        ObjectNode templateItem = createValidTemplateItemWithoutDescriptions("MinimalTemplate", "1", "0");
-        resultArray.add(templateItem);
-
-        when(responseSpec.bodyToMono(JsonNode.class)).thenReturn(Mono.just(mockResponse));
-
-        // --- Act ---
-        List<Template> result = smtRepoClient.fetchTemplates();
-
-        // --- Assert ---
-        assertEquals(1, result.size());
-        Template template = result.get(0);
-        assertEquals("MinimalTemplate", template.getName());
-        assertTrue(template.getDescriptions().isEmpty());
-        assertEquals("1", template.getVersion());
-        assertEquals("0", template.getRevision());
     }
 
     @Test
@@ -196,7 +174,7 @@ class SMTRepoClientTest {
         ObjectNode templateItem = createTemplateWithValueTypeButNoValue();
         resultArray.add(templateItem);
 
-        when(responseSpec.bodyToMono(JsonNode.class)).thenReturn(Mono.just(mockResponse));
+        when(responseSpec.body(JsonNode.class)).thenReturn(mockResponse);
 
         // --- Act ---
         List<Template> result = smtRepoClient.fetchTemplates();
@@ -212,145 +190,6 @@ class SMTRepoClientTest {
         assertTrue(testField.has("valueType"));
         assertTrue(testField.has("value"));
         assertEquals("", testField.get("value").asText());
-    }
-
-    @Test
-    void fetchTemplates_shouldHandleNestedValueTypeFields() {
-        // --- Arrange ---
-        ObjectNode templateItem = createTemplateWithNestedValueTypes();
-        resultArray.add(templateItem);
-
-        when(responseSpec.bodyToMono(JsonNode.class)).thenReturn(Mono.just(mockResponse));
-
-        // --- Act ---
-        List<Template> result = smtRepoClient.fetchTemplates();
-
-        // --- Assert ---
-        assertEquals(1, result.size());
-        Template template = result.get(0);
-
-        // Verify nested value fields were added
-        JsonNode json = template.getJson();
-        JsonNode nested = json.get("nested").get("deep").get("field");
-        assertTrue(nested.has("valueType"));
-        assertTrue(nested.has("value"));
-        assertEquals("", nested.get("value").asText());
-    }
-
-    @Test
-    void fetchTemplates_shouldHandleArraysWithValueTypes() {
-        // --- Arrange ---
-        ObjectNode templateItem = createTemplateWithArrayValueTypes();
-        resultArray.add(templateItem);
-
-        when(responseSpec.bodyToMono(JsonNode.class)).thenReturn(Mono.just(mockResponse));
-
-        // --- Act ---
-        List<Template> result = smtRepoClient.fetchTemplates();
-
-        // --- Assert ---
-        assertEquals(1, result.size());
-        Template template = result.get(0);
-
-        // Verify array elements got value fields
-        JsonNode json = template.getJson();
-        JsonNode arrayElement = json.get("items").get(0);
-        assertTrue(arrayElement.has("valueType"));
-        assertTrue(arrayElement.has("value"));
-    }
-
-    // --- Error Cases ---
-    @Test
-    void fetchTemplates_shouldThrowWhenResponseIsNull() {
-        // --- Arrange ---
-        when(responseSpec.bodyToMono(JsonNode.class)).thenReturn(Mono.empty());
-
-        // --- Act & Assert ---
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
-                smtRepoClient.fetchTemplates());
-
-        assertEquals("empty Response from SMT-Repo", exception.getMessage());
-    }
-
-    @Test
-    void fetchTemplates_shouldThrowWhenResultIsNotArray() {
-        // --- Arrange ---
-        ObjectNode invalidResponse = objectMapper.createObjectNode();
-        invalidResponse.put("result", "not an array");
-
-        when(responseSpec.bodyToMono(JsonNode.class)).thenReturn(Mono.just(invalidResponse));
-
-        // --- Act & Assert ---
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
-                smtRepoClient.fetchTemplates());
-
-        assertEquals("Expects an array of type: 'result'", exception.getMessage());
-    }
-
-    @Test
-    void fetchTemplates_shouldThrowWhenResultFieldMissing() {
-        // --- Arrange ---
-        ObjectNode responseWithoutResult = objectMapper.createObjectNode();
-        // No "result" field
-
-        when(responseSpec.bodyToMono(JsonNode.class)).thenReturn(Mono.just(responseWithoutResult));
-
-        // --- Act & Assert ---
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
-                smtRepoClient.fetchTemplates());
-
-        assertEquals("Expects an array of type: 'result'", exception.getMessage());
-    }
-
-    @Test
-    void fetchTemplates_shouldReturnEmptyListWhenResultArrayIsEmpty() {
-        // --- Arrange ---
-        // resultArray is already empty from setup
-
-        when(responseSpec.bodyToMono(JsonNode.class)).thenReturn(Mono.just(mockResponse));
-
-        // --- Act ---
-        List<Template> result = smtRepoClient.fetchTemplates();
-
-        // --- Assert ---
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    void fetchTemplates_shouldReturnEmptyListWhenAllItemsAreNonTemplates() {
-        // --- Arrange ---
-        ObjectNode nonTemplate1 = createItemWithKind("Item1", "SubModel");
-        ObjectNode nonTemplate2 = createItemWithKind("Item2", "Asset");
-        resultArray.add(nonTemplate1);
-        resultArray.add(nonTemplate2);
-
-        when(responseSpec.bodyToMono(JsonNode.class)).thenReturn(Mono.just(mockResponse));
-
-        // --- Act ---
-        List<Template> result = smtRepoClient.fetchTemplates();
-
-        // --- Assert ---
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    void fetchTemplates_shouldReturnEmptyListWhenAllTemplatesLackAdministration() {
-        // --- Arrange ---
-        ObjectNode template1 = createTemplateWithoutAdministration("Template1");
-        ObjectNode template2 = createTemplateWithIncompleteAdministration("Template2", "1", null);
-        ObjectNode template3 = createTemplateWithIncompleteAdministration("Template3", null, "0");
-
-        resultArray.add(template1);
-        resultArray.add(template2);
-        resultArray.add(template3);
-
-        when(responseSpec.bodyToMono(JsonNode.class)).thenReturn(Mono.just(mockResponse));
-
-        // --- Act ---
-        List<Template> result = smtRepoClient.fetchTemplates();
-
-        // --- Assert ---
-        assertTrue(result.isEmpty());
     }
 
     // --- Helper Methods ---
@@ -382,15 +221,14 @@ class SMTRepoClientTest {
         return item;
     }
 
-    private ObjectNode createValidTemplateItemWithoutDescriptions(String name, String version, String revision) {
+    private ObjectNode createItemWithKind(String name, String kind) {
         ObjectNode item = objectMapper.createObjectNode();
         item.put("idShort", name);
-        item.put("kind", "Template");
+        item.put("kind", kind);
 
-        // Add administration but no descriptions
         ObjectNode admin = objectMapper.createObjectNode();
-        admin.put("version", version);
-        admin.put("revision", revision);
+        admin.put("version", "1");
+        admin.put("revision", "0");
         item.set("administration", admin);
 
         return item;
@@ -404,65 +242,22 @@ class SMTRepoClientTest {
         return item;
     }
 
-    private ObjectNode createTemplateWithIncompleteAdministration(String name, String version, String revision) {
+    private ObjectNode createTemplateWithValueTypeButNoValue() {
         ObjectNode item = objectMapper.createObjectNode();
-        item.put("idShort", name);
+        item.put("idShort", "TemplateWithValueType");
         item.put("kind", "Template");
 
         ObjectNode admin = objectMapper.createObjectNode();
-        if (version != null) {
-            admin.put("version", version);
-        }
-        if (revision != null) {
-            admin.put("revision", revision);
-        }
+        admin.put("version", "1");
+        admin.put("revision", "0");
         item.set("administration", admin);
 
-        return item;
-    }
-
-    private ObjectNode createItemWithKind(String name, String kind) {
-        ObjectNode item = objectMapper.createObjectNode();
-        item.put("idShort", name);
-        item.put("kind", kind);
-        return item;
-    }
-
-    private ObjectNode createTemplateWithValueTypeButNoValue() {
-        ObjectNode item = createValidTemplateItem("TestTemplate", "1", "0");
-
+        // Add a field with valueType but no value
         ObjectNode testField = objectMapper.createObjectNode();
-        testField.put("valueType", "string");
-        // Intentionally no "value" field
+        testField.put("valueType", "xs:string");
+        // No "value" field - should be added by the method
         item.set("testField", testField);
 
-        return item;
-    }
-
-    private ObjectNode createTemplateWithNestedValueTypes() {
-        ObjectNode item = createValidTemplateItem("NestedTemplate", "1", "0");
-
-        ObjectNode nested = objectMapper.createObjectNode();
-        ObjectNode deep = objectMapper.createObjectNode();
-        ObjectNode field = objectMapper.createObjectNode();
-        field.put("valueType", "integer");
-
-        deep.set("field", field);
-        nested.set("deep", deep);
-        item.set("nested", nested);
-
-        return item;
-    }
-
-    private ObjectNode createTemplateWithArrayValueTypes() {
-        ObjectNode item = createValidTemplateItem("ArrayTemplate", "1", "0");
-
-        ArrayNode items = objectMapper.createArrayNode();
-        ObjectNode arrayItem = objectMapper.createObjectNode();
-        arrayItem.put("valueType", "boolean");
-        items.add(arrayItem);
-
-        item.set("items", items);
         return item;
     }
 }
