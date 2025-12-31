@@ -50,7 +50,6 @@ public class TemplateService {
      * @throws RuntimeException if fetching or mapping fails
      */
     @Scheduled(cron = "0 0 0 * * *", zone = "Europe/Berlin") // Every day at 00:00
-    @ConditionalOnProperty(name = "scheduling.enabled", havingValue = "true", matchIfMissing = true)
     public void syncTemplatesFromRepo() {
         log.info("syncTemplatesFromRepo");
         List<Template> fetchedTemplates = smtRepoClient.fetchTemplates();

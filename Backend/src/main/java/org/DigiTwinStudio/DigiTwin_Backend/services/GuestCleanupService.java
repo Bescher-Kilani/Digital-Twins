@@ -32,7 +32,6 @@ public class GuestCleanupService {
      * Hard deletes the models and all referenced files.
      */
     @Scheduled(fixedRate = 120 * 60 * 1000)// Every 120 minutes
-    @ConditionalOnProperty(name = "scheduling.enabled", havingValue = "true", matchIfMissing = true)
     public void deleteExpiredGuestModels() {
         LocalDateTime twoHoursAgo = LocalDateTime.now().minusHours(2);
 
