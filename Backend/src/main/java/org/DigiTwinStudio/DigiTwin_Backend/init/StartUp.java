@@ -8,6 +8,7 @@ import org.DigiTwinStudio.DigiTwin_Backend.domain.Tag;
 import org.DigiTwinStudio.DigiTwin_Backend.repositories.TagRepository;
 import org.DigiTwinStudio.DigiTwin_Backend.services.TemplateService;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.core.io.ClassPathResource;
@@ -24,6 +25,11 @@ import java.util.stream.Stream;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@ConditionalOnProperty(
+        name = "startup.initialization.enabled",
+        havingValue = "true",
+        matchIfMissing = true
+)
 public class StartUp implements ApplicationListener<ApplicationReadyEvent> {
 
     private final TemplateService templateService;

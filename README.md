@@ -3,8 +3,8 @@
 A modern, full-stack web application for creating and managing Digital Twin Asset Administration Shell (AAS) models. Built with React, Spring Boot, Keycloak, and MongoDB, fully containerized with Docker and deployed on Railway.
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Railway-blueviolet)](https://bescher-digitwins.up.railway.app)
-[![GitHub](https://img.shields.io/badge/GitHub-Repository-blue)](https://github.com/Bescher-Kilani/DigiTwin-Studio)
-[![Tests](https://img.shields.io/badge/Tests-300%2B-success)](https://github.com/Bescher-Kilani/DigiTwin-Studio)
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-blue)](https://github.com/Bescher-Kilani/Digital-Twins)
+[![Tests](https://img.shields.io/badge/Tests-300%2B-success)](https://github.com/Bescher-Kilani/Digital-Twins)
 [![Made with Love](https://img.shields.io/badge/Made%20with-❤️-red)](https://github.com/Bescher-Kilani)
 
 ![DigiTwin Studio Landing](docs/images/1_landing_page.jpg)
@@ -652,11 +652,11 @@ docker-compose logs -f backend | grep JWT
 
 **Bescher Kilani**
 - 🌐 GitHub: [@Bescher-Kilani](https://github.com/Bescher-Kilani)
-- 📧 Email: bescher.kilani@kit.edu
-- 💼 LinkedIn: [Bescher Kilani](https://linkedin.com/in/bescher-kilani)
+- 📧 Email: bescherkilani@gmail.com
+- 💼 LinkedIn: [Bescher Kilani](www.linkedin.com/in/bescher-kilani-34726a361)
 
 **Project Links**
-- 🔗 Repository: [https://github.com/Bescher-Kilani/DigiTwin-Studio](https://github.com/Bescher-Kilani/DigiTwin-Studio)
+- 🔗 Repository: [https://github.com/Bescher-Kilani/DigiTwin-Studio](https://github.com/Bescher-Kilani/Digital-Twins)
 - 🚀 Live Demo: [https://bescher-digitwins.up.railway.app](https://bescher-digitwins.up.railway.app)
 
 ---
