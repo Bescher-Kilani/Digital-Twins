@@ -1,6 +1,6 @@
 # 🌐 DigiTwin Studio - Digital Twin Submodel Instantiation Platform
 
-A modern, full-stack web application for creating and managing Digital Twin Asset Administration Shell (AAS) models. Built with React, Spring Boot, Keycloak, and MongoDB, fully containerized with Docker and deployed on Railway.
+DigiTwin Studio is a modern, full-stack web application, collaboratively designed and implemented by a team of four students as part of an academic software engineering project. Built with React, Spring Boot, Keycloak, and MongoDB, fully containerized with Docker and deployed on Railway.
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Railway-blueviolet)](https://bescher-digitwins.up.railway.app)
 [![GitHub](https://img.shields.io/badge/GitHub-Repository-blue)](https://github.com/Bescher-Kilani/Digital-Twins)
