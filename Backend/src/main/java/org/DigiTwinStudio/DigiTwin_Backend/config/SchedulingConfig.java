@@ -15,7 +15,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @ConditionalOnProperty(
         name = "scheduling.enabled",
         havingValue = "true",
-        matchIfMissing = false  // Enabled by default if property is not set
+        matchIfMissing = true  // Enabled by default if property is not set
 )
 @EnableScheduling
 public class SchedulingConfig {
