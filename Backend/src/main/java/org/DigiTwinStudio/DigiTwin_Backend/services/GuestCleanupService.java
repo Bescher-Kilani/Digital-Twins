@@ -30,7 +30,7 @@ public class GuestCleanupService {
      * Scheduled cleanup of guest models older than 2 hours.
      * Hard deletes the models and all referenced files.
      */
-    @Scheduled(fixedRate = 120 * 60 * 1000) // Every 30 minutes
+    @Scheduled(fixedRate = 24 * 60 * 60 * 1000) // Every day
     public void deleteExpiredGuestModels() {
         LocalDateTime twoHoursAgo = LocalDateTime.now().minusHours(2);
 
