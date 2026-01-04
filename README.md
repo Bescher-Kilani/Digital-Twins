@@ -195,6 +195,16 @@ Railway services:
 3. **Keycloak** - Authentication service
 4. **MongoDB** - Application database
 
+### **⚡ Serverless Mode (Cost Optimization)**
+
+Railway's Serverless feature automatically sleeps inactive services to reduce costs:
+
+**How it works:**
+- Services sleep after **10 minutes of inactivity** (no outbound traffic)
+- First request after sleep causes a **~20 second cold start**
+- Subsequent requests are instant (normal response time)
+- Automatically wakes on incoming traffic
+
 ---
 
 ## 📁 Project Structure
