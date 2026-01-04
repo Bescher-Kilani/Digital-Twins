@@ -27,6 +27,8 @@ Built with **React**, **Spring Boot**, **Keycloak**, and **MongoDB**, fully cont
 - **👤 Guest Mode** - Try the platform without registration
 - **🎨 Modern UI** - Responsive design with beautiful user experience
 - **✅ Comprehensive Testing** - Over 300 JUnit tests ensuring reliability and code quality
+- **🚀 CI/CD Pipeline** - Automatic deployment to Railway on every push to main branch
+
 
 ---
 
